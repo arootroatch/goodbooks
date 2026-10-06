@@ -10,7 +10,9 @@ class ClassificationsController < ApplicationController
     attrs = classification_attributes
     return redirect_back_or_to(business_inbox_path(@business), alert: "Choose a category.") unless attrs
 
-    @transaction.update!(attrs.merge(categorized_by: "user"))
+    unless @transaction.update(attrs.merge(categorized_by: "user"))
+      return redirect_back_or_to business_inbox_path(@business), alert: @transaction.errors.full_messages.to_sentence
+    end
 
     if params[:make_rule] == "1" && @transaction.category
       redirect_to new_business_rule_path(@business, value: @transaction.payee.squish.split.first, category_id: @transaction.category_id)

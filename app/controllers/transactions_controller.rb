@@ -45,11 +45,12 @@ class TransactionsController < ApplicationController
   end
 
   def destroy
-    if @transaction.account.manual?
-      @transaction.destroy!
+    if !@transaction.account.manual?
+      redirect_to business_transactions_path(@business), alert: "Imported transactions can be excluded, not deleted.", status: :see_other
+    elsif @transaction.destroy
       redirect_to business_transactions_path(@business), notice: "Transaction deleted.", status: :see_other
     else
-      redirect_to business_transactions_path(@business), alert: "Imported transactions can be excluded, not deleted.", status: :see_other
+      redirect_to edit_business_transaction_path(@business, @transaction), alert: @transaction.linked_invoice_message, status: :see_other
     end
   end
 
