@@ -16,7 +16,12 @@ Rails.application.routes.draw do
   resource :setup, only: %i[new create]
 
   resources :businesses, only: %i[new create show edit update] do
-    resources :accounts, only: %i[index new create edit update]
+    resources :accounts, only: %i[index new create edit update] do
+      resources :csv_imports, only: %i[new create show destroy] do
+        post :commit, on: :member
+        resource :mapping, only: %i[edit update], controller: "csv_import_mappings"
+      end
+    end
     resources :categories, only: %i[index new create edit update]
     resources :transactions, except: :show do
       resource :classification, only: :update

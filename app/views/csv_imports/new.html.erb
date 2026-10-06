@@ -1,0 +1,7 @@
+<%= business_nav @business %>
+<h1>Import CSV into <%= @account.name %></h1>
+<%= form_with model: @import, url: business_account_csv_imports_path(@business, @account) do |f| %>
+  <%= render "shared/errors", record: @import %>
+  <p><%= f.file_field :file, accept: ".csv,text/csv", required: true %></p>
+  <%= f.submit "Upload" %>
+<% end %>

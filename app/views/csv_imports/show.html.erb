@@ -1,0 +1,33 @@
+<%= business_nav @business %>
+<h1>Preview import into <%= @account.name %></h1>
+<% if @file_error %>
+  <p class="errors"><%= @file_error %></p>
+<% elsif @import.previewed? %>
+  <p>
+    <%= @preview.new_entries.size %> new ·
+    <%= pluralize(@preview.duplicate_entries.size, "duplicate") %> ·
+    <%= pluralize(@preview.error_entries.size, "row") %> with errors
+  </p>
+  <table>
+    <thead><tr><th>Line</th><th>Date</th><th>Payee</th><th class="num">Amount</th><th>Status</th><th>Rule</th></tr></thead>
+    <tbody>
+      <% @preview.entries.each do |entry| %>
+        <tr>
+          <td><%= entry.row.line %></td>
+          <td><%= entry.row.posted_on %></td>
+          <td><%= entry.row.payee %></td>
+          <td class="num"><%= money(entry.row.amount_cents) %></td>
+          <td><%= entry.status == :error ? entry.row.error : entry.status %></td>
+          <td><%= entry.proposed_rule && (entry.proposed_rule.outcome == "transfer" ? "Transfer" : entry.proposed_rule.category.name) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= button_to "Import", commit_business_account_csv_import_path(@business, @account, @import) %>
+<% else %>
+  <p>This import was <%= @import.status %>.</p>
+<% end %>
+<%= link_to "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
+<% if @import.previewed? %>
+  <%= button_to "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete %>
+<% end %>

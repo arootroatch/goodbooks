@@ -1,0 +1,23 @@
+<%= business_nav @business %>
+<h1>Map columns for <%= @account.name %></h1>
+<% if @file_error %><p class="errors"><%= @file_error %></p><% end %>
+<%= form_with url: edit_business_account_csv_import_mapping_path(@business, @account, @import), method: :get, class: "inline-form" do |f| %>
+  <%= f.label :skip_rows, "Rows to skip before the header" %>
+  <%= f.number_field :skip_rows, value: @mapping.skip_rows, min: 0 %>
+  <%= f.submit "Reload columns" %>
+<% end %>
+<%= form_with model: @mapping, scope: :csv_import_mapping, url: business_account_csv_import_mapping_path(@business, @account, @import), method: :patch do |f| %>
+  <%= render "shared/errors", record: @mapping %>
+  <%= f.hidden_field :skip_rows %>
+  <p><%= f.label :date_column, "Date column" %> <%= f.select :date_column, @headers, include_blank: true %></p>
+  <p><%= f.label :date_format, "Date format" %> <%= f.select :date_format, CsvImport::Parser::DATE_FORMATS.keys %></p>
+  <p><%= f.label :payee_column, "Payee column" %> <%= f.select :payee_column, @headers, include_blank: true %></p>
+  <p><%= f.label :memo_column, "Memo column (optional)" %> <%= f.select :memo_column, @headers, include_blank: true %></p>
+  <p><%= f.label :amount_column, "Amount column" %> <%= f.select :amount_column, @headers, include_blank: true %></p>
+  <p>…or separate columns:
+    <%= f.label :debit_column, "Debit column" %> <%= f.select :debit_column, @headers, include_blank: true %>
+    <%= f.label :credit_column, "Credit column" %> <%= f.select :credit_column, @headers, include_blank: true %>
+  </p>
+  <p><%= f.label :invert_sign, "Invert signs (credit card statements that show purchases as positive)" %> <%= f.check_box :invert_sign %></p>
+  <%= f.submit "Save mapping" %>
+<% end %>
