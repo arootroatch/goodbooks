@@ -27,7 +27,7 @@
 <% else %>
   <p>This import was <%= @import.status %>.</p>
 <% end %>
-<%= link_to "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
 <% if @import.previewed? %>
+  <%= link_to "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
   <%= button_to "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete %>
 <% end %>

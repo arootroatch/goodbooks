@@ -53,4 +53,11 @@ RSpec.describe CsvImport do
     import.commit!
     expect { import.commit! }.to raise_error(CsvImport::NotPreviewed)
   end
+
+  it "refuses to commit a stale copy of an import committed elsewhere" do
+    import = upload
+    CsvImport.find(import.id).update_columns(status: "committed")
+    expect { import.commit! }.to raise_error(CsvImport::NotPreviewed)
+    expect(account.transactions.count).to eq(0)
+  end
 end

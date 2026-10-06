@@ -44,4 +44,76 @@ RSpec.describe "CSV imports" do
     get new_business_account_csv_import_path(business, cash)
     expect(response).to have_http_status(:not_found)
   end
+
+  context "with a mapped account and an uploaded import" do
+    let(:mapping) { CsvImport::Mapping.new(date_column: "Date", payee_column: "Description", amount_column: "Amount").to_h }
+    let!(:mapped) { create(:account, :csv, business: business, csv_mapping: mapping) }
+    let!(:import) { mapped.csv_imports.create!(file: fixture) }
+    let(:editor) { user_with_role("editor", business) }
+
+    it "commits once and refuses a second commit" do
+      sign_in_as editor
+      post commit_business_account_csv_import_path(business, mapped, import)
+      expect(response).to redirect_to(business_transactions_path(business, account_id: mapped.id))
+      expect(flash[:notice]).to start_with("Imported 4 new transactions")
+      post commit_business_account_csv_import_path(business, mapped, import)
+      expect(response).to redirect_to(business_account_csv_import_path(business, mapped, import))
+      expect(flash[:alert]).to include("already committed")
+      expect(mapped.transactions.count).to eq(4)
+    end
+
+    it "does not discard a committed import" do
+      sign_in_as editor
+      import.commit!
+      delete business_account_csv_import_path(business, mapped, import)
+      expect(response).to redirect_to(business_account_csv_import_path(business, mapped, import))
+      expect(flash[:alert]).to include("already committed")
+      expect(import.reload).to be_committed
+      expect(import.file).to be_attached
+    end
+
+    it "discards a previewed import and purges the file" do
+      sign_in_as editor
+      delete business_account_csv_import_path(business, mapped, import)
+      expect(import.reload).to be_discarded
+      expect(import.file).not_to be_attached
+    end
+
+    it "forbids viewers from committing and discarding" do
+      sign_in_as user_with_role("viewer", business)
+      post commit_business_account_csv_import_path(business, mapped, import)
+      expect(response).to have_http_status(:forbidden)
+      delete business_account_csv_import_path(business, mapped, import)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "is not found for non-members" do
+      sign_in_as create(:user)
+      get business_account_csv_import_path(business, mapped, import)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "shows a discarded import without reading the file" do
+      sign_in_as editor
+      import.update!(status: "discarded")
+      import.file.purge
+      get business_account_csv_import_path(business, mapped, import)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("This import was discarded")
+    end
+
+    it "redirects the mapping step for a committed import" do
+      sign_in_as editor
+      import.commit!
+      get edit_business_account_csv_import_mapping_path(business, mapped, import)
+      expect(response).to redirect_to(business_account_csv_import_path(business, mapped, import))
+    end
+
+    it "is not found for archived accounts" do
+      mapped.update!(archived_at: Time.current)
+      sign_in_as editor
+      get new_business_account_csv_import_path(business, mapped)
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

@@ -21,7 +21,7 @@ class CsvImportsController < ApplicationController
   def show
     return redirect_to edit_business_account_csv_import_mapping_path(@business, @account, @import) unless @account.mapped?
 
-    @preview = @import.preview
+    @preview = @import.preview if @import.previewed?
   rescue CsvImport::Parser::FileError => e
     @file_error = e.message
   end
@@ -33,9 +33,13 @@ class CsvImportsController < ApplicationController
               "#{@import.error_count} rows with errors)."
   rescue CsvImport::NotPreviewed, CsvImport::Parser::FileError => e
     redirect_to import_path, alert: e.message
+  rescue ActiveRecord::RecordNotUnique
+    redirect_to import_path, alert: "Some rows were already imported. Refresh and try again."
   end
 
   def destroy
+    return redirect_to(import_path, alert: "This import was already #{@import.status}.", status: :see_other) unless @import.previewed?
+
     @import.update!(status: "discarded")
     @import.file.purge
     redirect_to business_accounts_path(@business), notice: "Import discarded.", status: :see_other
@@ -44,7 +48,7 @@ class CsvImportsController < ApplicationController
   private
 
   def set_account
-    @account = @business.accounts.csv.find(params[:account_id])
+    @account = @business.accounts.active.csv.find(params[:account_id])
   end
 
   def set_import

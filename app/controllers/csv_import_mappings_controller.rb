@@ -5,6 +5,7 @@ class CsvImportMappingsController < ApplicationController
 
   before_action :require_editor!
   before_action :set_import
+  before_action :require_previewed
 
   def edit
     @mapping = @account.mapping
@@ -25,8 +26,12 @@ class CsvImportMappingsController < ApplicationController
 
   private
 
+  def require_previewed
+    redirect_to business_account_csv_import_path(@business, @account, @import) unless @import.previewed?
+  end
+
   def set_import
-    @account = @business.accounts.csv.find(params[:account_id])
+    @account = @business.accounts.active.csv.find(params[:account_id])
     @import = @account.csv_imports.find(params[:csv_import_id])
   end
 

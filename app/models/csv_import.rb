@@ -21,10 +21,10 @@ class CsvImport < ApplicationRecord
   def preview = CsvImport::Preview.build(self)
 
   def commit!
-    raise NotPreviewed, "This import was already #{status}." unless previewed?
+    with_lock do
+      raise NotPreviewed, "This import was already #{status}." unless previewed?
 
-    result = preview
-    ApplicationRecord.transaction do
+      result = preview
       created = result.new_entries.map do |entry|
         row = entry.row
         account.transactions.create!(posted_on: row.posted_on, amount_cents: row.amount_cents, payee: row.payee,
