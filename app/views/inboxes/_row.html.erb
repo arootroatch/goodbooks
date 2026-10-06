@@ -1,3 +1,4 @@
+<% matches = local_assigns[:matcher] ? matcher.for(txn, business.id) : [] %>
 <tr id="<%= dom_id(txn) %>">
   <td><%= txn.posted_on %></td>
   <td><%= txn.account.name %></td>
@@ -15,6 +16,12 @@
       <% end %>
       <%= button_to "Transfer", business_transaction_classification_path(business, txn), method: :patch, params: { outcome: "transfer" }, form_class: "inline-form" %>
       <%= button_to "Exclude", business_transaction_classification_path(business, txn), method: :patch, params: { outcome: "exclude" }, form_class: "inline-form" %>
+      <% if matches.any? %>
+        <%= render "inboxes/invoice_hint", business: business, txn: txn, invoices: matches, categories: categories %>
+      <% end %>
+    <% end %>
+    <% if local_assigns[:error] %>
+      <p class="errors"><%= error %></p>
     <% end %>
   </td>
 </tr>

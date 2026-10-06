@@ -20,3 +20,4 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .badge-draft, .badge-void { color: var(--muted); }
 dl.details { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
 .actions { display: flex; gap: .5rem; align-items: center; }
+.invoice-hint { margin-top: .25rem; font-size: .9rem; color: var(--muted); }

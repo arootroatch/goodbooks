@@ -25,6 +25,8 @@ class InvoicePaymentsController < ApplicationController
   def create
     deposit = Transaction.for_businesses(@business.id).find(scalar_params(:deposit_id)[:deposit_id])
     result = link(deposit)
+    return respond_for_inbox(result, deposit) if params[:from_inbox] == "1"
+
     if result.ok?
       redirect_to business_invoice_path(@business, @invoice), notice: "Payment recorded.", status: :see_other
     else
@@ -50,6 +52,25 @@ class InvoicePaymentsController < ApplicationController
     category_id = scalar_params(:category_id)[:category_id]
     category = category_id && @business.categories.active.income.find(category_id)
     InvoicePayments.link(invoice: @invoice, deposit: deposit, amount_cents: cents, category: category)
+  end
+
+  def respond_for_inbox(result, deposit)
+    respond_to do |format|
+      format.turbo_stream do
+        if result.ok?
+          render turbo_stream: turbo_stream.remove(deposit)
+        else
+          render turbo_stream: turbo_stream.replace(deposit, partial: "inboxes/row", locals: {
+            business: @business, txn: deposit.reload, categories: @business.categories.active.order(:name), editable: true,
+            matcher: InvoiceMatcher.for_businesses([ @business.id ]), error: result.error
+          })
+        end
+      end
+      format.html do
+        flash_message = result.ok? ? { notice: "Payment recorded." } : { alert: result.error }
+        redirect_back_or_to business_inbox_path(@business), **flash_message
+      end
+    end
   end
 
   def requested_cents
