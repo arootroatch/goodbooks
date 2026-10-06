@@ -13,6 +13,7 @@ class Invite < ApplicationRecord
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validate :has_grants
+  validate :grants_active_businesses
   validate :creator_may_grant
 
   before_validation :generate_token, on: :create
@@ -61,6 +62,10 @@ class Invite < ApplicationRecord
 
   def has_grants
     errors.add(:base, "Grant access to at least one business") if grants.empty?
+  end
+
+  def grants_active_businesses
+    errors.add(:base, "Grant access to active businesses only") if grants.any? { |grant| grant.business&.archived_at }
   end
 
   def creator_may_grant

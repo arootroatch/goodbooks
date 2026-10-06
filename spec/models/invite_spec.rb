@@ -23,6 +23,13 @@ RSpec.describe Invite do
     expect(Invite.find_usable(invite.token)).to be_nil
   end
 
+  it "rejects grants for archived businesses" do
+    business.update!(archived_at: Time.current)
+    invite = Invite.new(created_by: create(:user, :household_owner), grant_roles: { business.id => "viewer" })
+    expect(invite).not_to be_valid
+    expect(invite.errors[:base]).to include("Grant access to active businesses only")
+  end
+
   it "requires at least one grant" do
     invite = Invite.new(created_by: create(:user, :household_owner))
     expect(invite).not_to be_valid

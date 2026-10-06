@@ -18,6 +18,15 @@ RSpec.describe "Invites" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
+  it "rejects granting an archived business" do
+    owner = create(:user, :household_owner)
+    business.update!(archived_at: Time.current)
+    sign_in_as owner
+    expect { post invites_path, params: { invite: { grant_roles: { business.id => "viewer" } } } }.not_to change(Invite, :count)
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Grant access to active businesses only")
+  end
+
   it "rejects an unknown business id" do
     sign_in_as user_with_role("owner", business)
     post invites_path, params: { invite: { grant_roles: { 0 => "viewer" } } }
