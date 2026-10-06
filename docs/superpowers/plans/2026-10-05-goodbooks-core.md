@@ -6,13 +6,14 @@
 
 **Architecture:** Rails 8 monolith, server-rendered with Hotwire. Pure-Ruby domain objects (`Money`, `RuleEngine`, `CsvImport::Parser`, report calculators) hold the logic and are unit-tested without the DB. Controllers are thin, and every business-scoped request goes through one `BusinessScoped` concern that resolves the business via the user's memberships (404 for non-members) and checks role (403 for insufficient role).
 
-**Tech Stack:** Ruby 3.3.6, Rails 8.1.x, SQLite (WAL), Solid Queue, Hotwire, Propshaft, Importmap, Active Storage (local disk), Active Record Encryption, `rotp`, `rqrcode`, RSpec, FactoryBot, Capybara (rack_test driver), WebMock.
+**Tech Stack:** Ruby 4.0.7, Rails 8.1.x (8.1.4+), SQLite (WAL), Solid Queue, Hotwire, Propshaft, Importmap, Active Storage (local disk), Active Record Encryption, `rotp`, `rqrcode`, RSpec, FactoryBot, Capybara (rack_test; headless Chrome via Selenium for JS specs), WebMock, SortableJS (drag-and-drop rule ordering).
 
 **Spec:** `docs/superpowers/specs/2026-10-05-goodbooks-design.md` (sections 1–5 apply to this plan; 6–10 are later sub-projects).
 
 ## Global Constraints
 
-- Ruby 3.3.6 (`.ruby-version`), Rails `~> 8.1.0`, SQLite only. No Postgres, no Redis.
+- Ruby 4.0.7 (`.ruby-version`), Rails `~> 8.1.4`, SQLite only. No Postgres, no Redis.
+- Ruby 4.0.7 lives at `~/.rubies/ruby-4.0.7` and no version manager is installed. **Every shell command in this plan runs after `export PATH="$HOME/.rubies/ruby-4.0.7/bin:$PATH"`** (in a single Bash call, prefix the command with it). Check with `ruby -v` → `ruby 4.0.7`.
 - All money is a signed integer number of cents in a column named `*_cents`. Never floats, never decimals.
 - Percentages are integer basis points (`5000` = 50%). Mileage is integer tenths of a mile (`miles_tenths`). The mileage rate is integer tenths of a cent (72.5¢ → `725`).
 - Rounding happens only in `Money.round_rational` (half away from zero), once per line item, on a `Rational`.
@@ -72,12 +73,14 @@ docker-compose.yml, .env.example, README.md
 
 ```bash
 cd /Users/AlexRoot-Roatch/current-projects/goodbooks
-gem install rails -v "~> 8.1.0" --no-document
+export PATH="$HOME/.rubies/ruby-4.0.7/bin:$PATH"
+ruby -v   # must print ruby 4.0.7
+gem install rails -v "~> 8.1.4" --no-document
 RAILS_VERSION=$(ruby -e 'puts Gem::Specification.find_all_by_name("rails").map(&:version).select { _1.segments.first(2) == [8, 1] }.max')
 rails _${RAILS_VERSION}_ new . --name=goodbooks --database=sqlite3 --skip-test --skip-system-test --skip-jbuilder --skip-kamal --force
 ```
 
-`--force` only overwrites files the generator creates; `docs/` is untouched. Confirm `cat .ruby-version` prints `3.3.6` (write `3.3.6` into it if not).
+`--force` only overwrites files the generator creates; `docs/` is untouched. Confirm `cat .ruby-version` prints `4.0.7` (write `4.0.7` into it if not).
 
 - [ ] **Step 2: Add gems**
 
@@ -3484,17 +3487,18 @@ git commit -m "Add pure rule matching engine"
 ### Task 11: Rules management and RuleApplier
 
 **Files:**
-- Create: migration `create_rules`; `app/models/rule.rb`; `app/services/rule_applier.rb`; `app/controllers/rules_controller.rb`; `app/views/rules/{index,new,edit,_form}.html.erb`; `spec/factories/rules.rb`
-- Modify: `app/models/transaction.rb`, `app/models/business.rb`, `config/routes.rb`, `app/views/businesses/_nav.html.erb`
-- Test: `spec/models/rule_spec.rb`, `spec/services/rule_applier_spec.rb`, `spec/requests/rules_spec.rb`
+- Create: migration `create_rules`; `app/models/rule.rb`; `app/services/rule_applier.rb`; `app/controllers/rules_controller.rb`; `app/views/rules/{index,new,edit,_form}.html.erb`; `app/javascript/controllers/sortable_controller.js`; `spec/factories/rules.rb`; `spec/support/capybara.rb`
+- Modify: `Gemfile` (selenium-webdriver), `config/importmap.rb` (sortablejs), `spec/rails_helper.rb` (JS driver), `app/models/transaction.rb`, `app/models/business.rb`, `config/routes.rb`, `app/views/businesses/_nav.html.erb`, `app/assets/stylesheets/application.css`
+- Test: `spec/models/rule_spec.rb`, `spec/services/rule_applier_spec.rb`, `spec/requests/rules_spec.rb`, `spec/system/rule_reorder_spec.rb`
 
 **Interfaces:**
 - Consumes: `RuleEngine.match` (Task 10), `Transaction#inbox?`, `#categorized_by_user?`, `#rule_attributes` (Task 9)
 - Produces:
-  - `Rule` (`business`, `position`, `field`, `operator`, `value`, `amount_min_cents`, `amount_max_cents`, `outcome` in `categorize|transfer`, `category`), `money_attribute :amount_min/:amount_max, allow_blank: true`, `Rule.ordered`, `#move!(:up | :down)`, `#description → String`
+  - `Rule` (`business`, `position`, `field`, `operator`, `value`, `amount_min_cents`, `amount_max_cents`, `outcome` in `categorize|transfer`, `category`), `money_attribute :amount_min/:amount_max, allow_blank: true`, `Rule.ordered`, `#move_to!(position)` (1-based, clamped, renumbers all rules 1..n), `#description → String`
   - `Transaction#rule` (belongs_to, optional)
   - `RuleApplier.new(business).apply(transactions) → Integer` (count changed). It only touches transactions that are `inbox?` and not `categorized_by_user?`, and sets `category` or `transfer`, `categorized_by: "rule"`, and `rule`.
-  - Routes: `business_rules_path`, `new_business_rule_path(b, value:, category_id:)`, `edit_business_rule_path`, `move_business_rule_path(b, r, direction:)`, `apply_business_rules_path(b)`
+  - Routes: `business_rules_path`, `new_business_rule_path(b, value:, category_id:)`, `edit_business_rule_path`, `move_business_rule_path(b, r)` (PATCH, param `position`, responds 204), `apply_business_rules_path(b)`
+  - Stimulus `sortable` controller: attach to a `<tbody>`; rows carry `data-sortable-url`; drag via `.drag-handle`; sets `data-sortable-state` on the tbody to `saving` / `saved` / `error`
 
 - [ ] **Step 1: Migration**
 
@@ -3576,15 +3580,22 @@ RSpec.describe Rule do
     expect(build(:rule, business: business, amount_min: "-5")).not_to be_valid
   end
 
-  it "moves up and down by swapping positions" do
-    a = create(:rule, business: business)
-    b = create(:rule, business: business)
-    b.move!(:up)
-    expect(business.rules.ordered).to eq([b, a])
-    b.reload.move!(:up)
-    expect(business.rules.ordered).to eq([b, a])
-    b.reload.move!(:down)
-    expect(business.rules.ordered).to eq([a, b])
+  it "moves to a position and renumbers the rest" do
+    a, b, c = Array.new(3) { create(:rule, business: business) }
+    c.move_to!(1)
+    expect(business.rules.ordered).to eq([c, a, b])
+    expect(business.rules.ordered.pluck(:position)).to eq([1, 2, 3])
+    c.move_to!(99)
+    expect(business.rules.ordered).to eq([a, b, c])
+    b.move_to!(0)
+    expect(business.rules.ordered).to eq([b, a, c])
+  end
+
+  it "does not touch another business's rules" do
+    other = create(:rule)
+    mine = create(:rule, business: business)
+    mine.move_to!(1)
+    expect(other.reload.position).to eq(1)
   end
 end
 ```
@@ -3665,12 +3676,20 @@ RSpec.describe "Rules" do
     expect(response.body).to include('value="ADOBE"')
   end
 
-  it "reorders" do
+  it "reorders from a JSON position" do
     a = create(:rule, business: business, category: category)
     b = create(:rule, business: business, category: category)
     sign_in_as user_with_role("editor", business)
-    patch move_business_rule_path(business, b, direction: "up")
+    patch move_business_rule_path(business, b), params: { position: 1 }, as: :json
+    expect(response).to have_http_status(:no_content)
     expect(business.rules.ordered.to_a).to eq([b, a])
+  end
+
+  it "rejects a move without a position" do
+    rule = create(:rule, business: business, category: category)
+    sign_in_as user_with_role("editor", business)
+    patch move_business_rule_path(business, rule), params: {}, as: :json
+    expect(response).to have_http_status(:bad_request)
   end
 
   it "applies rules to the inbox" do
@@ -3687,7 +3706,7 @@ RSpec.describe "Rules" do
     sign_in_as user_with_role("viewer", business)
     post business_rules_path(business), params: { rule: { value: "x" } }
     expect(response).to have_http_status(:forbidden)
-    patch move_business_rule_path(business, rule, direction: "up")
+    patch move_business_rule_path(business, rule), params: { position: 1 }, as: :json
     expect(response).to have_http_status(:forbidden)
     post apply_business_rules_path(business)
     expect(response).to have_http_status(:forbidden)
@@ -3734,18 +3753,13 @@ class Rule < ApplicationRecord
   before_validation { self.category = nil if outcome == "transfer" }
   before_create { self.position = (business.rules.maximum(:position) || 0) + 1 }
 
-  def move!(direction)
-    neighbor = business.rules.ordered
-      .where(direction == :up ? ["position < ?", position] : ["position > ?", position])
-      .reorder(position: direction == :up ? :desc : :asc).first
-    return unless neighbor
-
+  def move_to!(new_position)
     ApplicationRecord.transaction do
-      mine, theirs = position, neighbor.position
-      update_columns(position: -1)
-      neighbor.update_columns(position: mine)
-      update_columns(position: theirs)
+      ids = business.rules.ordered.where.not(id: id).pluck(:id)
+      ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
+      ids.each.with_index(1) { |rule_id, position| Rule.where(id: rule_id).update_all(position: position) }
     end
+    reload
   end
 
   def description
@@ -3857,8 +3871,8 @@ class RulesController < ApplicationController
   end
 
   def move
-    @rule.move!(params[:direction] == "up" ? :up : :down)
-    redirect_to business_rules_path(@business), status: :see_other
+    @rule.move_to!(params.expect(:position))
+    head :no_content
   end
 
   def apply
@@ -3897,19 +3911,17 @@ end
 ```erb
 <%= business_nav @business %>
 <h1>Rules</h1>
-<p>Rules run in order on new imported transactions. The first match wins.</p>
+<p>Rules run top to bottom on new imported transactions. The first match wins.<%= " Drag ≡ to reorder." if current_membership.can_edit? %></p>
 <table>
-  <thead><tr><th>#</th><th>Rule</th><th>Amount</th><th></th></tr></thead>
-  <tbody>
+  <thead><tr><th></th><th>Rule</th><th>Amount</th><th></th></tr></thead>
+  <tbody <%= tag.attributes(data: { controller: "sortable" }) if current_membership.can_edit? %>>
     <% @rules.each do |rule| %>
-      <tr id="<%= dom_id(rule) %>">
-        <td><%= rule.position %></td>
+      <tr id="<%= dom_id(rule) %>" data-sortable-url="<%= move_business_rule_path(@business, rule) %>">
+        <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
         <td><%= rule.description %></td>
         <td><%= [rule.amount_min_cents && "≥ #{money(rule.amount_min_cents)}", rule.amount_max_cents && "≤ #{money(rule.amount_max_cents)}"].compact.join(" ") %></td>
         <td>
           <% if current_membership.can_edit? %>
-            <%= button_to "↑", move_business_rule_path(@business, rule, direction: "up"), method: :patch, form_class: "inline-form" %>
-            <%= button_to "↓", move_business_rule_path(@business, rule, direction: "down"), method: :patch, form_class: "inline-form" %>
             <%= link_to "Edit", edit_business_rule_path(@business, rule) %>
             <%= button_to "Delete", business_rule_path(@business, rule), method: :delete, form_class: "inline-form" %>
           <% end %>
@@ -3968,16 +3980,143 @@ Append to the nav `<ul>`:
     <li><%= link_to "Rules", business_rules_path(business) %></li>
 ```
 
-- [ ] **Step 7: Run the specs**
+Append to `app/assets/stylesheets/application.css`:
+
+```css
+.drag-handle { cursor: grab; user-select: none; padding: 0 .5rem; font-size: 1.2rem; }
+.sortable-ghost { opacity: .4; }
+```
+
+- [ ] **Step 7: Drag-and-drop: write the failing JS system spec**
+
+Add to the `:test` group in `Gemfile` and install:
+
+```ruby
+  gem "selenium-webdriver", "~> 4.27"
+```
+
+```bash
+bundle install
+```
+
+`spec/support/capybara.rb`:
+
+```ruby
+Capybara.server = :puma, { Silent: true }
+Selenium::WebDriver.logger.level = :error
+```
+
+In `spec/rails_helper.rb`, replace `config.before(:each, type: :system) { driven_by :rack_test }` with:
+
+```ruby
+  config.before(:each, type: :system) do |example|
+    if example.metadata[:js]
+      driven_by :selenium, using: :headless_chrome, screen_size: [1400, 900]
+    else
+      driven_by :rack_test
+    end
+  end
+```
+
+`spec/system/rule_reorder_spec.rb`:
+
+```ruby
+require "rails_helper"
+
+RSpec.describe "Reordering rules", js: true do
+  let!(:business) { create(:business) }
+  let!(:category) { create(:category, business: business, name: "Software") }
+  let!(:first_rule) { create(:rule, business: business, value: "alpha", category: category) }
+  let!(:second_rule) { create(:rule, business: business, value: "bravo", category: category) }
+
+  it "saves the new order after dragging a rule to the top" do
+    system_sign_in_as user_with_role("editor", business)
+    visit business_rules_path(business)
+    find("#rule_#{second_rule.id} .drag-handle").drag_to(find("#rule_#{first_rule.id}"))
+    expect(page).to have_css("tbody[data-sortable-state='saved']")
+    expect(page).to have_css("tbody tr:first-child#rule_#{second_rule.id}")
+    expect(business.rules.ordered.to_a).to eq([second_rule, first_rule])
+  end
+
+  it "shows no drag handles to viewers" do
+    system_sign_in_as user_with_role("viewer", business)
+    visit business_rules_path(business)
+    expect(page).to have_content("alpha")
+    expect(page).to have_no_css(".drag-handle")
+  end
+end
+```
+
+Run: `bundle exec rspec spec/system/rule_reorder_spec.rb`
+Expected: the first example FAILS (no `data-sortable-state`; the controller doesn't exist yet). Selenium Manager downloads chromedriver on first run; Chrome is installed at `/Applications/Google Chrome.app`.
+
+- [ ] **Step 8: Drag-and-drop: implement the Stimulus controller**
+
+```bash
+bin/importmap pin sortablejs
+```
+
+`app/javascript/controllers/sortable_controller.js`:
+
+```javascript
+import { Controller } from "@hotwired/stimulus"
+import Sortable from "sortablejs"
+
+// Drag rows (by .drag-handle) to reorder. PATCHes the moved row's data-sortable-url
+// with its new 1-based position and reports progress in data-sortable-state.
+export default class extends Controller {
+  connect() {
+    this.sortable = Sortable.create(this.element, {
+      handle: ".drag-handle",
+      forceFallback: true,
+      onEnd: (event) => this.save(event)
+    })
+  }
+
+  disconnect() {
+    this.sortable.destroy()
+  }
+
+  async save({ item, newIndex, oldIndex }) {
+    if (newIndex === oldIndex) return
+
+    this.element.dataset.sortableState = "saving"
+    const response = await fetch(item.dataset.sortableUrl, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
+      },
+      body: JSON.stringify({ position: newIndex + 1 })
+    })
+    this.element.dataset.sortableState = response.ok ? "saved" : "error"
+  }
+}
+```
+
+`forceFallback: true` makes Sortable use mouse events instead of native HTML5 drag-and-drop. Selenium's `drag_to` drives the mouse, so this is what makes the behavior testable (and it behaves the same for users). Stimulus auto-registers the controller through `eagerLoadControllersFrom("controllers", ...)` in `app/javascript/controllers/index.js`.
+
+If `drag_to` doesn't trigger Sortable reliably, replace it in the spec with explicit stepped mouse moves:
+
+```ruby
+    handle = find("#rule_#{second_rule.id} .drag-handle").native
+    target = find("#rule_#{first_rule.id}").native
+    page.driver.browser.action.click_and_hold(handle).move_to(target, 0, -5).pause(duration: 0.2).move_to(target, 0, -10).release.perform
+```
+
+Run: `bundle exec rspec spec/system/rule_reorder_spec.rb`
+Expected: PASS, with no Puma, Selenium, or browser console output.
+
+- [ ] **Step 9: Run the specs**
 
 Run: `bundle exec rspec`
 Expected: all PASS.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add -A
-git commit -m "Add categorization rules and rule applier"
+git commit -m "Add categorization rules with drag-and-drop ordering and rule applier"
 ```
 
 ---
@@ -7802,7 +7941,7 @@ docker compose down
 rm .env
 ```
 
-Expected: `OK`, then `302` (redirect to `/setup`). If the build fails on the Ruby version, confirm `.ruby-version` is `3.3.6` and the Dockerfile's `ARG RUBY_VERSION` matches.
+Expected: `OK`, then `302` (redirect to `/setup`). If the build fails on the Ruby version, confirm `.ruby-version` is `4.0.7` and the Dockerfile's `ARG RUBY_VERSION` matches.
 
 - [ ] **Step 6: README**
 
