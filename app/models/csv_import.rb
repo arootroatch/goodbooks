@@ -23,6 +23,8 @@ class CsvImport < ApplicationRecord
 
   def content = file.download
 
+  def transcoded? = CsvImport::Parser.decode(content).last
+
   def preview = CsvImport::Preview.build(self)
 
   def commit!

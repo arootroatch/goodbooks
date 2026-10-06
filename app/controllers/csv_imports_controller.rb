@@ -30,6 +30,7 @@ class CsvImportsController < ApplicationController
     return redirect_to edit_business_account_csv_import_mapping_path(@business, @account, @import) unless @account.mapped?
 
     @preview = @import.preview if @import.previewed?
+    @transcoded = @import.transcoded? if @preview
   rescue CsvImport::Parser::FileError => e
     @file_error = e.message
   end

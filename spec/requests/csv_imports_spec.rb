@@ -115,6 +115,21 @@ RSpec.describe "CSV imports" do
       expect(import.file).not_to be_attached
     end
 
+    it "notes when the file was read as Windows-1252" do
+      sign_in_as editor
+      latin = Rack::Test::UploadedFile.new(StringIO.new("Date,Description,Amount\n01/05/2026,Caf\xE9,-3.00\n".b), "text/csv", original_filename: "latin.csv")
+      legacy = mapped.csv_imports.create!(file: latin)
+      get business_account_csv_import_path(business, mapped, legacy)
+      expect(response.body).to include("This file wasn't UTF-8; it was read as Windows-1252 — check names and accents in the preview.")
+      expect(response.body).to include("Café")
+    end
+
+    it "does not show the encoding note for UTF-8 files" do
+      sign_in_as editor
+      get business_account_csv_import_path(business, mapped, import)
+      expect(response.body).not_to include("Windows-1252")
+    end
+
     it "forbids viewers from committing and discarding" do
       sign_in_as user_with_role("viewer", business)
       post commit_business_account_csv_import_path(business, mapped, import)

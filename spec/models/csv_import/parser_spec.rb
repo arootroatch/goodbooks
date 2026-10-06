@@ -122,8 +122,18 @@ RSpec.describe CsvImport::Parser do
     expect(rows.first.external_id).to be_nil
   end
 
-  it "raises FileError for non-UTF-8 content" do
-    expect { parse("Date,Description\n\xFF\xFE".b) }.to raise_error(CsvImport::Parser::FileError, "File must be UTF-8 encoded.")
+  it "reads non-UTF-8 content as Windows-1252" do
+    rows = parse("Date,Description,Memo,Amount\n01/05/2026,Caf\xE9,,-1.00\n".b)
+    expect(rows.first.payee).to eq("Café")
+  end
+
+  it "reports whether content was transcoded" do
+    expect(described_class.decode("Date\n".b)).to eq(["Date\n", false])
+    expect(described_class.decode("Caf\xE9".b)).to eq(["Café", true])
+  end
+
+  it "raises FileError when transcoding also fails" do
+    expect { parse("Date,Description\n\x81".b) }.to raise_error(CsvImport::Parser::FileError, "File must be UTF-8 or Windows-1252 encoded.")
   end
 
   it "raises FileError when a mapped column is missing" do

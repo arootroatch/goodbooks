@@ -15,10 +15,18 @@ class CsvImport::Parser
     def rule_attributes = { payee: payee, memo: memo, amount_cents: amount_cents }
   end
 
-  def self.table(content, skip_rows: 0)
+  # Returns [text, transcoded?]; files that aren't valid UTF-8 are read as Windows-1252.
+  def self.decode(content)
     text = content.to_s.dup.force_encoding(Encoding::UTF_8)
-    raise FileError, "File must be UTF-8 encoded." unless text.valid_encoding?
+    return [text, false] if text.valid_encoding?
 
+    [content.to_s.dup.force_encoding("Windows-1252").encode(Encoding::UTF_8), true]
+  rescue EncodingError
+    raise FileError, "File must be UTF-8 or Windows-1252 encoded."
+  end
+
+  def self.table(content, skip_rows: 0)
+    text, = decode(content)
     CSV.parse(text.delete_prefix("\uFEFF"), liberal_parsing: true).drop(skip_rows)
   rescue CSV::MalformedCSVError => e
     raise FileError, "Could not read CSV: #{e.message}"
