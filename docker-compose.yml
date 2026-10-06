@@ -14,3 +14,4 @@ services:
 
 volumes:
   goodbooks_storage:
+    name: goodbooks_storage

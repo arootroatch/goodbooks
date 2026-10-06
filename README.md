@@ -13,12 +13,35 @@ bundle exec rspec       # test suite
 
 ## Deploying on a home server
 
-1. Copy `.env.example` to `.env`. Set `RAILS_MASTER_KEY` (from `config/master.key`) and `APP_HOST` (the public hostname).
-2. `docker compose up -d --build`
-3. Complete first-run setup (create the household and enroll in 2FA) on your local network BEFORE exposing the tunnel — the first visitor to an un-set-up install can claim it.
-4. Expose port 3000 through a tunnel. TLS terminates at the tunnel.
+1. Copy `.env.example` to `.env`; set `RAILS_MASTER_KEY` (contents of `config/master.key`).
+
+2. First-run setup, locally, BEFORE exposing anything:
+   - Set `APP_HOST=localhost` in `.env`.
+   - Run `docker compose up -d --build`.
+   - On the server itself, open `http://localhost:3000` in Chrome or Firefox (they treat localhost as secure, which the app's secure cookies need).
+   - Create the household and enroll in 2FA.
+   - **Warning:** the first visitor to an un-set-up install can claim it — that's why this happens before the tunnel exists.
+   - *If the server is headless*, use an SSH port-forward from your laptop: `ssh -L 3000:localhost:3000 you@server`, then open `http://localhost:3000` on the laptop.
+
+3. Set `APP_HOST` to your public hostname (it must exactly match the hostname people type — don't override the Host header in the tunnel), then `docker compose up -d`.
+
+4. Expose port 3000 through the tunnel. TLS terminates at the tunnel.
    - **Cloudflare Tunnel:** `cloudflared tunnel create goodbooks`, route `APP_HOST` to `http://localhost:3000`, run `cloudflared tunnel run goodbooks` (or install it as a service).
    - **Tailscale Funnel:** `tailscale funnel --bg 3000`; set `APP_HOST` to your `*.ts.net` name.
+
+5. Visit `https://APP_HOST` and sign in.
+
+## Updating
+
+```bash
+git pull && docker compose up -d --build
+```
+
+## Logs
+
+```bash
+docker compose logs -f app
+```
 
 Data lives in the `goodbooks_storage` Docker volume (SQLite databases, uploads, backups).
 
