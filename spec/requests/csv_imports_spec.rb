@@ -95,6 +95,19 @@ RSpec.describe "CSV imports" do
       expect(import.file).to be_attached
     end
 
+    it "re-checks the status under the lock when discarding a stale import" do
+      sign_in_as editor
+      allow_any_instance_of(CsvImport).to receive(:with_lock).and_wrap_original do |original, *args, &block|
+        CsvImport.where(id: import.id).update_all(status: "committed")
+        original.call(*args, &block)
+      end
+      delete business_account_csv_import_path(business, mapped, import)
+      expect(import.reload).to be_committed
+      expect(import.file).to be_attached
+      expect(response).to redirect_to(business_account_csv_import_path(business, mapped, import))
+      expect(flash[:alert]).to eq("This import was already committed.")
+    end
+
     it "discards a previewed import and purges the file" do
       sign_in_as editor
       delete business_account_csv_import_path(business, mapped, import)

@@ -46,9 +46,9 @@ class CsvImportsController < ApplicationController
   end
 
   def destroy
-    return redirect_to(import_path, alert: "This import was already #{@import.status}.", status: :see_other) unless @import.previewed?
+    discarded = @import.with_lock { @import.update!(status: "discarded") if @import.previewed? }
+    return redirect_to(import_path, alert: "This import was already #{@import.status}.", status: :see_other) unless discarded
 
-    @import.update!(status: "discarded")
     @import.file.purge
     redirect_to business_accounts_path(@business), notice: "Import discarded.", status: :see_other
   end
