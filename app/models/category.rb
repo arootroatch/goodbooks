@@ -20,7 +20,12 @@ class Category < ApplicationRecord
   def deductible_percent=(input)
     @deductible_percent_input = input
     @deductible_percent_invalid = false
-    self.deductible_bps = (Rational(input.to_s.strip) * 100).round
+    stripped = input.to_s.strip
+    unless stripped.match?(/\A\d{1,3}(\.\d{1,2})?\z/)
+      @deductible_percent_invalid = true
+      return
+    end
+    self.deductible_bps = (Rational(stripped) * 100).round
   rescue ArgumentError, ZeroDivisionError
     @deductible_percent_invalid = true
   end

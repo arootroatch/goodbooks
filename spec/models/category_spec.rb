@@ -30,6 +30,36 @@ RSpec.describe Category do
       expect(category.deductible_bps).to eq(3333)
     end
 
+    it "accepts valid numeric forms" do
+      expect(build(:category, deductible_percent: "50").deductible_bps).to eq(5000)
+      expect(build(:category, deductible_percent: "33.33").deductible_bps).to eq(3333)
+      expect(build(:category, deductible_percent: "100").deductible_bps).to eq(10_000)
+    end
+
+    it "rejects rational form" do
+      category = build(:category, deductible_percent: "1/2")
+      expect(category).not_to be_valid
+      expect(category.errors[:deductible_percent]).to include("is not a number")
+    end
+
+    it "rejects scientific notation" do
+      category = build(:category, deductible_percent: "1e2")
+      expect(category).not_to be_valid
+      expect(category.errors[:deductible_percent]).to include("is not a number")
+    end
+
+    it "rejects underscore separators" do
+      category = build(:category, deductible_percent: "1_0")
+      expect(category).not_to be_valid
+      expect(category.errors[:deductible_percent]).to include("is not a number")
+    end
+
+    it "rejects empty string" do
+      category = build(:category, deductible_percent: "")
+      expect(category).not_to be_valid
+      expect(category.errors[:deductible_percent]).to include("is not a number")
+    end
+
     it "flags garbage" do
       category = build(:category, deductible_percent: "half")
       expect(category).not_to be_valid
