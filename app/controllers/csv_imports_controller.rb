@@ -10,7 +10,15 @@ class CsvImportsController < ApplicationController
   end
 
   def create
-    @import = @account.csv_imports.new(file: params.dig(:csv_import, :file))
+    file = params.dig(:csv_import, :file)
+    @import = @account.csv_imports.new
+    if file.is_a?(ActionDispatch::Http::UploadedFile)
+      @import.file = file
+    else
+      @import.errors.add(:file, "must be a file upload")
+      return render :new, status: :unprocessable_content
+    end
+
     if @import.save
       redirect_to @account.mapped? ? import_path : edit_business_account_csv_import_mapping_path(@business, @account, @import)
     else

@@ -30,6 +30,19 @@ RSpec.describe "CSV imports" do
     expect(response.body).to include("Column not found: Description, Amount")
   end
 
+  it "rejects a non-file csv_import[file] param without creating an import" do
+    sign_in_as user_with_role("editor", business)
+    expect {
+      post business_account_csv_imports_path(business, account), params: { csv_import: { file: "not a file" } }
+    }.not_to change(CsvImport, :count)
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+
+  it "has no public Active Storage direct upload route" do
+    post "/rails/active_storage/direct_uploads"
+    expect(response).to have_http_status(:not_found)
+  end
+
   it "forbids viewers" do
     sign_in_as user_with_role("viewer", business)
     get new_business_account_csv_import_path(business, account)
