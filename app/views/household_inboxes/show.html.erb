@@ -6,7 +6,7 @@
     <tbody>
       <% transactions.each do |txn| %>
         <%= render "inboxes/row", business: business, txn: txn, categories: @categories.fetch(business.id, []),
-              editable: @memberships.fetch(business.id).can_edit? %>
+              editable: @memberships.fetch(business.id).can_edit?, matcher: @matcher %>
       <% end %>
     </tbody>
   </table>

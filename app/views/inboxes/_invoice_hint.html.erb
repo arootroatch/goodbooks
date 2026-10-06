@@ -1,0 +1,22 @@
+<% gross_receipts = categories.select { _1.income? && _1.schedule_c_line == "1" } %>
+<div class="invoice-hint">
+  <% invoices.each do |invoice| %>
+    <div>
+      Matches <%= link_to invoice.number, business_invoice_path(business, invoice) %> · <%= invoice.client.name %> · due <%= invoice.due_date.strftime("%b %-d") %>
+      <% if gross_receipts.empty? %>
+        <%= link_to "Record payment", new_business_invoice_payment_path(business, invoice) %>
+      <% else %>
+        <%= form_with url: business_invoice_payments_path(business, invoice), class: "inline-form" do |f| %>
+          <%= hidden_field_tag :deposit_id, txn.id, id: nil %>
+          <%= hidden_field_tag :from_inbox, "1", id: nil %>
+          <% if gross_receipts.size > 1 %>
+            <%= select_tag :category_id, options_from_collection_for_select(gross_receipts, :id, :name), id: nil, aria: { label: "Income category" } %>
+          <% else %>
+            <%= hidden_field_tag :category_id, gross_receipts.first.id, id: nil %>
+          <% end %>
+          <%= f.submit "Mark paid" %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
