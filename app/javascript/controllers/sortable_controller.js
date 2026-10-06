@@ -20,14 +20,28 @@ export default class extends Controller {
     if (newIndex === oldIndex) return
 
     this.element.dataset.sortableState = "saving"
-    const response = await fetch(item.dataset.sortableUrl, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content
-      },
-      body: JSON.stringify({ position: newIndex + 1 })
-    })
-    this.element.dataset.sortableState = response.ok ? "saved" : "error"
+    this.sortable.option("disabled", true)
+    try {
+      const response = await fetch(item.dataset.sortableUrl, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content
+        },
+        body: JSON.stringify({ position: newIndex + 1 })
+      })
+      if (!response.ok) throw new Error(`Move failed: ${response.status}`)
+      this.element.dataset.sortableState = "saved"
+    } catch {
+      this.revert(item, oldIndex)
+      this.element.dataset.sortableState = "error"
+    } finally {
+      this.sortable.option("disabled", false)
+    }
+  }
+
+  revert(item, oldIndex) {
+    item.remove()
+    this.element.insertBefore(item, this.element.children[oldIndex] || null)
   }
 }
