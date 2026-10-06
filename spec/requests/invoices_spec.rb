@@ -1,6 +1,13 @@
 require "rails_helper"
 
 RSpec.describe "Invoices" do
+  it "ignores a crafted invoice param on the new form" do
+    business = create(:business)
+    sign_in_as user_with_role("editor", business)
+    get new_business_invoice_path(business, invoice: "x")
+    expect(response).to have_http_status(:ok)
+  end
+
   let!(:business) { create(:business) }
   let!(:client) { create(:client, business: business, name: "Acme") }
   let!(:invoice) { create(:invoice, business: business, client: client, number: "INV-0042", amount_cents: 120_000) }

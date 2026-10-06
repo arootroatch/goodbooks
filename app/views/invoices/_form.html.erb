@@ -3,7 +3,7 @@
   <p>
     <%= f.label :client_id, "Client" %>
     <%= f.select :client_id, invoice_client_options(@business, invoice), { include_blank: "Choose…" }, required: true %>
-    <%= text_field_tag "invoice[new_client_name]", params.dig(:invoice, :new_client_name), placeholder: "New client name", aria: { label: "New client name" } %>
+    <%= text_field_tag "invoice[new_client_name]", invoice_form_param(:new_client_name), placeholder: "New client name", aria: { label: "New client name" } %>
   </p>
   <p><%= f.label :number %> <%= f.text_field :number, required: true %></p>
   <p><%= f.label :issue_date %> <%= f.date_field :issue_date, required: true %></p>

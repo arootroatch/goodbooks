@@ -1,6 +1,15 @@
 require "rails_helper"
 
 RSpec.describe "Categories" do
+  it "refuses to change kind while deposits are linked to invoices" do
+    payment = create(:invoice_payment)
+    linked = payment.deposit.category
+    sign_in_as user_with_role("owner", linked.business)
+    patch business_category_path(linked.business, linked), params: { category: { kind: "expense", schedule_c_line: "18" } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(linked.reload).to be_income
+  end
+
   let!(:business) { create(:business) }
   let!(:category) { create(:category, business: business, name: "Office expense") }
 

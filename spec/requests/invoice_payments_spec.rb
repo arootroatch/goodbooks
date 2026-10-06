@@ -9,6 +9,31 @@ RSpec.describe "Invoice payments" do
   let!(:recent) { create(:transaction, account: account, amount_cents: 50_000, payee: "ACME RECENT", posted_on: Date.current - 10) }
   let!(:old) { create(:transaction, account: account, amount_cents: 50_000, payee: "ACME OLD", posted_on: Date.current - 200) }
 
+  it "explains a fully paid invoice instead of hiding it behind the new page" do
+    sign_in_as user_with_role("editor", business)
+    other = create(:transaction, account: account, amount_cents: 120_000, payee: "ACME TWO", posted_on: Date.current - 2)
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: exact.id }
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: other.id }
+    expect(response).to redirect_to(business_invoice_path(business, invoice))
+    expect(flash[:alert]).to eq("This invoice is already fully paid.")
+  end
+
+  it "rejects a blank amount instead of linking the full amount" do
+    sign_in_as user_with_role("editor", business)
+    expect {
+      post business_invoice_payments_path(business, invoice), params: { deposit_id: exact.id, amount: " " }
+    }.not_to change(InvoicePayment, :count)
+    expect(flash[:alert]).to eq("Amount can't be blank.")
+  end
+
+  it "does not list deposits already linked to this invoice" do
+    sign_in_as user_with_role("editor", business)
+    create(:invoice_payment, invoice: invoice, deposit: recent, amount_cents: 10_000)
+    get new_business_invoice_payment_path(business, invoice)
+    expect(response.body).to include("ACME EXACT")
+    expect(response.body).not_to include("ACME RECENT")
+  end
+
   it "lists exact matches first, then recent deposits, with an older-date filter" do
     sign_in_as user_with_role("editor", business)
     get new_business_invoice_payment_path(business, invoice)

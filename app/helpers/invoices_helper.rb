@@ -16,7 +16,12 @@ module InvoicesHelper
 
   def invoice_client_options(business, invoice)
     clients = business.clients.where(archived_at: nil).or(business.clients.where(id: invoice.client_id)).order(:name)
-    selected = (params.dig(:invoice, :client_id) || invoice.client_id).to_s
+    selected = (invoice_form_param(:client_id) || invoice.client_id).to_s
     options_for_select(clients.map { [ _1.name, _1.id.to_s ] } + [ [ "New client…", "new" ] ], selected)
+  end
+
+  def invoice_form_param(key)
+    nested = params[:invoice]
+    nested[key] if nested.is_a?(ActionController::Parameters)
   end
 end
