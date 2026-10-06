@@ -84,6 +84,39 @@ RSpec.describe "Authentication" do
     expect(response).to redirect_to(new_session_path)
   end
 
+  describe "rate limiting" do
+    include_context "with rate limiting"
+
+    let(:wrong) { user.totp.now == "000000" ? "111111" : "000000" }
+
+    it "limits password attempts per IP on the sessions controller" do
+      10.times { log_in_password(password: "wrong password!!") }
+      expect(response).to redirect_to(new_session_path)
+      log_in_password(password: "wrong password!!")
+      expect(flash[:alert]).to eq("Try again later.")
+    end
+
+    it "limits code attempts per pending user across IPs" do
+      log_in_password
+      10.times { |i| post two_factor_path, params: { code: wrong }, headers: { "REMOTE_ADDR" => "10.0.0.#{i + 1}" } }
+      expect(response).to have_http_status(:unprocessable_content)
+      post two_factor_path, params: { code: wrong }, headers: { "REMOTE_ADDR" => "10.0.1.1" }
+      expect(response).to redirect_to(new_session_path)
+      expect(flash[:alert]).to eq("Try again later.")
+    end
+
+    it "limits code attempts per pending user on setup" do
+      user = create(:user, :without_otp)
+      post session_path, params: { email_address: user.email_address, password: AuthHelpers::PASSWORD }
+      get new_two_factor_setup_path
+      10.times { |i| post two_factor_setup_path, params: { code: "abcdef" }, headers: { "REMOTE_ADDR" => "10.0.0.#{i + 1}" } }
+      expect(response).to redirect_to(new_two_factor_setup_path)
+      post two_factor_setup_path, params: { code: "abcdef" }, headers: { "REMOTE_ADDR" => "10.0.1.1" }
+      expect(response).to redirect_to(new_session_path)
+      expect(flash[:alert]).to eq("Try again later.")
+    end
+  end
+
   describe "first-time enrollment" do
     let(:user) { create(:user, :without_otp) }
 
