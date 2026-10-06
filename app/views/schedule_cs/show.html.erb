@@ -1,0 +1,21 @@
+<%= business_nav @business %>
+<h1>Schedule C summary <%= @year %></h1>
+<p class="no-print">
+  <%= link_to "← #{@year - 1}", business_schedule_c_path(@business, year: @year - 1) %>
+  <%= link_to "#{@year + 1} →", business_schedule_c_path(@business, year: @year + 1) %>
+</p>
+<% if @mileage.missing_rate_years.any? %>
+  <p class="flash-alert">Mileage is excluded: no IRS rate set for <%= @year %>.</p>
+<% end %>
+<table>
+  <tbody>
+    <% @summary.lines.each do |code, cents| %>
+      <tr><td><%= ScheduleC.label(code) %></td><td class="num"><%= money(cents) %></td></tr>
+    <% end %>
+    <tr><td><%= ScheduleC.label("30") %></td><td class="num">—</td></tr>
+    <tr><th>Gross income</th><th class="num"><%= money(@summary.gross_income_cents) %></th></tr>
+    <tr><th>Total expenses</th><th class="num"><%= money(@summary.total_expenses_cents) %></th></tr>
+    <tr><th>Net profit</th><th class="num"><%= money(@summary.net_profit_cents) %></th></tr>
+  </tbody>
+</table>
+<p class="no-print"><%= link_to "Mileage log (CSV)", business_mileage_log_path(@business, year: @year, format: :csv) %></p>

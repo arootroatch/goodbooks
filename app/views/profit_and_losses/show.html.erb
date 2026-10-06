@@ -1,0 +1,24 @@
+<%= business_nav @business %>
+<h1>Profit &amp; loss</h1>
+<%= render "shared/date_range_form", url: business_profit_and_loss_path(@business) %>
+<% if @mileage.missing_rate_years.any? %>
+  <p class="flash-alert">Mileage for <%= @mileage.missing_rate_years.to_sentence %> is excluded: no IRS rate set.</p>
+<% end %>
+<table>
+  <thead><tr><th>Category</th><th class="num">Actual</th><th class="num">Deductible</th></tr></thead>
+  <tbody>
+    <tr><th colspan="3">Income</th></tr>
+    <% @report.income_lines.each do |line| %>
+      <tr><td><%= line.name %></td><td class="num"><%= money(line.actual_cents) %></td><td class="num"><%= money(line.deductible_cents) %></td></tr>
+    <% end %>
+    <tr><th>Total income</th><th class="num"><%= money(@report.total_income_cents) %></th><th class="num"><%= money(@report.total_income_cents) %></th></tr>
+    <tr><th colspan="3">Expenses</th></tr>
+    <% @report.expense_lines.each do |line| %>
+      <tr><td><%= line.name %></td><td class="num"><%= money(line.actual_cents) %></td><td class="num"><%= money(line.deductible_cents) %></td></tr>
+    <% end %>
+    <tr><td>Mileage deduction</td><td class="num">—</td><td class="num"><%= money(@report.mileage_deduction_cents) %></td></tr>
+    <tr><th>Total expenses</th><th class="num"><%= money(@report.total_expense_cents) %></th><th class="num"><%= money(@report.total_deductible_expense_cents + @report.mileage_deduction_cents) %></th></tr>
+    <tr><th>Net profit (tax basis)</th><th></th><th class="num"><%= money(@report.net_profit_cents) %></th></tr>
+  </tbody>
+</table>
+<p class="no-print"><%= link_to "Export transactions (CSV)", business_transaction_export_path(@business, from: date_range.first, to: date_range.last, format: :csv) %></p>

@@ -1,0 +1,11 @@
+class MileageLogsController < ApplicationController
+  include BusinessScoped
+
+  def show
+    year = (params[:year].presence || Date.current.year).to_i
+    entries = @business.mileage_entries.where(driven_on: Date.new(year).all_year).order(:driven_on)
+    rate = TaxParameters.for_year(year)&.standard_mileage_rate_tenth_cents
+    send_data Reports::MileageLogCsv.generate(entries, rate_tenth_cents: rate),
+      filename: "#{@business.name.parameterize}-mileage-#{year}.csv", type: "text/csv"
+  end
+end

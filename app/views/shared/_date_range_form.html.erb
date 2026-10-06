@@ -1,0 +1,5 @@
+<%= form_with url: url, method: :get, class: "inline-form no-print" do |f| %>
+  <%= f.date_field :from, value: date_range.first %>
+  <%= f.date_field :to, value: date_range.last %>
+  <%= f.submit "Update" %>
+<% end %>

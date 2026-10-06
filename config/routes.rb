@@ -32,11 +32,20 @@ Rails.application.routes.draw do
     end
     resources :mileage_entries, except: :show
     resource :inbox, only: :show
+    get "reports/profit_and_loss", to: "profit_and_losses#show", as: :profit_and_loss
+    get "reports/schedule_c", to: "schedule_cs#show", as: :schedule_c
+    get "reports/mileage_log", to: "mileage_logs#show", as: :mileage_log
+    get "reports/transactions", to: "transaction_exports#show", as: :transaction_export
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
+
+  scope "household", as: "household" do
+    get "profit_and_loss", to: "household_profit_and_losses#show", as: :profit_and_loss
+    get "transactions", to: "household_transaction_exports#show", as: :transaction_export
+  end
 
   root "dashboards#show"
 end

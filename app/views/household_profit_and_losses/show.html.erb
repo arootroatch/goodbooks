@@ -1,0 +1,29 @@
+<h1>Household profit &amp; loss</h1>
+<%= render "shared/date_range_form", url: household_profit_and_loss_path %>
+<% businesses = @report.businesses %>
+<table>
+  <thead>
+    <tr><th></th><% businesses.each do |b| %><th class="num"><%= b.name %></th><% end %><th class="num">Total</th></tr>
+  </thead>
+  <tbody>
+    <% [["Income", @report.income_rows], ["Expenses", @report.expense_rows]].each do |heading, rows| %>
+      <tr><th colspan="<%= businesses.size + 2 %>"><%= heading %></th></tr>
+      <% rows.each do |row| %>
+        <tr>
+          <td><%= row.name %></td>
+          <% businesses.each do |b| %><td class="num"><%= money(row.amounts[b.id]) %></td><% end %>
+          <td class="num"><%= money(row.total_cents) %></td>
+        </tr>
+      <% end %>
+    <% end %>
+    <% [["Mileage deduction", :mileage_deduction_cents], ["Net profit (tax basis)", :net_profit_cents]].each do |label, metric| %>
+      <% column = @report.column(metric) %>
+      <tr>
+        <th><%= label %></th>
+        <% businesses.each do |b| %><th class="num"><%= money(column[b.id]) %></th><% end %>
+        <th class="num"><%= money(column[:total]) %></th>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p class="no-print"><%= link_to "Export household transactions (CSV)", household_transaction_export_path(from: date_range.first, to: date_range.last, format: :csv) %></p>
