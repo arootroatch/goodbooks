@@ -110,4 +110,11 @@ RSpec.describe "Mileage" do
       expect(response.body).not_to include("Deduction at")
     end
   end
+
+  it "falls back to the current year when given an invalid year" do
+    sign_in_as user_with_role("viewer", business)
+    get business_mileage_entries_path(business, year: "abc")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(Date.current.year.to_s)
+  end
 end

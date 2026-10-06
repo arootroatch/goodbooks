@@ -7,7 +7,7 @@ class MileageEntriesController < ApplicationController
   before_action :set_entry, only: %i[edit update destroy]
 
   def index
-    @year = (params[:year].presence || Date.current.year).to_i
+    @year = year_param
     @entries = @business.mileage_entries.where(driven_on: Date.new(@year).all_year).order(:driven_on)
     @total_tenths = @entries.sum(&:effective_miles_tenths)
     @rate = TaxParameters.for_year(@year)

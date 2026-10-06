@@ -54,4 +54,11 @@ RSpec.describe "Tax parameters" do
     }.not_to change(TaxParameters, :count)
     expect(response).to have_http_status(:unprocessable_content)
   end
+
+  it "falls back to the current year when given an out-of-range year in the new form" do
+    sign_in_as create(:user, :household_owner)
+    get new_tax_parameter_path(year: "99999")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("value=\"#{Date.current.year}\"")
+  end
 end

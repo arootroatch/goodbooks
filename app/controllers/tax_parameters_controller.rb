@@ -7,7 +7,7 @@ class TaxParametersController < ApplicationController
   end
 
   def new
-    @tax_parameters = TaxParameters.new(year: params[:year] || Date.current.year)
+    @tax_parameters = TaxParameters.new(year: year_param)
   end
 
   def create
