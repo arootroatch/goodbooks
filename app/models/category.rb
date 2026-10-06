@@ -27,6 +27,8 @@ class Category < ApplicationRecord
 
   def archived? = archived_at.present?
 
+  def archived = archived?
+
   private
 
   def schedule_c_line_matches_kind

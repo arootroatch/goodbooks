@@ -1,0 +1,16 @@
+<%= form_with model: [@business, category] do |f| %>
+  <%= render "shared/errors", record: category %>
+  <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
+  <p><%= f.label :kind %> <%= f.select :kind, [["Income", "income"], ["Expense", "expense"]] %></p>
+  <p>
+    <%= f.label :schedule_c_line, "Schedule C line" %>
+    <%= f.select :schedule_c_line, grouped_options_for_select(
+          { "Income" => ScheduleC.options_for("income"), "Expense" => ScheduleC.options_for("expense") },
+          category.schedule_c_line) %>
+  </p>
+  <p><%= f.label :deductible_percent, "Deductible %" %> <%= f.text_field :deductible_percent, size: 6 %></p>
+  <% if category.persisted? %>
+    <p><%= f.label :archived %> <%= f.check_box :archived, { checked: category.archived? }, "1", "0" %></p>
+  <% end %>
+  <%= f.submit %>
+<% end %>

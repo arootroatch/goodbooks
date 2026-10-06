@@ -17,6 +17,7 @@ Rails.application.routes.draw do
 
   resources :businesses, only: %i[new create show edit update] do
     resources :accounts, only: %i[index new create edit update]
+    resources :categories, only: %i[index new create edit update]
   end
 
   root "dashboards#show"
