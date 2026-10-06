@@ -94,6 +94,8 @@ RSpec.describe InvoicePayments do
   describe ".unlink" do
     it "removes the payment and reverts a paid invoice to sent, keeping the deposit's category" do
       payment = described_class.link(invoice: invoice, deposit: deposit).payment
+      expect(payment.invoice).to receive(:lock!).and_call_original
+      expect(payment.deposit).to receive(:lock!).and_call_original
       result = described_class.unlink(payment)
       expect(result).to be_ok
       expect(InvoicePayment.exists?(payment.id)).to be(false)
