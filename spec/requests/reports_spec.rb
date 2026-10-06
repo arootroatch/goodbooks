@@ -54,6 +54,30 @@ RSpec.describe "Reports" do
     expect(response).to have_http_status(:ok)
   end
 
+  it "includes archived businesses in the household P&L" do
+    archived = create(:business, name: "Old Venture", archived_at: 1.day.ago)
+    create(:membership, user: accountant, business: archived, role: "viewer")
+    old_sales = create(:category, :income, business: archived, name: "Old sales")
+    create(:transaction, account: create(:account, business: archived), category: old_sales, amount_cents: 500_000, posted_on: Date.new(2026, 4, 1))
+    sign_in_as accountant
+    get household_profit_and_loss_path(from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).to include("Old Venture")
+    expect(response.body).to include("$17,255.53")
+  end
+
+  it "ignores over-long date params" do
+    sign_in_as accountant
+    get business_profit_and_loss_path(pat, from: "2" * 200)
+    expect(response).to have_http_status(:ok)
+  end
+
+  it "falls back to the current year for a bad year param" do
+    sign_in_as accountant
+    get business_schedule_c_path(pat, year: "abc")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Schedule C summary #{Date.current.year}")
+  end
+
   it "hides household reports from someone missing a business" do
     sign_in_as user_with_role("owner", pat)
     get household_profit_and_loss_path

@@ -12,6 +12,17 @@ RSpec.describe "Report CSVs" do
       expect(Reports::CsvSafe.text("Coffee")).to eq("Coffee")
       expect(Reports::CsvSafe.text(nil)).to be_nil
     end
+
+    it "prefixes every dangerous leading form" do
+      ["+1", "-2", "\t=x", "\r=x", "\n=x", "  =SUM(A1)", "|cmd", "%x", "＝1"].each do |text|
+        expect(Reports::CsvSafe.text(text)).to eq("'#{text}")
+      end
+    end
+
+    it "leaves ordinary text alone" do
+      expect(Reports::CsvSafe.text("Office Depot")).to eq("Office Depot")
+      expect(Reports::CsvSafe.text("Client - ACME")).to eq("Client - ACME")
+    end
   end
 
   describe Reports::TransactionCsv do
@@ -26,15 +37,15 @@ RSpec.describe "Report CSVs" do
   describe Reports::MileageLogCsv do
     it "writes entries, a total, and the deduction" do
       entry = create(:mileage_entry, business: business, miles_tenths: 1234, driven_on: Date.new(2026, 3, 2))
-      rows = CSV.parse(Reports::MileageLogCsv.generate([entry], rate_tenth_cents: 725))
+      rows = CSV.parse(Reports::MileageLogCsv.generate([entry], rate_tenth_cents: 725, year: 2026))
       expect(rows[1]).to eq(["2026-03-02", "Client meeting", "Home office", "Client", "123.4", "no"])
       expect(rows[-2]).to eq(["Total", nil, nil, nil, "123.4", nil])
       expect(rows[-1]).to eq(["Deduction at 72.5¢/mile", nil, nil, nil, "89.47", nil])
     end
 
-    it "omits the deduction row without a rate" do
-      rows = CSV.parse(Reports::MileageLogCsv.generate([], rate_tenth_cents: nil))
-      expect(rows.last.first).to eq("Total")
+    it "notes the missing rate instead of a deduction" do
+      rows = CSV.parse(Reports::MileageLogCsv.generate([], rate_tenth_cents: nil, year: 2026))
+      expect(rows.last).to eq(["Deduction: no IRS rate set for 2026", nil, nil, nil, nil, nil])
     end
   end
 end

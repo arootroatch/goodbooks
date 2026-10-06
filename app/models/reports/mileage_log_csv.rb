@@ -4,7 +4,7 @@ module Reports
   module MileageLogCsv
     HEADERS = ["Date", "Purpose", "From", "To", "Miles", "Round trip"].freeze
 
-    def self.generate(entries, rate_tenth_cents:)
+    def self.generate(entries, rate_tenth_cents:, year:)
       total = entries.sum(&:effective_miles_tenths)
       CSV.generate do |csv|
         csv << HEADERS
@@ -16,6 +16,8 @@ module Reports
         if rate_tenth_cents
           deduction = MileageDeduction.cents(miles_tenths: total, rate_tenth_cents: rate_tenth_cents)
           csv << ["Deduction at #{Tenths.format(rate_tenth_cents)}¢/mile", nil, nil, nil, Money.new(deduction).to_input, nil]
+        else
+          csv << ["Deduction: no IRS rate set for #{year}", nil, nil, nil, nil, nil]
         end
       end
     end

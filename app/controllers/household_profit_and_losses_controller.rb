@@ -5,7 +5,7 @@ class HouseholdProfitAndLossesController < ApplicationController
 
   def show
     @report = Reports::HouseholdProfitAndLoss.new(
-      Business.active.order(:name).to_h do |business|
+      Business.order(:name).to_h do |business|
         mileage = Reports::MileageTotals.load(business_ids: [business.id], range: date_range)
         [business, Reports::ProfitAndLoss.new(
           category_totals: Reports::CategoryTotals.load(business_ids: [business.id], range: date_range),

@@ -11,6 +11,11 @@ class ApplicationController < ActionController::Base
 
   private
 
+  def year_param
+    year = params[:year].to_i
+    (1900..2100).cover?(year) ? year : Date.current.year
+  end
+
   def require_household
     redirect_to new_setup_path unless Household.exists?
   end

@@ -2,7 +2,7 @@ class ScheduleCsController < ApplicationController
   include BusinessScoped
 
   def show
-    @year = (params[:year].presence || Date.current.year).to_i
+    @year = year_param
     range = Date.new(@year).all_year
     @mileage = Reports::MileageTotals.load(business_ids: [@business.id], range: range)
     @summary = Reports::ScheduleCSummary.new(
