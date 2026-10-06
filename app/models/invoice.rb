@@ -6,12 +6,14 @@ class Invoice < ApplicationRecord
     "void" => { from: %w[draft sent], to: "void", verb: "voided" },
     "reopen" => { from: %w[void], to: "sent", verb: "reopened" }
   }.freeze
+  PDF_MAX_BYTES = 10.megabytes
 
   money_attribute :amount
 
   belongs_to :business
   belongs_to :client
   has_many :payments, class_name: "InvoicePayment", dependent: :restrict_with_error
+  has_one_attached :pdf
 
   enum :status, { draft: "draft", sent: "sent", paid: "paid", void: "void" }, validate: true
 
@@ -23,6 +25,7 @@ class Invoice < ApplicationRecord
   validate :client_in_business
   validate :amount_covers_payments
   validate :no_void_with_payments
+  validate :pdf_is_a_small_pdf
 
   def paid_cents = payments.loaded? ? payments.sum(&:amount_cents) : payments.sum(:amount_cents)
   def outstanding_cents = amount_cents.to_i - paid_cents
@@ -80,5 +83,12 @@ class Invoice < ApplicationRecord
     return unless persisted? && will_save_change_to_status?(to: "void") && payments.exists?
 
     errors.add(:base, "Unlink its payments before voiding this invoice.")
+  end
+
+  def pdf_is_a_small_pdf
+    return unless pdf.attached?
+
+    errors.add(:pdf, "must be a PDF") unless pdf.blob.content_type == "application/pdf"
+    errors.add(:pdf, "must be smaller than 10 MB") if pdf.blob.byte_size > PDF_MAX_BYTES
   end
 end

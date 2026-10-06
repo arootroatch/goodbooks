@@ -118,4 +118,27 @@ RSpec.describe Invoice do
     expect(payment.invoice.destroy).to be(false)
     expect(Invoice.exists?(payment.invoice_id)).to be(true)
   end
+
+  describe "pdf" do
+    it "accepts a PDF" do
+      invoice = build(:invoice)
+      invoice.pdf.attach(io: file_fixture("invoice.pdf").open, filename: "invoice.pdf")
+      expect(invoice).to be_valid
+    end
+
+    it "rejects other file types" do
+      invoice = build(:invoice)
+      invoice.pdf.attach(io: file_fixture("checking.csv").open, filename: "checking.csv")
+      expect(invoice).not_to be_valid
+      expect(invoice.errors[:pdf]).to include("must be a PDF")
+    end
+
+    it "rejects files over the size limit" do
+      stub_const("Invoice::PDF_MAX_BYTES", 10)
+      invoice = build(:invoice)
+      invoice.pdf.attach(io: file_fixture("invoice.pdf").open, filename: "invoice.pdf")
+      expect(invoice).not_to be_valid
+      expect(invoice.errors[:pdf]).to include("must be smaller than 10 MB")
+    end
+  end
 end

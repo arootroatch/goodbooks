@@ -2,7 +2,7 @@ class InvoicesController < ApplicationController
   include BusinessScoped
   include ScalarParams
 
-  PERMITTED = %i[number issue_date due_date amount description].freeze
+  PERMITTED = %i[number issue_date due_date amount description pdf].freeze
 
   before_action :require_editor!, except: %i[index show]
   before_action :set_invoice, only: %i[show edit update destroy mark_sent void reopen]

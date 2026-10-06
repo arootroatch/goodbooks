@@ -10,6 +10,7 @@
   <p><%= f.label :due_date %> <%= f.date_field :due_date, required: true %></p>
   <p><%= f.label :amount %> <%= f.text_field :amount, required: true, inputmode: "decimal" %></p>
   <p><%= f.label :description %> <%= f.text_area :description, rows: 3 %></p>
+  <p><%= f.label :pdf, "PDF (optional)" %> <%= f.file_field :pdf, accept: "application/pdf" %></p>
   <% if invoice.new_record? %>
     <p><%= f.label :status %> <%= f.select :status, [ [ "Sent", "sent" ], [ "Draft (not sent yet)", "draft" ] ] %></p>
   <% end %>
