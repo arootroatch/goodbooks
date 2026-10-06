@@ -1,0 +1,12 @@
+<h1>Inbox: all businesses</h1>
+<% @groups.each do |business, transactions| %>
+  <h2><%= link_to business.name, business_inbox_path(business) %> (<%= transactions.size %>)</h2>
+  <table>
+    <tbody>
+      <% transactions.each do |txn| %>
+        <%= render "inboxes/row", business: business, txn: txn, categories: @categories.fetch(business.id, []),
+              editable: @memberships.fetch(business.id).can_edit? %>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

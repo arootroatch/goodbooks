@@ -1,0 +1,13 @@
+<%= business_nav @business %>
+<h1>Inbox (<%= @transactions.size %>)</h1>
+<% if current_membership.can_edit? %>
+  <%= button_to "Apply rules to inbox", apply_business_rules_path(@business) %>
+<% end %>
+<table>
+  <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th></th></tr></thead>
+  <tbody>
+    <% @transactions.each do |txn| %>
+      <%= render "inboxes/row", business: @business, txn: txn, categories: @categories, editable: current_membership.can_edit? %>
+    <% end %>
+  </tbody>
+</table>

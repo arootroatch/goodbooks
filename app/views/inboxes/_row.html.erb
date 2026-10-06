@@ -1,0 +1,20 @@
+<tr id="<%= dom_id(txn) %>">
+  <td><%= txn.posted_on %></td>
+  <td><%= txn.account.name %></td>
+  <td><%= txn.payee %></td>
+  <td class="num"><%= money(txn.amount_cents) %></td>
+  <td>
+    <% if editable %>
+      <%= form_with url: business_transaction_classification_path(business, txn), method: :patch, class: "inline-form" do |f| %>
+        <%= f.hidden_field :outcome, value: "categorize" %>
+        <%= f.select :category_id, grouped_options_for_select({
+              "Income" => categories.select(&:income?).map { [_1.name, _1.id] },
+              "Expense" => categories.select(&:expense?).map { [_1.name, _1.id] } }), include_blank: "Category…" %>
+        <label><%= f.check_box :make_rule, {}, "1", nil %> make rule</label>
+        <%= f.submit "Save" %>
+      <% end %>
+      <%= button_to "Transfer", business_transaction_classification_path(business, txn), method: :patch, params: { outcome: "transfer" }, form_class: "inline-form" %>
+      <%= button_to "Exclude", business_transaction_classification_path(business, txn), method: :patch, params: { outcome: "exclude" }, form_class: "inline-form" %>
+    <% end %>
+  </td>
+</tr>

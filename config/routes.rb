@@ -18,13 +18,17 @@ Rails.application.routes.draw do
   resources :businesses, only: %i[new create show edit update] do
     resources :accounts, only: %i[index new create edit update]
     resources :categories, only: %i[index new create edit update]
-    resources :transactions, except: :show
+    resources :transactions, except: :show do
+      resource :classification, only: :update
+    end
     resources :rules, except: :show do
       patch :move, on: :member
       post :apply, on: :collection
     end
     resource :inbox, only: :show
   end
+
+  get "inbox", to: "household_inboxes#show", as: :household_inbox
 
   root "dashboards#show"
 end
