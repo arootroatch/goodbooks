@@ -12,6 +12,16 @@ RSpec.describe "CSV imports" do
     expect(response).to redirect_to(edit_business_account_csv_import_mapping_path(business, account, import))
   end
 
+  it "stores the saved mapping on the import as well as the account" do
+    sign_in_as user_with_role("editor", business)
+    post business_account_csv_imports_path(business, account), params: { csv_import: { file: fixture } }
+    import = account.csv_imports.sole
+    patch business_account_csv_import_mapping_path(business, account, import),
+      params: { csv_import_mapping: { date_column: "Date", payee_column: "Description", amount_column: "Amount", date_format: "MM/DD/YYYY" } }
+    expect(import.reload.mapping).to include("date_column" => "Date", "payee_column" => "Description")
+    expect(import.mapping).to eq(account.reload.csv_mapping)
+  end
+
   it "re-renders the mapping with errors" do
     sign_in_as user_with_role("editor", business)
     post business_account_csv_imports_path(business, account), params: { csv_import: { file: fixture } }

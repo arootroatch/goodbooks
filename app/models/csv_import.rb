@@ -11,10 +11,15 @@ class CsvImport < ApplicationRecord
 
   validate :file_present_and_small, on: :create
 
+  before_create { self.mapping ||= account.csv_mapping }
+
   # The enum would also define committed!, which clashes with ActiveRecord's own committed! callback hook.
   def previewed? = status == "previewed"
   def committed? = status == "committed"
   def discarded? = status == "discarded"
+
+  # Legacy imports have no stored mapping and fall back to the account's current one.
+  def effective_mapping = mapping.present? ? CsvImport::Mapping.new(mapping) : account.mapping
 
   def content = file.download
 

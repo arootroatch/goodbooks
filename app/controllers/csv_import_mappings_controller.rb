@@ -16,7 +16,10 @@ class CsvImportMappingsController < ApplicationController
   def update
     @mapping = CsvImport::Mapping.new(params.expect(csv_import_mapping: PERMITTED))
     if @mapping.valid?
-      @account.update!(csv_mapping: @mapping.to_h)
+      ApplicationRecord.transaction do
+        @account.update!(csv_mapping: @mapping.to_h)
+        @import.update!(mapping: @mapping.to_h)
+      end
       redirect_to business_account_csv_import_path(@business, @account, @import)
     else
       load_headers

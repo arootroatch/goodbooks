@@ -54,6 +54,22 @@ RSpec.describe CsvImport do
     expect(second.reload.new_count).to eq(0)
   end
 
+  it "copies the account's mapping onto the import and parses with it after the account mapping changes" do
+    import = upload
+    expect(import.mapping).to eq(account.csv_mapping)
+    original = import.preview.new_entries.map { _1.row.amount_cents }
+    account.update!(csv_mapping: account.csv_mapping.merge("invert_sign" => true))
+    import.commit!
+    expect(account.transactions.order(:id).map(&:amount_cents)).to eq(original)
+  end
+
+  it "falls back to the account's mapping for legacy imports without one" do
+    import = upload
+    import.update_columns(mapping: nil)
+    account.update!(csv_mapping: account.csv_mapping.merge("invert_sign" => true))
+    expect(import.reload.preview.new_entries.first.row.amount_cents).to eq(5499)
+  end
+
   it "refuses to commit twice" do
     import = upload
     import.commit!

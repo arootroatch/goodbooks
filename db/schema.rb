@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_044427) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_060331) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -85,6 +85,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_044427) do
     t.datetime "committed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "mapping"
     t.index ["account_id"], name: "index_csv_imports_on_account_id"
   end
 

@@ -5,7 +5,7 @@ class CsvImport::Preview
 
   def self.build(csv_import)
     account = csv_import.account
-    rows = CsvImport::Parser.new(account.mapping, account_id: account.id).parse(csv_import.content)
+    rows = CsvImport::Parser.new(csv_import.effective_mapping, account_id: account.id).parse(csv_import.content)
     existing = account.transactions.where(external_id: rows.filter_map(&:external_id)).pluck(:external_id).to_set
     rules = account.business.rules.applicable.ordered.includes(:category).to_a
 
