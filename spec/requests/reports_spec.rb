@@ -91,4 +91,15 @@ RSpec.describe "Reports" do
     get business_profit_and_loss_path(pat)
     expect(response).to have_http_status(:not_found)
   end
+
+  describe "household reports with no businesses" do
+    it "returns 404 for a user without memberships" do
+      Business.destroy_all
+      sign_in_as create(:user)
+      get household_profit_and_loss_path
+      expect(response).to have_http_status(:not_found)
+      get household_transaction_export_path(format: :csv)
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
