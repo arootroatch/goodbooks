@@ -62,4 +62,21 @@ RSpec.describe DemoSeeder do
     DemoSeeder.new(out: out, today: today_early_month).run
     expect(Transaction.inbox.count).to be > 0
   end
+
+  it "seeds clients and invoices in every state, with inbox deposits that match open invoices" do
+    run
+    expect(Client.count).to eq(6)
+    expect(Invoice.paid.count).to be >= 20
+    expect(Invoice.paid.all? { _1.paid_cents == _1.amount_cents && _1.paid_on.present? }).to be(true)
+    expect(Invoice.sent.select(&:partial?).size).to eq(2)
+    expect(Invoice.draft.count).to eq(2)
+    expect(Invoice.void.count).to eq(2)
+
+    report = Reports::InvoiceAging.new(Reports::InvoiceAging.rows_from(Invoice.sent.to_a), as_of: today)
+    expect(report.buckets.select { _1.rows.any? }.map(&:key)).to eq(%w[current days_1_30 days_31_60 over_60])
+
+    matcher = InvoiceMatcher.for_businesses(Business.ids)
+    hinted = Transaction.inbox.includes(:account).select { matcher.for(_1, _1.account.business_id).any? }
+    expect(hinted.size).to eq(2)
+  end
 end

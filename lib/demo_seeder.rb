@@ -44,6 +44,8 @@ class DemoSeeder
 
     seed_business(consulting, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
     seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
+    seed_invoices(consulting, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
+    seed_invoices(studio, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "JDS-")
   end
 
   def seed_business(business, client:, income_cents:, software:)
@@ -93,6 +95,39 @@ class DemoSeeder
                                          to_location: "#{client.titleize} office", miles: "18.4", round_trip: true)
       end
     end
+  end
+
+  def seed_invoices(business, payer:, others:, prefix:)
+    bank = business.accounts.find_by!(name: "Business Checking")
+    sales = business.categories.find_by!(name: "Sales")
+    payer_client, second, third = ([ payer.titleize ] + others).map { business.clients.create!(name: _1) }
+    count = 0
+    add_invoice = lambda do |client, cents, issued, status: "sent"|
+      count += 1
+      business.invoices.create!(client: client, number: format("%s%04d", prefix, count), issue_date: issued, due_date: issued + 30,
+                                amount_cents: cents, status: status, description: "Professional services")
+    end
+
+    # Each categorized monthly payment pays the invoice issued about a month earlier.
+    bank.transactions.where(payee: "#{payer} PAYMENT").where.not(category_id: nil).order(:posted_on).each do |deposit|
+      InvoicePayments.link(invoice: add_invoice.(payer_client, deposit.amount_cents, deposit.posted_on - 25), deposit: deposit)
+    end
+
+    partial_deposit = bank.transactions.create!(posted_on: @today - 20, payee: "#{second.name.upcase} PAYMENT", amount_cents: 100_000,
+                                                category: sales, categorized_by: "user", external_id: "demo-#{business.id}-partial")
+    InvoicePayments.link(invoice: add_invoice.(second, 300_000, @today - 50), deposit: partial_deposit)
+
+    add_invoice.(third, 180_000, @today - 40)
+    add_invoice.(second, 95_000, @today - 75)
+    add_invoice.(third, 60_000, @today - 105)
+    add_invoice.(payer_client, 220_000, @today - 5)
+    add_invoice.(third, 75_000, @today, status: "draft")
+    add_invoice.(second, 40_000, @today - 60, status: "void")
+
+    # An uncategorized deposit in the inbox for exactly an open invoice's amount, so the inbox shows its "Mark paid" hint.
+    match = add_invoice.(third, 245_000, @today - 20)
+    bank.transactions.create!(posted_on: @today, payee: "#{third.name.upcase} ACH", amount_cents: match.amount_cents,
+                              external_id: "demo-#{business.id}-match")
   end
 
   def ensure_tax_parameters
