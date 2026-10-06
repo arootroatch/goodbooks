@@ -2,7 +2,7 @@ class MileageEntry < ApplicationRecord
   belongs_to :business
 
   validates :driven_on, :purpose, presence: true
-  validates :miles_tenths, numericality: { only_integer: true, greater_than: 0, less_than: 2_147_483_647 }
+  validates :miles_tenths, numericality: { only_integer: true, greater_than: 0, less_than: 2_147_483_647 }, unless: -> { @miles_error }
   validate { errors.add(:miles, @miles_error) if @miles_error }
 
   def miles

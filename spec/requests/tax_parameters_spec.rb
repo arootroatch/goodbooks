@@ -10,10 +10,13 @@ RSpec.describe "Tax parameters" do
     expect(TaxParameters.for_year(2027).standard_mileage_rate_tenth_cents).to eq(730)
   end
 
-  it "rejects a malformed rate" do
+  it "rejects a malformed rate with a single error message" do
     sign_in_as create(:user, :household_owner)
     post tax_parameters_path, params: { tax_parameter: { year: "2027", mileage_rate_cents: "72.55" } }
     expect(response).to have_http_status(:unprocessable_content)
+    tp = TaxParameters.new(year: 2027, mileage_rate_cents: "72.55")
+    tp.valid?
+    expect(tp.errors.full_messages).to eq(["Mileage rate cents must be a number with at most one decimal place"])
   end
 
   it "forbids everyone else, even business owners" do

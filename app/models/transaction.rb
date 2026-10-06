@@ -15,7 +15,7 @@ class Transaction < ApplicationRecord
   scope :for_businesses, ->(ids) { joins(:account).where(accounts: { business_id: ids }) }
 
   validates :posted_on, :payee, presence: true
-  validates :amount_cents, presence: true, numericality: { only_integer: true }
+  validates :amount_cents, presence: true, numericality: { only_integer: true }, if: -> { errors[:amount].empty? }
   validates :categorized_by, inclusion: { in: CATEGORIZED_BY }, allow_nil: true
   validate :category_in_business
 
