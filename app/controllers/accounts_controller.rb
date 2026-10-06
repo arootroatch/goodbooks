@@ -8,6 +8,8 @@ class AccountsController < ApplicationController
 
   def index
     @accounts = @business.accounts.order(:archived_at, :name)
+    @accounts = @accounts.active unless params[:archived] == "1"
+    @show_archived = params[:archived] == "1"
   end
 
   def new

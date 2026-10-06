@@ -50,4 +50,20 @@ RSpec.describe "Accounts" do
     get business_accounts_path(business)
     expect(response).to have_http_status(:not_found)
   end
+
+  it "hides archived accounts by default" do
+    archived_account = create(:account, business: business, name: "Savings", archived_at: 1.day.ago)
+    sign_in_as user_with_role("viewer", business)
+    get business_accounts_path(business)
+    expect(response.body).to include("Checking")
+    expect(response.body).not_to include("Savings")
+  end
+
+  it "shows archived accounts with archived=1" do
+    archived_account = create(:account, business: business, name: "Savings", archived_at: 1.day.ago)
+    sign_in_as user_with_role("viewer", business)
+    get business_accounts_path(business, archived: "1")
+    expect(response.body).to include("Checking")
+    expect(response.body).to include("Savings")
+  end
 end

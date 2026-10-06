@@ -1,5 +1,10 @@
 <%= business_nav @business %>
 <h1>Accounts</h1>
+<% if @show_archived %>
+  <%= link_to "Hide archived", business_accounts_path(@business) %>
+<% else %>
+  <%= link_to "Show archived", business_accounts_path(@business, archived: "1") %>
+<% end %>
 <table>
   <thead><tr><th>Name</th><th>Source</th><th>Kind</th><th></th></tr></thead>
   <tbody>
