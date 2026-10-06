@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       end
     end
     resources :categories, only: %i[index new create edit update]
+    resources :clients, only: %i[index new create edit update]
     resources :transactions, except: :show do
       resource :classification, only: :update
     end
