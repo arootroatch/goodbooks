@@ -123,6 +123,29 @@ RSpec.describe "Navigation" do
     end
   end
 
+  it "links invoices, clients, and the aging report inside a business" do
+    sign_in_as household_owner
+    get business_transactions_path(business)
+    expect(sidebar).to have_link("Invoices", href: business_invoices_path(business))
+    expect(sidebar).to have_link("Clients", href: business_clients_path(business))
+    expect(sidebar).to have_link("Invoice aging", href: business_invoice_aging_path(business))
+  end
+
+  it "links household invoices from the household menu" do
+    sign_in_as household_owner
+    get root_path
+    expect(sidebar).to have_link("Household invoices", href: household_invoices_path)
+  end
+
+  it "treats the household invoice pages as household pages" do
+    sign_in_as household_owner
+    [ household_invoices_path, household_invoice_aging_path ].each do |path|
+      get business_transactions_path(business)
+      get path
+      expect(sidebar.find(".switcher summary").text).to eq("Household")
+    end
+  end
+
   it "renders for a user with no memberships" do
     sign_in_as create(:user)
     get root_path
