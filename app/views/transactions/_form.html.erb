@@ -1,0 +1,33 @@
+<%= form_with model: [@business, transaction] do |f| %>
+  <%= render "shared/errors", record: transaction %>
+  <% manual = transaction.new_record? || transaction.account.manual? %>
+  <% if transaction.new_record? %>
+    <p><%= f.label :account_id %> <%= f.collection_select :account_id, @business.accounts.manual.active.order(:name), :id, :name %></p>
+  <% end %>
+  <% if manual %>
+    <p><%= f.label :posted_on, "Date" %> <%= f.date_field :posted_on, required: true %></p>
+    <p><%= f.label :payee %> <%= f.text_field :payee, required: true %></p>
+    <p>
+      <%= f.label :amount %>
+      <%= f.text_field :amount, value: transaction.amount_cents ? Money.new(transaction.amount_cents.abs).to_input : transaction.amount %>
+      <% out = transaction.direction.present? ? transaction.direction == "out" : transaction.amount_cents.to_i <= 0 %>
+      <label><%= f.radio_button :direction, "out", checked: out %> Money out</label>
+      <label><%= f.radio_button :direction, "in", checked: !out %> Money in</label>
+    </p>
+  <% else %>
+    <p><%= transaction.posted_on %> · <%= transaction.payee %> · <%= money(transaction.amount_cents) %> (imported, read-only)</p>
+  <% end %>
+  <p><%= f.label :memo %> <%= f.text_field :memo %></p>
+  <p>
+    <%= f.label :category_id %>
+    <%= f.grouped_collection_select :category_id,
+          [["Income", @business.categories.active.income.order(:name)], ["Expense", @business.categories.active.expense.order(:name)]],
+          :last, :first, :id, :name, include_blank: "Uncategorized" %>
+  </p>
+  <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
+  <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
+  <%= f.submit %>
+<% end %>
+<% if transaction.persisted? && transaction.account.manual? %>
+  <%= button_to "Delete", business_transaction_path(@business, transaction), method: :delete %>
+<% end %>

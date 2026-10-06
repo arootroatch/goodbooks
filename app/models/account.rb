@@ -1,5 +1,6 @@
 class Account < ApplicationRecord
   belongs_to :business
+  has_many :transactions, dependent: :restrict_with_error
 
   enum :source, { manual: "manual", csv: "csv", plaid: "plaid" }, validate: true
   enum :kind, { checking: "checking", savings: "savings", credit: "credit", cash: "cash", other: "other" },

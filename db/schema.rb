@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_035135) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_040411) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -85,6 +85,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_035135) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "transactions", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.date "posted_on", null: false
+    t.integer "amount_cents", null: false
+    t.string "payee", null: false
+    t.string "memo"
+    t.integer "category_id"
+    t.boolean "transfer", default: false, null: false
+    t.boolean "excluded", default: false, null: false
+    t.string "external_id"
+    t.string "categorized_by"
+    t.integer "rule_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
+    t.index ["account_id"], name: "index_transactions_on_account_id"
+    t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["posted_on"], name: "index_transactions_on_posted_on"
+    t.index ["rule_id"], name: "index_transactions_on_rule_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email_address", null: false
     t.string "password_digest", null: false
@@ -108,4 +129,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_035135) do
   add_foreign_key "people", "households"
   add_foreign_key "people", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "transactions", "accounts"
+  add_foreign_key "transactions", "categories"
 end

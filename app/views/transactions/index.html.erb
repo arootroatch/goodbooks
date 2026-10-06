@@ -1,0 +1,32 @@
+<%= business_nav @business %>
+<h1>Transactions</h1>
+<%= form_with url: business_transactions_path(@business), method: :get, class: "inline-form no-print" do |f| %>
+  <%= f.date_field :from, value: params[:from] %>
+  <%= f.date_field :to, value: params[:to] %>
+  <%= f.select :account_id, options_from_collection_for_select(@business.accounts.order(:name), :id, :name, params[:account_id]), include_blank: "All accounts" %>
+  <%= f.select :category_id, options_from_collection_for_select(@business.categories.order(:name), :id, :name, params[:category_id]), include_blank: "All categories" %>
+  <%= f.select :status, [["All", ""], ["Inbox only", "inbox"]], selected: params[:status] %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Search payee or memo" %>
+  <%= f.submit "Filter" %>
+<% end %>
+<table>
+  <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th>Memo</th><th>Category</th><th class="num">Amount</th><th></th></tr></thead>
+  <tbody>
+    <% @transactions.each do |txn| %>
+      <tr id="<%= dom_id(txn) %>">
+        <td><%= txn.posted_on %></td>
+        <td><%= txn.account.name %></td>
+        <td><%= txn.payee %></td>
+        <td><%= txn.memo %></td>
+        <td><%= txn.transfer? ? "Transfer" : txn.excluded? ? "Excluded" : txn.category&.name || "Inbox" %></td>
+        <td class="num"><%= money(txn.amount_cents) %></td>
+        <td><%= link_to "Edit", edit_business_transaction_path(@business, txn) if current_membership.can_edit? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p>
+  <%= link_to "Previous", business_transactions_path(@business, @filter.params.merge(page: @filter.page - 1)) if @filter.page > 1 %>
+  <%= link_to "Next", business_transactions_path(@business, @filter.params.merge(page: @filter.page + 1)) if @filter.next_page? %>
+</p>
+<%= link_to "Add manual transaction", new_business_transaction_path(@business) if current_membership.can_edit? %>
