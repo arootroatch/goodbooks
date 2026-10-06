@@ -99,6 +99,15 @@ RSpec.describe "Authentication" do
       expect(user.reload.otp_secret).to eq(secret)
     end
 
+    it "issues a fresh secret on each password login until enrolled" do
+      log_in_password
+      get new_two_factor_setup_path
+      first_secret = user.reload.otp_secret
+      log_in_password
+      get new_two_factor_setup_path
+      expect(user.reload.otp_secret).not_to eq(first_secret)
+    end
+
     it "rejects a wrong setup code" do
       log_in_password
       get new_two_factor_setup_path

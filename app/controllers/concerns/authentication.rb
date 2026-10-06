@@ -48,6 +48,7 @@ module Authentication
     PENDING_TTL = 10.minutes
 
     def begin_two_factor(user)
+      user.generate_otp_secret! unless user.otp_enabled?
       return_to = session[:return_to_after_authenticating]
       reset_session
       session[:return_to_after_authenticating] = return_to if return_to
