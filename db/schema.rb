@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_060331) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_000003) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -75,6 +75,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060331) do
     t.index ["business_id"], name: "index_categories_on_business_id"
   end
 
+  create_table "clients", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.string "name", null: false
+    t.string "email"
+    t.text "notes"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "name"], name: "index_clients_on_business_id_and_name", unique: true
+    t.index ["business_id"], name: "index_clients_on_business_id"
+  end
+
   create_table "csv_imports", force: :cascade do |t|
     t.integer "account_id", null: false
     t.string "status", default: "previewed", null: false
@@ -119,6 +131,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060331) do
     t.index ["accepted_by_id"], name: "index_invites_on_accepted_by_id"
     t.index ["created_by_id"], name: "index_invites_on_created_by_id"
     t.index ["token_digest"], name: "index_invites_on_token_digest", unique: true
+  end
+
+  create_table "invoice_payments", force: :cascade do |t|
+    t.integer "invoice_id", null: false
+    t.integer "deposit_id", null: false
+    t.integer "amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deposit_id"], name: "index_invoice_payments_on_deposit_id"
+    t.index ["invoice_id", "deposit_id"], name: "index_invoice_payments_on_invoice_id_and_deposit_id", unique: true
+    t.index ["invoice_id"], name: "index_invoice_payments_on_invoice_id"
+  end
+
+  create_table "invoices", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.integer "client_id", null: false
+    t.string "number", null: false
+    t.date "issue_date", null: false
+    t.date "due_date", null: false
+    t.integer "amount_cents", null: false
+    t.text "description"
+    t.string "status", default: "sent", null: false
+    t.date "paid_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "number"], name: "index_invoices_on_business_id_and_number", unique: true
+    t.index ["business_id", "status"], name: "index_invoices_on_business_id_and_status"
+    t.index ["business_id"], name: "index_invoices_on_business_id"
+    t.index ["client_id"], name: "index_invoices_on_client_id"
   end
 
   create_table "memberships", force: :cascade do |t|
@@ -230,11 +271,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060331) do
   add_foreign_key "businesses", "households"
   add_foreign_key "businesses", "people"
   add_foreign_key "categories", "businesses"
+  add_foreign_key "clients", "businesses"
   add_foreign_key "csv_imports", "accounts"
   add_foreign_key "invite_grants", "businesses"
   add_foreign_key "invite_grants", "invites"
   add_foreign_key "invites", "users", column: "accepted_by_id"
   add_foreign_key "invites", "users", column: "created_by_id"
+  add_foreign_key "invoice_payments", "invoices"
+  add_foreign_key "invoice_payments", "transactions", column: "deposit_id"
+  add_foreign_key "invoices", "businesses"
+  add_foreign_key "invoices", "clients"
   add_foreign_key "memberships", "businesses"
   add_foreign_key "memberships", "users"
   add_foreign_key "mileage_entries", "businesses"

@@ -9,6 +9,7 @@ class Transaction < ApplicationRecord
   belongs_to :account
   belongs_to :category, optional: true
   belongs_to :rule, optional: true
+  has_many :invoice_payments, foreign_key: :deposit_id, inverse_of: :deposit, dependent: :restrict_with_error
 
   scope :inbox, -> { where(category_id: nil, transfer: false, excluded: false) }
   scope :countable, -> { where(transfer: false, excluded: false) }
