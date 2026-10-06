@@ -31,6 +31,10 @@ bundle exec rspec       # test suite
 
 5. Visit `https://APP_HOST` and sign in.
 
+### Invite links
+
+To invite others to the household, go to **Invites** and create an invite link. Share it like a password — whoever holds the link can join, and the email field is only a prefill suggestion. Invite links expire after 7 days, can be used once, and can be revoked from the **Invites** page at any time.
+
 ## Updating
 
 ```bash
