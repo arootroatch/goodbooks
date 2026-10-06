@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Reports::HouseholdProfitAndLoss do
-  FakeBusiness = Struct.new(:id, :name)
+  let(:fake_business_class) { Struct.new(:id, :name) }
 
   def pnl(*totals, mileage: 0)
     Reports::ProfitAndLoss.new(category_totals: totals, mileage_deduction_cents: mileage)
@@ -11,8 +11,8 @@ RSpec.describe Reports::HouseholdProfitAndLoss do
     Reports::CategoryTotal.new(business_id:, category_id: 0, name:, kind:, schedule_c_line: kind == "income" ? "1" : "18", deductible_bps: 10_000, sum_cents: sum)
   end
 
-  let(:pat) { FakeBusiness.new(1, "Pat") }
-  let(:jordan) { FakeBusiness.new(2, "Jordan") }
+  let(:pat) { fake_business_class.new(1, "Pat") }
+  let(:jordan) { fake_business_class.new(2, "Jordan") }
   let(:report) do
     described_class.new(
       pat => pnl(total(1, "Sales", "income", 100_00), total(1, "Office", "expense", -10_00), mileage: 5_00),

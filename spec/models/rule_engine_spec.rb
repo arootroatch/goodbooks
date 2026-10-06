@@ -1,10 +1,10 @@
 require "rails_helper"
 
 RSpec.describe RuleEngine do
-  FakeRule = Struct.new(:name, :field, :operator, :value, :amount_min_cents, :amount_max_cents, keyword_init: true)
+  let(:fake_rule_class) { Struct.new(:name, :field, :operator, :value, :amount_min_cents, :amount_max_cents, keyword_init: true) }
 
   def rule(name, field: "payee", operator: "contains", value:, min: nil, max: nil)
-    FakeRule.new(name:, field:, operator:, value:, amount_min_cents: min, amount_max_cents: max)
+    fake_rule_class.new(name:, field:, operator:, value:, amount_min_cents: min, amount_max_cents: max)
   end
 
   let(:attrs) { { payee: "  ADOBE   Creative Cloud ", memo: "Monthly SUB", amount_cents: -5499 } }
