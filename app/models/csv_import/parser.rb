@@ -19,7 +19,7 @@ class CsvImport::Parser
     text = content.to_s.dup.force_encoding(Encoding::UTF_8)
     raise FileError, "File must be UTF-8 encoded." unless text.valid_encoding?
 
-    CSV.parse(text.delete_prefix("﻿"), liberal_parsing: true).drop(skip_rows)
+    CSV.parse(text.delete_prefix("\uFEFF"), liberal_parsing: true).drop(skip_rows)
   rescue CSV::MalformedCSVError => e
     raise FileError, "Could not read CSV: #{e.message}"
   end
@@ -40,6 +40,9 @@ class CsvImport::Parser
     @columns = header.map { _1.to_s.strip }
     missing = @mapping.columns - @columns
     raise FileError, "Column not found: #{missing.join(", ")}" if missing.any?
+
+    duplicated = @mapping.columns.uniq.select { |name| @columns.count(name) > 1 }
+    raise FileError, "Column appears more than once: #{duplicated.join(", ")}" if duplicated.any?
 
     occurrences = Hash.new(0)
     data.each_with_index.filter_map do |cells, index|
@@ -79,7 +82,8 @@ class CsvImport::Parser
   end
 
   def parse_date(value)
-    Date.strptime(value, DATE_FORMATS.fetch(@mapping.date_format))
+    date = Date.strptime(value, DATE_FORMATS.fetch(@mapping.date_format))
+    date if date.year >= 1900
   rescue Date::Error
     nil
   end

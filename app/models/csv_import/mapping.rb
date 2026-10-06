@@ -17,11 +17,17 @@ class CsvImport::Mapping
   validates :skip_rows, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :one_amount_style
 
-  def columns
-    [date_column, payee_column, memo_column, amount_column, debit_column, credit_column].compact_blank
+  COLUMN_ATTRIBUTES = %i[date_column payee_column memo_column amount_column debit_column credit_column].freeze
+
+  COLUMN_ATTRIBUTES.each do |name|
+    define_method(name) { super()&.strip }
   end
 
-  def to_h = attributes
+  def columns
+    COLUMN_ATTRIBUTES.map { public_send(_1) }.compact_blank
+  end
+
+  def to_h = attributes.to_h { |name, value| [name, COLUMN_ATTRIBUTES.include?(name.to_sym) ? public_send(name) : value] }
 
   private
 

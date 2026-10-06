@@ -20,7 +20,8 @@ RSpec.describe CsvImport::Parser do
   end
 
   it "handles a BOM, CRLF line endings, and blank lines" do
-    content = "﻿Date,Description,Memo,Amount\r\n01/05/2026,Coffee,,-4.50\r\n\r\n,,,\r\n"
+    content = "\uFEFFDate,Description,Memo,Amount\r\n01/05/2026,Coffee,,-4.50\r\n\r\n,,,\r\n"
+    expect(content).to start_with("\uFEFF")
     rows = parse(content)
     expect(rows.size).to eq(1)
     expect(rows.first.amount_cents).to eq(-450)
@@ -105,5 +106,28 @@ RSpec.describe CsvImport::Parser do
   it "exposes rule attributes" do
     row = parse("Date,Description,Memo,Amount\n01/05/2026,Store,x,-1\n").first
     expect(row.rule_attributes).to eq(payee: "Store", memo: "x", amount_cents: -100)
+  end
+
+  it "rejects two-digit years under a four-digit format" do
+    row = parse("Date,Description,Memo,Amount\n1/5/26,Store,,-1\n").first
+    expect(row.error).to eq("Invalid date")
+    expect(row.external_id).to be_nil
+  end
+
+  it "parses two-digit years under MM/DD/YY" do
+    mapping.date_format = "MM/DD/YY"
+    expect(parse("Date,Description,Memo,Amount\n01/05/26,Store,,-1\n").first.posted_on).to eq(Date.new(2026, 1, 5))
+  end
+
+  it "raises FileError when a mapped column appears more than once" do
+    amount = CsvImport::Mapping.new(date_column: "Date", payee_column: "Description", amount_column: "Amount")
+    expect { described_class.new(amount, account_id: 1).parse("Date,Description,Amount,Amount\n01/05/2026,Store,1,2\n") }
+      .to raise_error(CsvImport::Parser::FileError, "Column appears more than once: Amount")
+  end
+
+  it "matches mapped column names ignoring surrounding whitespace" do
+    padded = CsvImport::Mapping.new(date_column: "Date ", payee_column: " Description", amount_column: "Amount ")
+    rows = described_class.new(padded, account_id: 1).parse("Date,Description,Amount\n01/05/2026,Store,-1\n")
+    expect(rows.first).to be_valid
   end
 end
