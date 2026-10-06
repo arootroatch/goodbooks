@@ -29,6 +29,12 @@ RSpec.describe CsvImport do
     expect(preview.new_entries.first.proposed_rule.category).to eq(software)
   end
 
+  it "ignores rules with archived categories when proposing" do
+    create(:rule, business: business, value: "adobe", category: software)
+    software.update!(archived_at: Time.current)
+    expect(upload.preview.new_entries.map(&:proposed_rule)).to all(be_nil)
+  end
+
   it "commits new rows, applies rules, and records counts" do
     create(:rule, business: business, value: "adobe", category: software)
     import = upload

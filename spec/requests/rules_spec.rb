@@ -13,6 +13,21 @@ RSpec.describe "Rules" do
     expect(business.rules.sole.value).to eq("adobe")
   end
 
+  it "marks rules whose category is archived as inactive" do
+    create(:rule, business: business, value: "adobe", category: category)
+    category.update!(archived_at: Time.current)
+    sign_in_as user_with_role("viewer", business)
+    get business_rules_path(business)
+    expect(response.body).to include("(category archived — rule inactive)")
+  end
+
+  it "does not mark rules with active categories" do
+    create(:rule, business: business, value: "adobe", category: category)
+    sign_in_as user_with_role("viewer", business)
+    get business_rules_path(business)
+    expect(response.body).not_to include("rule inactive")
+  end
+
   it "prefills the new form from params" do
     sign_in_as user_with_role("editor", business)
     get new_business_rule_path(business, value: "ADOBE", category_id: category.id)

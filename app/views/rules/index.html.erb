@@ -7,7 +7,7 @@
     <% @rules.each do |rule| %>
       <tr id="<%= dom_id(rule) %>" data-sortable-url="<%= move_business_rule_path(@business, rule) %>">
         <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
-        <td><%= rule.description %></td>
+        <td><%= rule.description %><%= " (category archived — rule inactive)" if rule.inactive? %></td>
         <td><%= [rule.amount_min_cents && "≥ #{money(rule.amount_min_cents)}", rule.amount_max_cents && "≤ #{money(rule.amount_max_cents)}"].compact.join(" ") %></td>
         <td>
           <% if current_membership.can_edit? %>

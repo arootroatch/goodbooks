@@ -16,6 +16,20 @@ RSpec.describe RuleApplier do
     expect(txn.rule).to eq(rule)
   end
 
+  it "ignores rules whose category is archived" do
+    software.update!(archived_at: Time.current)
+    txn = create(:transaction, account: account, payee: "ADOBE *CC")
+    expect(RuleApplier.new(business).apply([txn])).to eq(0)
+    expect(txn.reload).to be_inbox
+  end
+
+  it "still applies transfer rules when other categories are archived" do
+    software.update!(archived_at: Time.current)
+    txn = create(:transaction, account: account, payee: "Card payment thank you")
+    expect(RuleApplier.new(business).apply([txn])).to eq(1)
+    expect(txn.reload).to be_transfer
+  end
+
   it "marks transfers" do
     txn = create(:transaction, account: account, payee: "Card payment thank you")
     RuleApplier.new(business).apply([txn])

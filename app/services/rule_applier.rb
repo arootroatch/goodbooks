@@ -1,6 +1,6 @@
 class RuleApplier
   def initialize(business)
-    @rules = business.rules.ordered.includes(:category).to_a
+    @rules = business.rules.applicable.ordered.includes(:category).to_a
   end
 
   def apply(transactions)

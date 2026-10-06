@@ -13,6 +13,7 @@ class Rule < ApplicationRecord
   has_many :transactions, dependent: :nullify
 
   scope :ordered, -> { order(:position) }
+  scope :applicable, -> { left_joins(:category).where("rules.outcome = 'transfer' OR categories.archived_at IS NULL") }
 
   validates :field, inclusion: { in: FIELDS }
   validates :operator, inclusion: { in: OPERATORS }
@@ -33,6 +34,8 @@ class Rule < ApplicationRecord
     end
     reload
   end
+
+  def inactive? = outcome == "categorize" && category&.archived? == true
 
   def description
     target = outcome == "transfer" ? "Transfer" : category&.name
