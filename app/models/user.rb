@@ -20,10 +20,6 @@ class User < ApplicationRecord
     memberships.find_by(business: business)
   end
 
-  def household_owner?
-    person.present?
-  end
-
   def can_view_household?
     household_owner? || (memberships.exists? && Business.where.not(id: memberships.select(:business_id)).none?)
   end

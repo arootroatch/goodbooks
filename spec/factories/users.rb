@@ -12,10 +12,7 @@ FactoryBot.define do
     end
 
     trait :household_owner do
-      after(:create) do |user|
-        household = create(:household)
-        create(:person, user: user, household: household)
-      end
+      household_owner { true }
     end
   end
 end

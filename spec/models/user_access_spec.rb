@@ -36,6 +36,14 @@ RSpec.describe "User business access" do
       user = create(:user, :household_owner)
       expect(user.can_view_household?).to be(true)
     end
+
+    it "denies view access to a non-owner linked to a person" do
+      household = create(:household)
+      user = create(:user, household_owner: false)
+      create(:person, user: user, household: household)
+      expect(user.household_owner?).to be(false)
+      expect(user.can_view_household?).to be(false)
+    end
   end
 
   describe "with archived businesses" do
