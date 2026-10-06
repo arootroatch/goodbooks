@@ -1,6 +1,8 @@
 class BusinessesController < ApplicationController
+  include BusinessScoped
+
   before_action :require_household_owner!, only: %i[new create]
-  before_action :set_business, only: %i[show edit update]
+  skip_before_action :set_business, only: %i[new create]
   before_action :require_owner!, only: %i[edit update]
 
   def new
@@ -34,14 +36,7 @@ class BusinessesController < ApplicationController
 
   private
 
-  def set_business
-    @business = Current.user.accessible_businesses.find(params[:id])
-    @membership = Current.user.membership_for(@business)
+  def business_id_param
+    params[:id]
   end
-
-  def require_owner!
-    head :forbidden unless @membership.owner?
-  end
-
-  helper_method def current_membership = @membership
 end

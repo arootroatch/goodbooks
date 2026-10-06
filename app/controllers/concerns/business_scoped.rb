@@ -8,8 +8,12 @@ module BusinessScoped
 
   private
 
+  def business_id_param
+    params[:business_id]
+  end
+
   def set_business
-    @business = Current.user.accessible_businesses.find(params[:business_id])
+    @business = Current.user.accessible_businesses.find(business_id_param)
     @membership = Current.user.membership_for(@business)
   end
 
