@@ -31,6 +31,7 @@ Rails.application.routes.draw do
         patch :void
         patch :reopen
       end
+      resource :pdf, only: :show, controller: "invoice_pdfs"
     end
     resources :transactions, except: :show do
       resource :classification, only: :update

@@ -6,6 +6,9 @@
   <dt>Amount</dt><dd><%= money(@invoice.amount_cents) %></dd>
   <dt>Paid</dt><dd><%= money(@invoice.paid_cents) %><%= " on #{@invoice.paid_on}" if @invoice.paid? %></dd>
   <dt>Outstanding</dt><dd><%= invoice_outstanding(@invoice) %></dd>
+  <% if @invoice.pdf.attached? %>
+    <dt>PDF</dt><dd><%= link_to @invoice.pdf.filename.to_s, business_invoice_pdf_path(@business, @invoice) %></dd>
+  <% end %>
   <% if @invoice.description.present? %>
     <dt>Description</dt><dd><%= @invoice.description %></dd>
   <% end %>
