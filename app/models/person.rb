@@ -7,12 +7,12 @@ class Person < ApplicationRecord
 
   validates :name, presence: true
   validates :user_id, uniqueness: true, allow_nil: true
-  validate :household_has_room, on: :create
+  validate :household_has_room, if: -> { new_record? || will_save_change_to_household_id? }
 
   private
 
   def household_has_room
-    return unless household && household.people.count >= MAX_PER_HOUSEHOLD
+    return unless household && household.people.where.not(id: id).count >= MAX_PER_HOUSEHOLD
 
     errors.add(:base, "A household has at most two people")
   end

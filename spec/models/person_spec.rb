@@ -15,4 +15,15 @@ RSpec.describe Person do
     create(:person, user: user)
     expect(build(:person, user: user)).not_to be_valid
   end
+
+  it "enforces two-per-household limit on update" do
+    household1 = create(:household)
+    household2 = create(:household)
+    create(:person, household: household1)
+    create(:person, household: household1)
+    person_from_other = create(:person, household: household2)
+
+    expect(person_from_other.update(household: household1)).to be(false)
+    expect(person_from_other.errors[:base]).to include("A household has at most two people")
+  end
 end

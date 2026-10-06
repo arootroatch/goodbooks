@@ -25,4 +25,25 @@ RSpec.describe "User business access" do
     stranger = Person.create!(household: other_household, name: "Stranger")
     expect(build(:business, household: mine.household, person: stranger)).not_to be_valid
   end
+
+  describe "with no businesses in the household" do
+    it "denies view access to a plain user" do
+      user = create(:user)
+      expect(user.can_view_household?).to be(false)
+    end
+
+    it "grants view access to a household owner" do
+      user = create(:user, :household_owner)
+      expect(user.can_view_household?).to be(true)
+    end
+  end
+
+  describe "with archived businesses" do
+    it "denies view access if archived businesses lack a membership" do
+      household = mine.household
+      user = user_with_role("viewer", mine)
+      archived = create(:business, household: household, archived_at: Time.current)
+      expect(user.can_view_household?).to be(false)
+    end
+  end
 end
