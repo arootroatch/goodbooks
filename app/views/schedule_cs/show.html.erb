@@ -7,6 +7,7 @@
 <% if @mileage.missing_rate_years.any? %>
   <p class="flash-alert">Mileage is excluded: no IRS rate set for <%= @year %>.</p>
 <% end %>
+<%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: business_inbox_path(@business) %>
 <table>
   <tbody>
     <% @summary.lines.each do |code, cents| %>

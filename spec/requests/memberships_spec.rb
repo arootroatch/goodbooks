@@ -47,6 +47,33 @@ RSpec.describe "Memberships" do
     expect(flash[:alert]).to eq("A business needs at least one owner.")
   end
 
+  describe "household owner's membership" do
+    let!(:household_owner) { create(:user, :household_owner).tap { |u| create(:membership, user: u, business: business, role: "owner") } }
+    let(:membership) { household_owner.membership_for(business) }
+    let(:message) { "The household owner's access can only be changed by the household owner." }
+
+    it "cannot be demoted by another business owner" do
+      sign_in_as owner
+      patch business_membership_path(business, membership), params: { membership: { role: "viewer" } }
+      expect(response).to redirect_to(business_memberships_path(business))
+      expect(flash[:alert]).to eq(message)
+      expect(membership.reload).to be_owner
+    end
+
+    it "cannot be removed by another business owner" do
+      sign_in_as owner
+      delete business_membership_path(business, membership)
+      expect(flash[:alert]).to eq(message)
+      expect(Membership.exists?(membership.id)).to be(true)
+    end
+
+    it "can be changed by the household owner themselves" do
+      sign_in_as household_owner
+      patch business_membership_path(business, membership), params: { membership: { role: "editor" } }
+      expect(membership.reload).to be_editor
+    end
+  end
+
   it "removes members" do
     member = user_with_role("viewer", business)
     sign_in_as owner

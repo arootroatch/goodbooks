@@ -1,8 +1,12 @@
 class InboxesController < ApplicationController
   include BusinessScoped
 
+  LIMIT = 200
+
   def show
-    @transactions = Transaction.for_businesses(@business.id).inbox.includes(:account).order(posted_on: :desc, id: :desc)
+    scope = Transaction.for_businesses(@business.id).inbox
+    @total = scope.count
+    @transactions = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
     @categories = @business.categories.active.order(:name)
   end
 end

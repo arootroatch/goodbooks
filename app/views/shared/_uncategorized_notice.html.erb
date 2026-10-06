@@ -1,0 +1,3 @@
+<% if count.positive? %>
+  <p class="flash-alert"><%= count %> uncategorized transactions in this range are not included. <%= link_to "Open the inbox", inbox_path %></p>
+<% end %>

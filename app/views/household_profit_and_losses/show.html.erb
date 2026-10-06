@@ -1,5 +1,9 @@
 <h1>Household profit &amp; loss</h1>
 <%= render "shared/date_range_form", url: household_profit_and_loss_path %>
+<% if @missing_rate_years.any? %>
+  <p class="flash-alert">Mileage for <%= @missing_rate_years.to_sentence %> is excluded: no IRS rate set.</p>
+<% end %>
+<%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: household_inbox_path %>
 <% businesses = @report.businesses %>
 <table>
   <thead>
@@ -16,7 +20,7 @@
         </tr>
       <% end %>
     <% end %>
-    <% [["Mileage deduction", :mileage_deduction_cents], ["Net profit (tax basis)", :net_profit_cents]].each do |label, metric| %>
+    <% [["Total deductible expenses", :total_deductible_expense_cents], ["Mileage deduction", :mileage_deduction_cents], ["Net profit (tax basis)", :net_profit_cents]].each do |label, metric| %>
       <% column = @report.column(metric) %>
       <tr>
         <th><%= label %></th>

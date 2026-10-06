@@ -118,4 +118,24 @@ RSpec.describe "Inbox" do
       expect(response.body).not_to include("SECRET PAYEE")
     end
   end
+
+  describe "length limit" do
+    before do
+      stub_const("InboxesController::LIMIT", 1)
+      create(:transaction, account: account, payee: "SECOND ONE", posted_on: Date.new(2020, 1, 1))
+    end
+
+    it "truncates the business inbox and says so" do
+      sign_in_as user_with_role("viewer", business)
+      get business_inbox_path(business)
+      expect(response.body).to include("Showing 1 of 2")
+      expect(response.body.scan("<tr id=").size).to eq(1)
+    end
+
+    it "truncates each business in the household inbox" do
+      sign_in_as create(:user, :household_owner).tap { |u| create(:membership, user: u, business: business, role: "owner") }
+      get household_inbox_path
+      expect(response.body).to include("Showing 1 of 2")
+    end
+  end
 end

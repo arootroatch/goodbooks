@@ -4,7 +4,9 @@ class HouseholdInboxesController < ApplicationController
     @memberships = Current.user.memberships.where(business: businesses).index_by(&:business_id)
     @categories = Category.active.where(business: businesses).order(:name).group_by(&:business_id)
     @groups = businesses.map do |business|
-      [business, Transaction.for_businesses(business.id).inbox.includes(:account).order(posted_on: :desc, id: :desc).to_a]
+      scope = Transaction.for_businesses(business.id).inbox
+      rows = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(InboxesController::LIMIT).to_a
+      [business, rows, scope.count]
     end
   end
 end

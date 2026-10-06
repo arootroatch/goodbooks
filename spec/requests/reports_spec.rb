@@ -27,6 +27,53 @@ RSpec.describe "Reports" do
     expect(response.body).to include("$89.47")
   end
 
+  it "notes uncategorized transactions that are not included in the business P&L" do
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2025, 5, 1))
+    sign_in_as accountant
+    get business_profit_and_loss_path(pat, from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include(business_inbox_path(pat))
+  end
+
+  it "omits the uncategorized note when the inbox is empty for the range" do
+    sign_in_as accountant
+    get business_profit_and_loss_path(pat, from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).not_to include("uncategorized transactions")
+  end
+
+  it "notes uncategorized transactions on Schedule C" do
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
+    sign_in_as accountant
+    get business_schedule_c_path(pat, year: 2026)
+    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include(business_inbox_path(pat))
+  end
+
+  it "notes uncategorized transactions on the household P&L, linking to the household inbox" do
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
+    sign_in_as accountant
+    get household_profit_and_loss_path(from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include(%(href="#{household_inbox_path}"))
+  end
+
+  it "warns on the household P&L when a mileage rate is missing" do
+    TaxParameters.where(year: 2026).destroy_all
+    sign_in_as accountant
+    get household_profit_and_loss_path(from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).to include("Mileage for 2026 is excluded: no IRS rate set.")
+  end
+
+  it "shows total deductible expenses per business and in total on the household P&L" do
+    cost = create(:category, business: pat, name: "Software", deductible_bps: 5000)
+    create(:transaction, account: account, category: cost, amount_cents: -10_000, posted_on: Date.new(2026, 3, 3))
+    sign_in_as accountant
+    get household_profit_and_loss_path(from: "2026-01-01", to: "2026-12-31")
+    row = response.body[%r{<th>Total deductible expenses</th>.*?</tr>}m]
+    expect(row).to include("$50.00")
+  end
+
   it "shows Schedule C with mileage on line 9" do
     sign_in_as accountant
     get business_schedule_c_path(pat, year: 2026)

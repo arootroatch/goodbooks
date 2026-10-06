@@ -4,6 +4,7 @@
 <% if @mileage.missing_rate_years.any? %>
   <p class="flash-alert">Mileage for <%= @mileage.missing_rate_years.to_sentence %> is excluded: no IRS rate set.</p>
 <% end %>
+<%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: business_inbox_path(@business) %>
 <table>
   <thead><tr><th>Category</th><th class="num">Actual</th><th class="num">Deductible</th></tr></thead>
   <tbody>

@@ -2,6 +2,7 @@ class MembershipsController < ApplicationController
   include BusinessScoped
 
   LAST_OWNER = "A business needs at least one owner."
+  HOUSEHOLD_OWNER = "The household owner's access can only be changed by the household owner."
 
   before_action :require_owner!
   before_action :set_member, only: %i[update destroy]
@@ -11,6 +12,8 @@ class MembershipsController < ApplicationController
   end
 
   def update
+    return redirect_to(business_memberships_path(@business), alert: HOUSEHOLD_OWNER) if protected_member?
+
     role = params.dig(:membership, :role)
     return redirect_to(business_memberships_path(@business), alert: "Choose a valid role.") unless Membership.roles.key?(role)
 
@@ -21,6 +24,8 @@ class MembershipsController < ApplicationController
   end
 
   def destroy
+    return redirect_to(business_memberships_path(@business), alert: HOUSEHOLD_OWNER, status: :see_other) if protected_member?
+
     return redirect_to(business_memberships_path(@business), alert: LAST_OWNER, status: :see_other) if @member.last_owner?
 
     @member.destroy!
@@ -28,6 +33,10 @@ class MembershipsController < ApplicationController
   end
 
   private
+
+  def protected_member?
+    @member.user.household_owner? && @member.user != Current.user
+  end
 
   def set_member
     @member = @business.memberships.find(params[:id])
