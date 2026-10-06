@@ -1,2 +1,9 @@
-<h1>goodbooks</h1>
-<p>Signed in as <%= Current.user.name %>.</p>
+<h1>Businesses</h1>
+<ul class="business-list">
+  <% @businesses.each do |business| %>
+    <li><%= link_to business.name, business_path(business) %></li>
+  <% end %>
+</ul>
+<% if Current.user.household_owner? %>
+  <%= link_to "New business", new_business_path %>
+<% end %>

@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Authentication" do
+  before { create(:household) }
+
   let(:user) { create(:user) }
 
   def log_in_password(email: user.email_address, password: AuthHelpers::PASSWORD)

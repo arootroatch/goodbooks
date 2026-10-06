@@ -1,0 +1,11 @@
+<%= form_with model: business do |f| %>
+  <%= render "shared/errors", record: business %>
+  <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
+  <% if business.new_record? %>
+    <p>
+      <%= f.label :person_id, "Owner (taxpayer)" %>
+      <%= f.collection_select :person_id, Household.instance.people.order(:name), :id, :name %>
+    </p>
+  <% end %>
+  <%= f.submit %>
+<% end %>

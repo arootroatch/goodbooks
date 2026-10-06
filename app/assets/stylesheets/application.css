@@ -1,10 +1,14 @@
-/*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
- */
+:root { --fg: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; --accent: #0b6e4f; --bad: #b00020; }
+body { font-family: system-ui, sans-serif; color: var(--fg); margin: 0; }
+main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.site-header { display: flex; justify-content: space-between; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
+.site-nav { display: flex; gap: 1rem; align-items: center; }
+.site-nav form { display: inline; }
+.business-nav ul { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+.flash-alert, .errors { color: var(--bad); }
+.flash-notice { color: var(--accent); }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.inline-form { display: inline-flex; gap: .25rem; align-items: center; }
+@media print { .no-print, .business-nav, .site-header { display: none; } }

@@ -28,6 +28,7 @@
       <%= link_to "goodbooks", root_path, class: "brand" %>
       <% if authenticated? %>
         <nav class="site-nav">
+          <%= link_to "Businesses", root_path %>
           <%= button_to "Sign out", session_path, method: :delete %>
         </nav>
       <% end %>

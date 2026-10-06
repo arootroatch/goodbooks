@@ -1,0 +1,47 @@
+class BusinessesController < ApplicationController
+  before_action :require_household_owner!, only: %i[new create]
+  before_action :set_business, only: %i[show edit update]
+  before_action :require_owner!, only: %i[edit update]
+
+  def new
+    @business = Household.instance.businesses.new
+  end
+
+  def create
+    @business = Household.instance.businesses.new(params.expect(business: %i[name person_id]))
+    if @business.valid?
+      BusinessProvisioner.call(@business, owner: Current.user)
+      redirect_to business_path(@business), notice: "Business created."
+    else
+      render :new, status: :unprocessable_content
+    end
+  end
+
+  def show
+    @accounts = @business.accounts.active.order(:name)
+  end
+
+  def edit
+  end
+
+  def update
+    if @business.update(params.expect(business: %i[name]))
+      redirect_to business_path(@business), notice: "Business updated."
+    else
+      render :edit, status: :unprocessable_content
+    end
+  end
+
+  private
+
+  def set_business
+    @business = Current.user.accessible_businesses.find(params[:id])
+    @membership = Current.user.membership_for(@business)
+  end
+
+  def require_owner!
+    head :forbidden unless @membership.owner?
+  end
+
+  helper_method def current_membership = @membership
+end

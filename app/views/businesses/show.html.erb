@@ -1,0 +1,12 @@
+<%= business_nav @business %>
+<h1><%= @business.name %></h1>
+<p>Taxpayer: <%= @business.person.name %></p>
+<h2>Accounts</h2>
+<ul>
+  <% @accounts.each do |account| %>
+    <li><%= account.name %> (<%= account.source %>)</li>
+  <% end %>
+</ul>
+<% if current_membership.owner? %>
+  <%= link_to "Edit business", edit_business_path(@business) %>
+<% end %>

@@ -1,0 +1,12 @@
+<h1>Welcome to goodbooks</h1>
+<p>Create your household and your login. You'll set up two-factor authentication next.</p>
+<%= form_with model: @setup, scope: :setup, url: setup_path do |f| %>
+  <%= render "shared/errors", record: @setup %>
+  <p><%= f.label :household_name %> <%= f.text_field :household_name, required: true %></p>
+  <p><%= f.label :name, "Your name" %> <%= f.text_field :name, required: true %></p>
+  <p><%= f.label :email_address %> <%= f.email_field :email_address, required: true %></p>
+  <p><%= f.label :password %> <%= f.password_field :password, required: true, minlength: 12 %></p>
+  <p><%= f.label :password_confirmation %> <%= f.password_field :password_confirmation, required: true %></p>
+  <p><%= f.label :spouse_name, "Spouse's name (optional)" %> <%= f.text_field :spouse_name %></p>
+  <%= f.submit "Create household" %>
+<% end %>
