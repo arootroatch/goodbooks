@@ -38,6 +38,7 @@ class InvoicePayments
     ApplicationRecord.transaction do
       invoice = payment.invoice
       invoice.lock!
+      payment.deposit.lock!
       payment.destroy!
       invoice.sync_payment_status!
       Result.new(payment: payment, error: nil)
