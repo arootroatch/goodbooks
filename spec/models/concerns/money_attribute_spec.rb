@@ -51,4 +51,10 @@ RSpec.describe MoneyAttribute do
     expect(thing).not_to be_valid
     expect(thing.errors[:amount]).to include("can't be blank")
   end
+
+  it "rejects when omitted and not configured for blank" do
+    thing = model_class.new(limit: "")
+    expect(thing).not_to be_valid
+    expect(thing.errors[:amount]).to include("can't be blank")
+  end
 end

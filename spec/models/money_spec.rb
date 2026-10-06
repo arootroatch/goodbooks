@@ -20,7 +20,7 @@ RSpec.describe Money do
       end
     end
 
-    ["", "   ", nil, "abc", "1.234", "--5", "1.2.3", "$", "12a", "(-5)"].each do |input|
+    ["", "   ", nil, "abc", "1.234", "--5", "1.2.3", "$", "12a", "(-5)", "12,50", "1,23", ",5", "5,", "1,,000"].each do |input|
       it "rejects #{input.inspect}" do
         expect { Money.parse(input) }.to raise_error(Money::ParseError)
       end

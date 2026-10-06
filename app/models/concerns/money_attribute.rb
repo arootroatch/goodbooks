@@ -26,7 +26,11 @@ module MoneyAttribute
 
       validate do
         message = instance_variable_defined?(error_ivar) && instance_variable_get(error_ivar)
-        errors.add(name, message) if message
+        if message
+          errors.add(name, message)
+        elsif !allow_blank && self[cents].nil?
+          errors.add(name, :blank)
+        end
       end
     end
   end

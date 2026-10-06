@@ -26,11 +26,17 @@ class Money
       negative = true
       text = text.delete_prefix("-").strip
     end
-    text = text.delete_prefix("$").delete(",")
+    text = text.delete_prefix("$")
     if text.start_with?("-")
       negative = true
       text = text.delete_prefix("-")
     end
+
+    # Validate comma placement before stripping
+    integer_part, fractional_part = text.split(".")
+    raise ParseError, "is not a valid amount" if text.include?(",") && !integer_part.match?(/\A\d{1,3}(,\d{3})+\z/)
+
+    text = text.delete(",")
 
     match = text.match(/\A(\d*)(?:\.(\d{1,2}))?\z/)
     raise ParseError, "is not a valid amount" if match.nil? || (match[1].empty? && match[2].nil?)
