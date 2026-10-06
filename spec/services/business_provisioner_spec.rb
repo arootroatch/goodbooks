@@ -17,7 +17,24 @@ RSpec.describe BusinessProvisioner do
   it "rolls back everything when the business is invalid" do
     business.name = ""
     expect { BusinessProvisioner.call(business, owner: owner) }.to raise_error(ActiveRecord::RecordInvalid)
+    expect(Business.count).to eq(0)
     expect(Account.count).to eq(0)
     expect(Membership.count).to eq(0)
+    expect(Category.count).to eq(0)
+  end
+
+  it "rolls back everything when CategoryTemplate.apply_to raises" do
+    expect(Business.count).to eq(0)
+    expect(Membership.count).to eq(0)
+    expect(Account.count).to eq(0)
+    expect(Category.count).to eq(0)
+
+    allow(CategoryTemplate).to receive(:apply_to).and_raise(StandardError, "Category template error")
+    expect { BusinessProvisioner.call(business, owner: owner) }.to raise_error(StandardError, "Category template error")
+
+    expect(Business.count).to eq(0)
+    expect(Membership.count).to eq(0)
+    expect(Account.count).to eq(0)
+    expect(Category.count).to eq(0)
   end
 end
