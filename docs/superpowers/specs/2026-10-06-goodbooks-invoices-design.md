@@ -37,12 +37,13 @@ Invoice         business, client, number (string), issue_date, due_date, amount_
                 description (nullable), status: draft|sent|paid|void, paid_on (nullable),
                 pdf (Active Storage, optional)
                 unique(business, number); due_date >= issue_date
-InvoicePayment  invoice, transaction (FK `transaction_id`), amount_cents (> 0)
-                unique(invoice, transaction)
+InvoicePayment  invoice, deposit (FK `deposit_id` → transactions), amount_cents (> 0)
+                unique(invoice, deposit)
 ```
 
-- `Invoice#client` must belong to the same business. `InvoicePayment#transaction` must belong to an account in the invoice's business.
-- `Transaction has_many :invoice_payments` (restrict deletion, see §3.4).
+- The association is named `deposit`, never `transaction` (Core rule: that name shadows `ActiveRecord::Base#transaction`).
+- `Invoice#client` must belong to the same business. `InvoicePayment#deposit` must belong to an account in the invoice's business.
+- `Transaction has_many :invoice_payments, foreign_key: :deposit_id` (restrict deletion, see §3.4).
 - **Number default**: a new invoice's number field is prefilled with the business's highest invoice number whose trailing digits parse as an integer, incremented and keeping its prefix and zero-padding (`INV-0042` → `INV-0043`). With no prior invoices: `1001`. Always editable; uniqueness is per business.
 - **Status default**: `sent`. `draft` means "not sent yet".
 - PDF: content type `application/pdf` only, max 10 MB.
@@ -98,7 +99,7 @@ The invoice must have status `sent` and `outstanding_cents > 0`.
 - Clients, invoices, payments: viewers read; editors and owners write (data, not settings).
 - Household invoice list and household aging follow the household-screen rule (viewer on every business).
 - The invoice PDF is served by `InvoicePdfsController#show` after the business access check, streamed with `send_data` (`disposition: :inline`, `type: application/pdf`). Active Storage public routes stay disabled, so no blob URL is ever exposed.
-- Strong params never permit foreign-key keys (`*_id`). `client_id` and `transaction_id` are read from `params` and resolved through the business (`@business.clients.active.find(...)`, `Transaction.for_businesses(@business.id).find(...)`), which yields 404 for other businesses' records and keeps Brakeman clean.
+- Strong params never permit foreign-key keys (`*_id`). `client_id` and `deposit_id` are read from `params` and resolved through the business (`@business.clients.active.find(...)`, `Transaction.for_businesses(@business.id).find(...)`), which yields 404 for other businesses' records and keeps Brakeman clean.
 
 ## 4. Components
 
@@ -110,7 +111,7 @@ The invoice must have status `sent` and `outstanding_cents > 0`.
 
 ### Service
 
-**`InvoicePayments`** with `link(invoice:, transaction:, amount_cents: nil, category: nil)` and `unlink(payment)`. Each runs in one DB transaction that locks the invoice row and the transaction row (`lock!`, same pattern as Core's C1/C6 fixes), then:
+**`InvoicePayments`** with `link(invoice:, deposit:, amount_cents: nil, category: nil)` and `unlink(payment)`. Each runs in one DB transaction that locks the invoice row and the transaction row (`lock!`, same pattern as Core's C1/C6 fixes), then:
 
 - `link`: checks §3.1, computes the amount with `Invoices::Allocation`, categorizes an uncategorized deposit (with `category` if given, else the business's Gross receipts category, see §5.3) as `categorized_by: user`, creates the payment, and calls `invoice.sync_payment_status!`.
 - `unlink`: destroys the payment and calls `invoice.sync_payment_status!`. The deposit keeps its category.
@@ -152,7 +153,7 @@ List (active by default, "Show archived" toggle like accounts), new/edit form: n
 
 - `InboxesController` and `HouseholdInboxesController` load open invoices with `outstanding_cents > 0` for the businesses on screen in one query and index them by `[business_id, outstanding_cents]`.
 - A positive inbox row whose amount equals a key shows, below the normal controls: `Matches INV-1042 · Acme · due Sep 30  [Mark paid]`. Up to 3 matching invoices are listed (oldest due first); rows with no match render exactly as today.
-- **Mark paid** posts to `invoice_payments#create` with `transaction_id` and `from_inbox=1`. It categorizes into the business's Gross receipts category: the single active income category with `schedule_c_line == "1"`. If there are several, the hint renders a select of them next to the button; if there are none, the hint is replaced by a link to the invoice's Record payment page. On success the response is the same `turbo_stream.remove(transaction)` the inbox uses for categorization (HTML fallback: redirect back).
+- **Mark paid** posts to `invoice_payments#create` with `deposit_id` and `from_inbox=1`. It categorizes into the business's Gross receipts category: the single active income category with `schedule_c_line == "1"`. If there are several, the hint renders a select of them next to the button; if there are none, the hint is replaced by a link to the invoice's Record payment page. On success the response is the same `turbo_stream.remove(transaction)` the inbox uses for categorization (HTML fallback: redirect back).
 
 ### 5.4 Aging report
 
@@ -175,9 +176,9 @@ Per business and household, as of today: the four buckets with totals and the in
 TDD throughout. Test output must stay clean.
 
 - **Pure unit specs** (no DB): `Invoices::Allocation` (exact match, partial, deposit already partly allocated, request above either limit, zero/negative request), `Invoices::NumberSuggester` (prefixed, zero-padded, numeric only, non-numeric existing numbers ignored, empty), `Reports::InvoiceAging` (boundaries at 0, 1, 30, 31, 60, 61 days; household grouping; totals).
-- **Service specs** for `InvoicePayments`: link marks paid with correct `paid_on`; link categorizes an uncategorized deposit as user; rejects draft, void, paid, negative deposit, transfer, excluded, expense-category deposit, other-business deposit, over-allocation; unlink reverts paid to sent; a concurrency spec showing two links racing for the same deposit cannot over-allocate it.
+- **Service specs** for `InvoicePayments`: link marks paid with correct `paid_on`; link categorizes an uncategorized deposit as user; rejects draft, void, paid, negative deposit, transfer, excluded, expense-category deposit, other-business deposit, over-allocation; unlink reverts paid to sent; a stale-read spec: with the deposit allocated by another payment after the caller loaded it, `link` re-reads under the lock and rejects over-allocation. (SQLite serializes writers through Rails 8's IMMEDIATE transactions, so the lock's job is the fresh re-read; a threaded race spec is not used.)
 - **Model specs**: §3.4 guards (transaction destroy/recategorize/transfer/exclude blocked when linked; invoice void/delete/amount-reduction blocked), uniqueness of number per business, client and payment same-business validations, `RuleApplier` skips linked rows.
-- **Request specs** for every new controller with the standard matrix: non-member → 404, viewer cannot write, editor can write, owner can do everything. Plus: household invoice and aging pages require access to every business; the PDF endpoint enforces business access; a `client_id`/`transaction_id` from another business → 404; CSV export neutralizes formula prefixes.
+- **Request specs** for every new controller with the standard matrix: non-member → 404, viewer cannot write, editor can write, owner can do everything. Plus: household invoice and aging pages require access to every business; the PDF endpoint enforces business access; a `client_id`/`deposit_id` from another business → 404; CSV export neutralizes formula prefixes.
 - **System specs**: Record payment (open invoice → link exact-match deposit → invoice shows Paid); inbox hint (`js: true`, headless Chrome, following the existing inbox spec): matching row shows the hint, Mark paid removes the row without a page reload, the invoice shows Paid.
 - **Demo seed**: 3–4 clients per business; about 15 invoices covering paid (linked), partial, overdue in each aging bucket, current, one draft, one void; at least one uncategorized inbox deposit matching an open invoice exactly.
 
