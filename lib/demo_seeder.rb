@@ -18,6 +18,8 @@ class DemoSeeder
     raise "A household already exists. Run bin/rails demo:reset to start over." if Household.exists?
 
     ApplicationRecord.transaction { build }
+    ensure_tax_parameters
+    ensure_inbox_non_empty
     print_summary
   end
 
@@ -89,6 +91,36 @@ class DemoSeeder
                                          to_location: "#{client.titleize} office", miles: "18.4", round_trip: true)
       end
     end
+  end
+
+  def ensure_tax_parameters
+    years_with_activity = years_covered_by_transactions_and_mileage
+    default_mileage_rate = 725
+
+    years_with_activity.each do |year|
+      next if TaxParameters.exists?(year: year)
+
+      latest_params = TaxParameters.where("year < ?", year).order(year: :desc).first
+      mileage_rate = latest_params&.standard_mileage_rate_tenth_cents || default_mileage_rate
+
+      TaxParameters.create!(year: year, standard_mileage_rate_tenth_cents: mileage_rate)
+      @out.puts "Demo: copied #{mileage_rate} mileage rate to #{year}"
+    end
+  end
+
+  def years_covered_by_transactions_and_mileage
+    transaction_years = Transaction.pluck(:posted_on).map(&:year).uniq
+    mileage_years = MileageEntry.pluck(:driven_on).map(&:year).uniq
+    years = (transaction_years + mileage_years + [@today.year]).uniq.sort
+    years
+  end
+
+  def ensure_inbox_non_empty
+    inbox_transactions = Transaction.inbox
+    return if inbox_transactions.count > 0
+
+    recent_transactions = Transaction.order(posted_on: :desc, id: :desc).limit(3)
+    recent_transactions.update_all(category_id: nil, excluded: false, transfer: false)
   end
 
   def print_summary
