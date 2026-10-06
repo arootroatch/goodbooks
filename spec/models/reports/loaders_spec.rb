@@ -13,9 +13,10 @@ RSpec.describe "Report loaders" do
       create(:transaction, account: account, category: office, amount_cents: 500, posted_on: Date.new(2026, 6, 1))
       create(:transaction, account: account, category: office, amount_cents: -9_999, posted_on: Date.new(2027, 1, 1))
       create(:transaction, account: account, category: office, amount_cents: -9_999, excluded: true)
-      create(:transaction, account: account, amount_cents: -9_999, transfer: true)
+      create(:transaction, account: account, category: office, amount_cents: -9_999).update_columns(transfer: true)
       create(:transaction, account: account, amount_cents: -9_999)
-      create(:transaction, amount_cents: -9_999)
+      other = create(:transaction, amount_cents: -9_999)
+      other.update!(category: create(:category, business: other.account.business))
 
       totals = Reports::CategoryTotals.load(business_ids: [business.id], range: year)
       expect(totals.map { [_1.business_id, _1.name, _1.kind, _1.sum_cents] }).to eq([[business.id, "Office", "expense", -2_500]])

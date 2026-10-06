@@ -29,4 +29,17 @@ RSpec.describe Reports::ScheduleCSummary do
     only_mileage = described_class.new(category_totals: [], mileage_deduction_cents: 500)
     expect(only_mileage.lines).to eq("9" => 500)
   end
+
+  it "shows returns and allowances on line 2 as a positive amount subtracted from gross income" do
+    with_refund = described_class.new(category_totals: [
+      total("Sales", "income", 500_000, "1"),
+      total("Refunds given", "income", -5_000, "2"),
+      total("Software", "expense", -10_000, "27a")
+    ], mileage_deduction_cents: 0)
+
+    expect(with_refund.lines["2"]).to eq(5_000)
+    expect(with_refund.gross_income_cents).to eq(495_000)
+    expect(with_refund.total_expenses_cents).to eq(10_000)
+    expect(with_refund.net_profit_cents).to eq(485_000)
+  end
 end
