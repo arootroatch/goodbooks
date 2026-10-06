@@ -36,7 +36,13 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include ActiveSupport::Testing::TimeHelpers
-  config.before(:each, type: :system) { driven_by :rack_test }
+  config.before(:each, type: :system) do |example|
+    if example.metadata[:js]
+      driven_by :selenium, using: :headless_chrome, screen_size: [1400, 900]
+    else
+      driven_by :rack_test
+    end
+  end
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')

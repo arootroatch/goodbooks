@@ -1,0 +1,20 @@
+<%= form_with model: [@business, rule] do |f| %>
+  <%= render "shared/errors", record: rule %>
+  <p>
+    When
+    <%= f.select :field, Rule::FIELDS.map { [_1.humanize, _1] } %>
+    <%= f.select :operator, Rule::OPERATORS.map { [_1.humanize(capitalize: false), _1] } %>
+    <%= f.text_field :value, required: true %>
+  </p>
+  <p>
+    and amount between <%= f.text_field :amount_min, size: 8, placeholder: "any" %>
+    and <%= f.text_field :amount_max, size: 8, placeholder: "any" %> (absolute value)
+  </p>
+  <p>
+    then <%= f.select :outcome, [["categorize as", "categorize"], ["mark as transfer", "transfer"]] %>
+    <%= f.grouped_collection_select :category_id,
+          [["Income", @business.categories.active.income.order(:name)], ["Expense", @business.categories.active.expense.order(:name)]],
+          :last, :first, :id, :name, include_blank: "—" %>
+  </p>
+  <%= f.submit %>
+<% end %>

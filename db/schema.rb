@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_040411) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_041036) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -76,6 +76,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_040411) do
     t.index ["user_id"], name: "index_people_on_user_id", unique: true
   end
 
+  create_table "rules", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.integer "position", null: false
+    t.string "field", null: false
+    t.string "operator", null: false
+    t.string "value", null: false
+    t.integer "amount_min_cents"
+    t.integer "amount_max_cents"
+    t.string "outcome", null: false
+    t.integer "category_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_rules_on_business_id"
+    t.index ["category_id"], name: "index_rules_on_category_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -128,7 +144,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_040411) do
   add_foreign_key "memberships", "users"
   add_foreign_key "people", "households"
   add_foreign_key "people", "users"
+  add_foreign_key "rules", "businesses"
+  add_foreign_key "rules", "categories"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
+  add_foreign_key "transactions", "rules", on_delete: :nullify
 end

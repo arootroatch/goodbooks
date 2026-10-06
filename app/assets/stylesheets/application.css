@@ -12,3 +12,5 @@ th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(-
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .inline-form { display: inline-flex; gap: .25rem; align-items: center; }
 @media print { .no-print, .business-nav, .site-header { display: none; } }
+.drag-handle { cursor: grab; user-select: none; padding: 0 .5rem; font-size: 1.2rem; }
+.sortable-ghost { opacity: .4; }

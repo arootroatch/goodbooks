@@ -1,0 +1,22 @@
+<%= business_nav @business %>
+<h1>Rules</h1>
+<p>Rules run top to bottom on new imported transactions. The first match wins.<%= " Drag ≡ to reorder." if current_membership.can_edit? %></p>
+<table>
+  <thead><tr><th></th><th>Rule</th><th>Amount</th><th></th></tr></thead>
+  <tbody <%= tag.attributes(data: { controller: "sortable" }) if current_membership.can_edit? %>>
+    <% @rules.each do |rule| %>
+      <tr id="<%= dom_id(rule) %>" data-sortable-url="<%= move_business_rule_path(@business, rule) %>">
+        <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
+        <td><%= rule.description %></td>
+        <td><%= [rule.amount_min_cents && "≥ #{money(rule.amount_min_cents)}", rule.amount_max_cents && "≤ #{money(rule.amount_max_cents)}"].compact.join(" ") %></td>
+        <td>
+          <% if current_membership.can_edit? %>
+            <%= link_to "Edit", edit_business_rule_path(@business, rule) %>
+            <%= button_to "Delete", business_rule_path(@business, rule), method: :delete, form_class: "inline-form" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "New rule", new_business_rule_path(@business) if current_membership.can_edit? %>

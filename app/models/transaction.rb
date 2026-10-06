@@ -8,6 +8,7 @@ class Transaction < ApplicationRecord
 
   belongs_to :account
   belongs_to :category, optional: true
+  belongs_to :rule, optional: true
 
   scope :inbox, -> { where(category_id: nil, transfer: false, excluded: false) }
   scope :countable, -> { where(transfer: false, excluded: false) }

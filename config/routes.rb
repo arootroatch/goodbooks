@@ -19,6 +19,11 @@ Rails.application.routes.draw do
     resources :accounts, only: %i[index new create edit update]
     resources :categories, only: %i[index new create edit update]
     resources :transactions, except: :show
+    resources :rules, except: :show do
+      patch :move, on: :member
+      post :apply, on: :collection
+    end
+    resource :inbox, only: :show
   end
 
   root "dashboards#show"

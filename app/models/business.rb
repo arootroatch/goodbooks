@@ -4,6 +4,7 @@ class Business < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :accounts, dependent: :destroy
+  has_many :rules, dependent: :destroy
   has_many :categories, dependent: :destroy
   has_many :transactions, through: :accounts
 

@@ -15,6 +15,7 @@ module SystemAuthHelpers
     click_on "Sign in"
     fill_in "code", with: user.totp.now
     click_on "Verify"
+    expect(page).to have_content("Sign out")
   end
 end
 
