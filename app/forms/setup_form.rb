@@ -15,6 +15,8 @@ class SetupForm
     return unless valid?
 
     ApplicationRecord.transaction do
+      return already_completed if Household.exists?
+
       household = Household.create!(name: household_name)
       user = User.create!(name:, email_address:, password:, password_confirmation:, household_owner: true)
       household.people.create!(name:, user:)
@@ -23,6 +25,15 @@ class SetupForm
     end
   rescue ActiveRecord::RecordInvalid => e
     e.record.errors.each { |error| errors.add(error.attribute, error.message) }
+    nil
+  rescue ActiveRecord::RecordNotUnique
+    already_completed
+  end
+
+  private
+
+  def already_completed
+    errors.add(:base, "Setup has already been completed.")
     nil
   end
 end

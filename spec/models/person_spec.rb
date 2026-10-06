@@ -18,7 +18,8 @@ RSpec.describe Person do
 
   it "enforces two-per-household limit on update" do
     household1 = create(:household)
-    household2 = create(:household)
+    household2 = Household.new(name: "Other", singleton: false) # simulates legacy data; the singleton guard forbids a second household
+    household2.save!
     create(:person, household: household1)
     create(:person, household: household1)
     person_from_other = create(:person, household: household2)

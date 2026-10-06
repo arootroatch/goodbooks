@@ -32,4 +32,20 @@ RSpec.describe SetupForm do
     expect(form.save).to be_nil
     expect(form.errors[:household_name]).to be_present
   end
+
+  it "refuses a second setup" do
+    SetupForm.new(attrs).save
+    form = SetupForm.new(attrs.merge(email_address: "other@example.com"))
+    expect(form.save).to be_nil
+    expect(form.errors[:base]).to include("Setup has already been completed.")
+    expect(Household.count).to eq(1)
+    expect(User.where(household_owner: true).count).to eq(1)
+  end
+
+  it "refuses when a household appears after the form was built" do
+    form = SetupForm.new(attrs)
+    Household.create!(name: "x")
+    expect(form.save).to be_nil
+    expect(Household.count).to eq(1)
+  end
 end

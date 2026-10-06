@@ -21,7 +21,8 @@ RSpec.describe "User business access" do
   end
 
   it "requires the business person to be in the same household" do
-    other_household = Household.create!(name: "Other")
+    # simulates legacy data; the singleton guard forbids a second household
+    other_household = Household.create!(name: "Other", singleton: false)
     stranger = Person.create!(household: other_household, name: "Stranger")
     expect(build(:business, household: mine.household, person: stranger)).not_to be_valid
   end
@@ -38,7 +39,7 @@ RSpec.describe "User business access" do
     end
 
     it "denies view access to a non-owner linked to a person" do
-      household = create(:household)
+      household = Household.instance
       user = create(:user, household_owner: false)
       create(:person, user: user, household: household)
       expect(user.household_owner?).to be(false)
