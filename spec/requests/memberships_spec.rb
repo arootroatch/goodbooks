@@ -47,6 +47,22 @@ RSpec.describe "Memberships" do
     expect(flash[:alert]).to eq("A business needs at least one owner.")
   end
 
+  it "changes roles under a business lock" do
+    membership = user_with_role("viewer", business).membership_for(business)
+    sign_in_as owner
+    expect_any_instance_of(Business).to receive(:with_lock).and_call_original
+    patch business_membership_path(business, membership), params: { membership: { role: "editor" } }
+    expect(membership.reload).to be_editor
+  end
+
+  it "removes members under a business lock" do
+    membership = user_with_role("viewer", business).membership_for(business)
+    sign_in_as owner
+    expect_any_instance_of(Business).to receive(:with_lock).and_call_original
+    delete business_membership_path(business, membership)
+    expect(Membership.exists?(membership.id)).to be(false)
+  end
+
   describe "household owner's membership" do
     let!(:household_owner) { create(:user, :household_owner).tap { |u| create(:membership, user: u, business: business, role: "owner") } }
     let(:membership) { household_owner.membership_for(business) }

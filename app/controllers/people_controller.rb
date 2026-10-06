@@ -11,8 +11,9 @@ class PeopleController < ApplicationController
   end
 
   def create
-    @person = Household.instance.people.new(person_params)
-    if @person.save
+    household = Household.instance
+    @person = household.people.new(person_params)
+    if household.with_lock { @person.save }
       redirect_to people_path, notice: "Person added."
     else
       render :new, status: :unprocessable_content

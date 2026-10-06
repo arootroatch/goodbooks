@@ -17,18 +17,24 @@ class MembershipsController < ApplicationController
     role = params.dig(:membership, :role)
     return redirect_to(business_memberships_path(@business), alert: "Choose a valid role.") unless Membership.roles.key?(role)
 
-    return redirect_to(business_memberships_path(@business), alert: LAST_OWNER) if @member.last_owner? && role != "owner"
+    @business.with_lock do
+      @member.reload
+      return redirect_to(business_memberships_path(@business), alert: LAST_OWNER) if @member.last_owner? && role != "owner"
 
-    @member.update!(role: role)
+      @member.update!(role: role)
+    end
     redirect_to business_memberships_path(@business), notice: "Role updated."
   end
 
   def destroy
     return redirect_to(business_memberships_path(@business), alert: HOUSEHOLD_OWNER, status: :see_other) if protected_member?
 
-    return redirect_to(business_memberships_path(@business), alert: LAST_OWNER, status: :see_other) if @member.last_owner?
+    @business.with_lock do
+      @member.reload
+      return redirect_to(business_memberships_path(@business), alert: LAST_OWNER, status: :see_other) if @member.last_owner?
 
-    @member.destroy!
+      @member.destroy!
+    end
     redirect_to business_memberships_path(@business), notice: "Member removed.", status: :see_other
   end
 

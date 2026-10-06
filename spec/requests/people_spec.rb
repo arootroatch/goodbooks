@@ -19,6 +19,14 @@ RSpec.describe "People" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
+  it "adds a person under a household lock" do
+    sign_in_as household_owner
+    expect_any_instance_of(Household).to receive(:with_lock).and_call_original
+    post people_path, params: { person: { name: "Second" } }
+    expect(response).to redirect_to(people_path)
+    expect(household.people.count).to eq(2)
+  end
+
   it "rejects a user_id that does not exist" do
     sign_in_as household_owner
     patch person_path(spouse), params: { person: { name: "Jordan", user_id: 0 } }
