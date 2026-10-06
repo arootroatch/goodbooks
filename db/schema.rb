@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_042532) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_043047) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -107,6 +107,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_042532) do
     t.index ["user_id"], name: "index_memberships_on_user_id"
   end
 
+  create_table "mileage_entries", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.date "driven_on", null: false
+    t.string "purpose", null: false
+    t.string "from_location"
+    t.string "to_location"
+    t.integer "miles_tenths", null: false
+    t.boolean "round_trip", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_mileage_entries_on_business_id"
+    t.index ["driven_on"], name: "index_mileage_entries_on_driven_on"
+  end
+
   create_table "people", force: :cascade do |t|
     t.integer "household_id", null: false
     t.integer "user_id"
@@ -140,6 +154,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_042532) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "tax_parameters", force: :cascade do |t|
+    t.integer "year", null: false
+    t.integer "standard_mileage_rate_tenth_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["year"], name: "index_tax_parameters_on_year", unique: true
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -186,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_042532) do
   add_foreign_key "csv_imports", "accounts"
   add_foreign_key "memberships", "businesses"
   add_foreign_key "memberships", "users"
+  add_foreign_key "mileage_entries", "businesses"
   add_foreign_key "people", "households"
   add_foreign_key "people", "users"
   add_foreign_key "rules", "businesses"

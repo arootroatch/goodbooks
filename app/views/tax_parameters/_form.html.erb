@@ -1,0 +1,6 @@
+<%= form_with model: tax_parameters do |f| %>
+  <%= render "shared/errors", record: tax_parameters %>
+  <p><%= f.label :year %> <%= f.number_field :year, disabled: tax_parameters.persisted? %></p>
+  <p><%= f.label :mileage_rate_cents, "IRS standard mileage rate (cents per mile)" %> <%= f.text_field :mileage_rate_cents, size: 6 %></p>
+  <%= f.submit %>
+<% end %>

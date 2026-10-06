@@ -6,6 +6,7 @@ class Business < ApplicationRecord
   has_many :accounts, dependent: :destroy
   has_many :rules, dependent: :destroy
   has_many :categories, dependent: :destroy
+  has_many :mileage_entries, dependent: :destroy
   has_many :transactions, through: :accounts
 
   scope :active, -> { where(archived_at: nil) }

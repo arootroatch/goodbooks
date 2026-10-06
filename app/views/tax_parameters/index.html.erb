@@ -1,0 +1,10 @@
+<h1>Tax parameters</h1>
+<table>
+  <thead><tr><th>Year</th><th class="num">Mileage rate</th><th></th></tr></thead>
+  <tbody>
+    <% @all.each do |tp| %>
+      <tr><td><%= tp.year %></td><td class="num"><%= tp.mileage_rate_cents %>¢</td><td><%= link_to "Edit", edit_tax_parameter_path(tp) %></td></tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "Add a year", new_tax_parameter_path %>

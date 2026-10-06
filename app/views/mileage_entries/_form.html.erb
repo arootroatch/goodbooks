@@ -1,0 +1,13 @@
+<%= form_with model: [@business, entry] do |f| %>
+  <%= render "shared/errors", record: entry %>
+  <p><%= f.label :driven_on, "Date" %> <%= f.date_field :driven_on, required: true %></p>
+  <p><%= f.label :purpose %> <%= f.text_field :purpose, required: true %></p>
+  <p><%= f.label :from_location, "From" %> <%= f.text_field :from_location %></p>
+  <p><%= f.label :to_location, "To" %> <%= f.text_field :to_location %></p>
+  <p><%= f.label :miles, "Miles (one way)" %> <%= f.text_field :miles, size: 8, required: true %></p>
+  <p><%= f.label :round_trip %> <%= f.check_box :round_trip %></p>
+  <%= f.submit %>
+<% end %>
+<% if entry.persisted? %>
+  <%= button_to "Delete", business_mileage_entry_path(@business, entry), method: :delete %>
+<% end %>

@@ -30,8 +30,11 @@ Rails.application.routes.draw do
       patch :move, on: :member
       post :apply, on: :collection
     end
+    resources :mileage_entries, except: :show
     resource :inbox, only: :show
   end
+
+  resources :tax_parameters, only: %i[index new create edit update]
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 
