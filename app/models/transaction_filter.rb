@@ -6,7 +6,7 @@ class TransactionFilter
   def initialize(scope, params)
     @scope = scope
     @params = params.to_h.symbolize_keys
-    @page = [@params[:page].to_i, 1].max
+    @page = [[@params[:page].to_i, 1].max, 10_000].min
   end
 
   def results

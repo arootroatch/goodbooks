@@ -32,4 +32,16 @@ RSpec.describe TransactionFilter do
     expect(filter.next_page?).to be(true)
     expect(TransactionFilter.new(scope, page: "2").next_page?).to be(false)
   end
+
+  it "clamps page to 1..10000" do
+    filter = TransactionFilter.new(scope, page: "99999999999999999999")
+    expect(filter.page).to eq(10_000)
+    expect(filter.results).to be_empty
+    expect { filter.results }.not_to raise_error
+  end
+
+  it "treats non-numeric page as 1" do
+    filter = TransactionFilter.new(scope, page: "abc")
+    expect(filter.page).to eq(1)
+  end
 end
