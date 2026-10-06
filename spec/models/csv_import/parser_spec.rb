@@ -56,6 +56,41 @@ RSpec.describe CsvImport::Parser do
     expect(rows.map(&:amount_cents)).to eq([-1200, 50000])
   end
 
+  context "with debit and credit columns" do
+    let(:split) { CsvImport::Mapping.new(date_column: "Date", payee_column: "Payee", debit_column: "Debit", credit_column: "Credit") }
+
+    def split_row(debit, credit)
+      described_class.new(split, account_id: 1).parse("Date,Payee,Debit,Credit\n01/05/2026,Store,#{debit},#{credit}\n").first
+    end
+
+    it "reads the credit when the debit is 0.00" do
+      expect(split_row("0.00", "500.00").amount_cents).to eq(50000)
+    end
+
+    it "reads the credit when the debit is 0" do
+      expect(split_row("0", "500").amount_cents).to eq(50000)
+    end
+
+    it "reads the debit when the credit is 0.00" do
+      expect(split_row("12.00", "0.00").amount_cents).to eq(-1200)
+    end
+
+    it "flags rows with both a debit and a credit as ambiguous" do
+      row = split_row("5.00", "7.00")
+      expect(row.error).to eq("Amount is ambiguous (both debit and credit)")
+    end
+
+    it "flags rows with neither as blank" do
+      expect(split_row("0.00", "0.00").error).to eq("Amount can't be blank")
+      expect(split_row("", "").error).to eq("Amount can't be blank")
+    end
+
+    it "applies invert_sign afterwards" do
+      split.invert_sign = true
+      expect(split_row("12.00", "").amount_cents).to eq(1200)
+    end
+  end
+
   it "inverts signs for card statements" do
     mapping.invert_sign = true
     expect(parse("Date,Description,Memo,Amount\n01/05/2026,Store,,12.00\n").first.amount_cents).to eq(-1200)

@@ -93,14 +93,26 @@ class CsvImport::Parser
       if @mapping.amount_column.present?
         Money.parse(cell(cells, @mapping.amount_column)).cents
       else
-        debit = cell(cells, @mapping.debit_column)
-        credit = cell(cells, @mapping.credit_column)
-        if debit.present? then -Money.parse(debit).cents.abs
-        elsif credit.present? then Money.parse(credit).cents.abs
-        else raise Money::ParseError, "can't be blank"
-        end
+        split_amount(cells)
       end
     @mapping.invert_sign ? -cents : cents
+  end
+
+  def split_amount(cells)
+    debit = side_cents(cell(cells, @mapping.debit_column))
+    credit = side_cents(cell(cells, @mapping.credit_column))
+    raise Money::ParseError, "is ambiguous (both debit and credit)" if debit && credit
+    raise Money::ParseError, "can't be blank" unless debit || credit
+
+    debit ? -debit.abs : credit.abs
+  end
+
+  # A blank or zero cell counts as absent.
+  def side_cents(value)
+    return nil if value.blank?
+
+    cents = Money.parse(value).cents
+    cents.zero? ? nil : cents
   end
 
   def external_id(key, occurrence)
