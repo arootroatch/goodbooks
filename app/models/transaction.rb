@@ -2,6 +2,8 @@ class Transaction < ApplicationRecord
   include MoneyAttribute
 
   CATEGORIZED_BY = %w[rule user].freeze
+  UNALLOCATED_SQL = "transactions.amount_cents - COALESCE((SELECT SUM(invoice_payments.amount_cents) " \
+                    "FROM invoice_payments WHERE invoice_payments.deposit_id = transactions.id), 0)".freeze
 
   money_attribute :amount
   attr_accessor :direction
@@ -14,11 +16,19 @@ class Transaction < ApplicationRecord
   scope :inbox, -> { where(category_id: nil, transfer: false, excluded: false) }
   scope :countable, -> { where(transfer: false, excluded: false) }
   scope :for_businesses, ->(ids) { joins(:account).where(accounts: { business_id: ids }) }
+  scope :linkable_deposits, -> {
+    countable.where("transactions.amount_cents > 0")
+      .where("transactions.category_id IS NULL OR transactions.category_id IN (SELECT id FROM categories WHERE kind = 'income')")
+      .where("#{UNALLOCATED_SQL} > 0")
+  }
+  scope :with_unallocated, ->(cents) { where("#{UNALLOCATED_SQL} = ?", cents) }
 
   validates :posted_on, :payee, presence: true
   validates :amount_cents, presence: true, numericality: { only_integer: true }, if: -> { errors[:amount].empty? }
   validates :categorized_by, inclusion: { in: CATEGORIZED_BY }, allow_nil: true
   validate :category_in_business
+  validate :linked_deposit_stays_payable, on: :update
+  after_update :resync_linked_invoices, if: :saved_change_to_posted_on?
 
   before_validation :apply_direction
   before_validation :clear_category_for_transfer
@@ -31,6 +41,14 @@ class Transaction < ApplicationRecord
 
   def rule_attributes = { payee: payee, memo: memo, amount_cents: amount_cents }
 
+  def allocated_cents = invoice_payments.loaded? ? invoice_payments.sum(&:amount_cents) : invoice_payments.sum(:amount_cents)
+  def unallocated_cents = amount_cents - allocated_cents
+
+  def linked_invoice_message
+    numbers = invoice_payments.includes(:invoice).map { _1.invoice.number }
+    "Linked to #{numbers.join(", ")} — unlink the payment first."
+  end
+
   private
 
   def apply_direction
@@ -41,6 +59,19 @@ class Transaction < ApplicationRecord
 
   def clear_category_for_transfer
     self.category = nil if transfer?
+  end
+
+  def linked_deposit_stays_payable
+    changed = will_save_change_to_category_id? || will_save_change_to_transfer? ||
+              will_save_change_to_excluded? || will_save_change_to_amount_cents?
+    return unless changed && invoice_payments.exists?
+
+    payable = !transfer? && !excluded? && category&.income? && amount_cents.to_i >= allocated_cents
+    errors.add(:base, linked_invoice_message) unless payable
+  end
+
+  def resync_linked_invoices
+    invoice_payments.includes(:invoice).each { _1.invoice.sync_payment_status! }
   end
 
   def category_in_business
