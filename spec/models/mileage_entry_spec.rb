@@ -17,4 +17,8 @@ RSpec.describe MileageEntry do
     expect(build(:mileage_entry, purpose: "")).not_to be_valid
     expect(build(:mileage_entry, miles_tenths: 0)).not_to be_valid
   end
+
+  it "is invalid, not an error, for miles too large to store" do
+    expect(build(:mileage_entry, miles: "99999999999999999999")).not_to be_valid
+  end
 end

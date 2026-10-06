@@ -21,4 +21,37 @@ RSpec.describe "Tax parameters" do
     get tax_parameters_path
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "forbids business owners from creating" do
+    sign_in_as user_with_role("owner", business)
+    expect {
+      post tax_parameters_path, params: { tax_parameter: { year: "2027", mileage_rate_cents: "73" } }
+    }.not_to change(TaxParameters, :count)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "forbids business owners from updating" do
+    tp = create(:tax_parameters, year: 2026, standard_mileage_rate_tenth_cents: 725)
+    sign_in_as user_with_role("owner", business)
+    patch tax_parameter_path(tp), params: { tax_parameter: { mileage_rate_cents: "70" } }
+    expect(response).to have_http_status(:forbidden)
+    expect(tp.reload.standard_mileage_rate_tenth_cents).to eq(725)
+  end
+
+  it "updates the rate but never the year" do
+    tp = create(:tax_parameters, year: 2026, standard_mileage_rate_tenth_cents: 725)
+    sign_in_as create(:user, :household_owner)
+    patch tax_parameter_path(tp), params: { tax_parameter: { year: "2030", mileage_rate_cents: "70" } }
+    tp.reload
+    expect(tp.standard_mileage_rate_tenth_cents).to eq(700)
+    expect(tp.year).to eq(2026)
+  end
+
+  it "rejects an out-of-range rate" do
+    sign_in_as create(:user, :household_owner)
+    expect {
+      post tax_parameters_path, params: { tax_parameter: { year: "2027", mileage_rate_cents: "99999999999999999999" } }
+    }.not_to change(TaxParameters, :count)
+    expect(response).to have_http_status(:unprocessable_content)
+  end
 end

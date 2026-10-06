@@ -2,7 +2,7 @@ class TaxParameters < ApplicationRecord
   self.table_name = "tax_parameters"
 
   validates :year, presence: true, uniqueness: true, numericality: { only_integer: true, in: 2000..2100 }
-  validates :standard_mileage_rate_tenth_cents, numericality: { only_integer: true, greater_than: 0 }
+  validates :standard_mileage_rate_tenth_cents, numericality: { only_integer: true, greater_than: 0, less_than: 2_147_483_647 }
   validate { errors.add(:mileage_rate_cents, @mileage_rate_error) if @mileage_rate_error }
 
   def self.for_year(year) = find_by(year: year)

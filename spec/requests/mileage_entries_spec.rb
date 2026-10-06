@@ -42,4 +42,72 @@ RSpec.describe "Mileage" do
     delete business_mileage_entry_path(business, entry)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "rejects miles too large to store" do
+    sign_in_as user_with_role("editor", business)
+    expect {
+      post business_mileage_entries_path(business), params: { mileage_entry: { driven_on: "2026-03-02", purpose: "X", miles: "99999999999999999999" } }
+    }.not_to change(MileageEntry, :count)
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+
+  it "does not create a row for bad miles" do
+    sign_in_as user_with_role("editor", business)
+    expect {
+      post business_mileage_entries_path(business), params: { mileage_entry: { driven_on: "2026-03-02", purpose: "X", miles: "far" } }
+    }.not_to change(MileageEntry, :count)
+  end
+
+  context "when editing existing entries" do
+    let!(:entry) { create(:mileage_entry, business: business) }
+    let(:editor) { user_with_role("editor", business) }
+
+    before { sign_in_as editor }
+
+    it "shows the edit form" do
+      get edit_business_mileage_entry_path(business, entry)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "updates the entry" do
+      patch business_mileage_entry_path(business, entry), params: { mileage_entry: { purpose: "Bank run", miles: "7.5" } }
+      expect(response).to redirect_to(business_mileage_entries_path(business, year: 2026))
+      entry.reload
+      expect(entry.purpose).to eq("Bank run")
+      expect(entry.miles_tenths).to eq(75)
+    end
+
+    it "deletes the entry" do
+      delete business_mileage_entry_path(business, entry)
+      expect(MileageEntry.exists?(entry.id)).to be(false)
+    end
+
+    it "404s on another business's entry" do
+      other = create(:mileage_entry, purpose: "Theirs")
+      get edit_business_mileage_entry_path(business, other)
+      expect(response).to have_http_status(:not_found)
+      patch business_mileage_entry_path(business, other), params: { mileage_entry: { purpose: "Hacked" } }
+      expect(response).to have_http_status(:not_found)
+      delete business_mileage_entry_path(business, other)
+      expect(response).to have_http_status(:not_found)
+      expect(other.reload.purpose).to eq("Theirs")
+    end
+  end
+
+  context "when the year has no rate" do
+    it "links a household owner to set it" do
+      sign_in_as user_with_role("viewer", business, household_owner: true)
+      get business_mileage_entries_path(business, year: 2026)
+      expect(response.body).to include(new_tax_parameter_path(year: 2026))
+      expect(response.body).not_to include("Deduction at")
+    end
+
+    it "tells a non-owner to ask" do
+      sign_in_as user_with_role("viewer", business)
+      get business_mileage_entries_path(business, year: 2026)
+      expect(response.body).to include("Ask the household owner")
+      expect(response.body).not_to include(new_tax_parameter_path(year: 2026))
+      expect(response.body).not_to include("Deduction at")
+    end
+  end
 end
