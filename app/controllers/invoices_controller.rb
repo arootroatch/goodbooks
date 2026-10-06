@@ -9,7 +9,12 @@ class InvoicesController < ApplicationController
 
   def index
     @filter = InvoiceFilter.new(@business.invoices, scalar_params(:status, :client_id, :from, :to, :page))
-    @invoices = @filter.results
+    respond_to do |format|
+      format.html { @invoices = @filter.results }
+      format.csv do
+        send_data Reports::InvoiceCsv.generate(@filter.all), filename: "#{@business.name.parameterize}-invoices-#{Date.current}.csv", type: "text/csv"
+      end
+    end
   end
 
   def show

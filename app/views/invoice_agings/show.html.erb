@@ -1,0 +1,23 @@
+<%= business_nav @business if @business %>
+<h1><%= @title %></h1>
+<p>As of <%= Date.current %> · total outstanding <%= money(@report.total_cents) %> · <%= link_to "Download CSV", @csv_path %></p>
+<% @report.buckets.each do |bucket| %>
+  <h2><%= bucket.label %>: <%= money(bucket.total_cents) %></h2>
+  <% if bucket.rows.any? %>
+    <table>
+      <thead><tr><th>Number</th><th>Business</th><th>Client</th><th>Due</th><th class="num">Days past due</th><th class="num">Outstanding</th></tr></thead>
+      <tbody>
+        <% bucket.rows.each do |row| %>
+          <tr>
+            <td><%= row.number %></td>
+            <td><%= row.business_name %></td>
+            <td><%= row.client_name %></td>
+            <td><%= row.due_date %></td>
+            <td class="num"><%= Reports::InvoiceAging.days_past_due(row.due_date, Date.current) %></td>
+            <td class="num"><%= money(row.outstanding_cents) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

@@ -47,6 +47,7 @@ Rails.application.routes.draw do
     get "reports/schedule_c", to: "schedule_cs#show", as: :schedule_c
     get "reports/mileage_log", to: "mileage_logs#show", as: :mileage_log
     get "reports/transactions", to: "transaction_exports#show", as: :transaction_export
+    get "reports/aging", to: "invoice_agings#show", as: :invoice_aging
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
@@ -61,6 +62,8 @@ Rails.application.routes.draw do
   scope "household", as: "household" do
     get "profit_and_loss", to: "household_profit_and_losses#show", as: :profit_and_loss
     get "transactions", to: "household_transaction_exports#show", as: :transaction_export
+    get "invoices", to: "household_invoices#show", as: :invoices
+    get "aging", to: "household_invoice_agings#show", as: :invoice_aging
   end
 
   root "dashboards#show"
