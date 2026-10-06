@@ -125,6 +125,14 @@ RSpec.describe "Reports" do
     expect(response.body).to include("Schedule C summary #{Date.current.year}")
   end
 
+  it "swaps reversed date ranges and shows a notice" do
+    sign_in_as accountant
+    get business_profit_and_loss_path(pat, from: "2026-12-31", to: "2026-01-01")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("$12,345.00")
+    expect(response.body).to include("Start date was after end date — swapped.")
+  end
+
   it "hides household reports from someone missing a business" do
     sign_in_as user_with_role("owner", pat)
     get household_profit_and_loss_path

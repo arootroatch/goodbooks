@@ -8,7 +8,16 @@ module DateRangeParams
   private
 
   def date_range
-    @date_range ||= (parse_date(params[:from]) || Date.current.beginning_of_year)..(parse_date(params[:to]) || Date.current)
+    @date_range ||= begin
+      from = parse_date(params[:from]) || Date.current.beginning_of_year
+      to = parse_date(params[:to]) || Date.current
+      if from > to
+        flash.now[:notice] = "Start date was after end date — swapped."
+        to..from
+      else
+        from..to
+      end
+    end
   end
 
   def parse_date(value)
