@@ -54,6 +54,8 @@ docker run --rm -v goodbooks_storage:/data -v "$PWD":/out alpine \
   sh -c 'cp /data/backups/*.sqlite3 /out/'
 ```
 
+The SQLite backups are useless without `config/master.key`: it decrypts the stored 2FA secrets, so a restored database without it cannot sign anyone in. Store `config/master.key` and `.env` offsite, separately from the database copies. Restoring needs both.
+
 ## Each tax year
 
 Household owner → Tax parameters → add the year's IRS standard mileage rate once the IRS publishes it.

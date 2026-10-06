@@ -19,6 +19,14 @@ RSpec.describe "Authentication" do
     expect(response).to redirect_to(new_session_path)
   end
 
+  it "shows the login failure message exactly once" do
+    log_in_password(password: "wrong password!!")
+    follow_redirect!
+    alert = flash[:alert]
+    expect(alert).to be_present
+    expect(response.body.scan(alert).size).to eq(1)
+  end
+
   it "requires a TOTP code after the password" do
     log_in_password
     expect(response).to redirect_to(new_two_factor_path)

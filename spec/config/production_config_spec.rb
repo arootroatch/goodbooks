@@ -9,3 +9,10 @@ RSpec.describe "Production host configuration" do
     expect(config).to include("config.force_ssl = true")
   end
 end
+
+RSpec.describe "Parameter filtering" do
+  it "filters one-time and recovery codes from logs" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+    expect(filter.filter("code" => "123456")).to eq("code" => "[FILTERED]")
+  end
+end
