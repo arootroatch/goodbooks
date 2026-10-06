@@ -17,6 +17,12 @@ RSpec.describe Invite do
     expect(Invite.find_usable(invite.token)).to be_nil
   end
 
+  it "is not usable once accepted" do
+    invite = create(:invite, business: business)
+    invite.accept!(create(:user))
+    expect(Invite.find_usable(invite.token)).to be_nil
+  end
+
   it "requires at least one grant" do
     invite = Invite.new(created_by: create(:user, :household_owner))
     expect(invite).not_to be_valid
@@ -50,6 +56,14 @@ RSpec.describe Invite do
       expect(user.membership_for(business)).to be_editor
       expect(invite.reload.accepted_by).to eq(user)
       expect { invite.accept!(create(:user)) }.to raise_error(Invite::AlreadyUsed)
+    end
+
+    it "refuses when the creator no longer owns the business" do
+      creator = user_with_role("owner", business)
+      invite = create(:invite, created_by: creator, business: business, role: "owner")
+      creator.membership_for(business).update!(role: "viewer")
+      expect { invite.accept!(user) }.to raise_error(Invite::AlreadyUsed)
+      expect(user.membership_for(business)).to be_nil
     end
 
     it "upgrades but never downgrades" do

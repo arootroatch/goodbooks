@@ -11,7 +11,9 @@ class MembershipsController < ApplicationController
   end
 
   def update
-    role = params.expect(membership: [:role])[:role]
+    role = params.dig(:membership, :role)
+    return redirect_to(business_memberships_path(@business), alert: "Choose a valid role.") unless Membership.roles.key?(role)
+
     return redirect_to(business_memberships_path(@business), alert: LAST_OWNER) if @member.last_owner? && role != "owner"
 
     @member.update!(role: role)

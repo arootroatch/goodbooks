@@ -19,6 +19,12 @@ RSpec.describe "People" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
+  it "rejects a user_id that does not exist" do
+    sign_in_as household_owner
+    patch person_path(spouse), params: { person: { name: "Jordan", user_id: 0 } }
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+
   it "forbids others" do
     sign_in_as create(:user)
     get people_path

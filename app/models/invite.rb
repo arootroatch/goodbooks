@@ -31,6 +31,8 @@ class Invite < ApplicationRecord
 
   def accept!(user)
     ApplicationRecord.transaction do
+      raise AlreadyUsed, "This invite has already been used or has expired." unless creator_still_authorized?
+
       claimed = Invite.usable.where(id: id).update_all(accepted_at: Time.current, accepted_by_id: user.id)
       raise AlreadyUsed, "This invite has already been used or has expired." if claimed.zero?
 
@@ -46,6 +48,10 @@ class Invite < ApplicationRecord
   end
 
   private
+
+  def creator_still_authorized?
+    created_by.household_owner? || grants.all? { |grant| created_by.membership_for(grant.business)&.owner? }
+  end
 
   def generate_token
     @token = SecureRandom.urlsafe_base64(32)

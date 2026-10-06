@@ -1,9 +1,9 @@
 <h1>Join goodbooks</h1>
 <p>You've been invited to: <%= @invite.grants.map { "#{_1.business.name} (#{_1.role})" }.join(", ") %>.</p>
 <% if authenticated? %>
-  <%= button_to "Accept invite", join_path(params[:token]) %>
+  <%= button_to "Accept invite", join_path(token: params[:token]) %>
 <% else %>
-  <%= form_with model: @user, url: join_path(params[:token]) do |f| %>
+  <%= form_with model: @user, url: join_path(token: params[:token]) do |f| %>
     <%= render "shared/errors", record: @user %>
     <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
     <p><%= f.label :email_address %> <%= f.email_field :email_address, required: true %></p>

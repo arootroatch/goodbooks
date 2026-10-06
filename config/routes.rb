@@ -41,9 +41,9 @@ Rails.application.routes.draw do
 
   resources :tax_parameters, only: %i[index new create edit update]
 
-  resources :invites, only: %i[index new create]
-  get "join/:token", to: "invite_acceptances#show", as: :join
-  post "join/:token", to: "invite_acceptances#create"
+  resources :invites, only: %i[index new create destroy]
+  get "join", to: "invite_acceptances#show", as: :join
+  post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox

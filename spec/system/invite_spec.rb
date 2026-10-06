@@ -13,7 +13,8 @@ RSpec.describe "Inviting the accountant" do
     join_url = find("#join-url").text
     click_on "Sign out"
 
-    visit URI(join_url).path
+    uri = URI(join_url)
+    visit "#{uri.path}?#{uri.query}"
     fill_in "Name", with: "Avery Accountant"
     fill_in "Password", with: AuthHelpers::PASSWORD
     fill_in "Password confirmation", with: AuthHelpers::PASSWORD

@@ -1,6 +1,6 @@
 <h1>Invites</h1>
 <table>
-  <thead><tr><th>Email</th><th>Access</th><th>Status</th></tr></thead>
+  <thead><tr><th>Email</th><th>Access</th><th>Status</th><th></th></tr></thead>
   <tbody>
     <% @invites.each do |invite| %>
       <tr>
@@ -11,6 +11,7 @@
           <% elsif invite.expires_at.past? %>Expired
           <% else %>Pending until <%= l(invite.expires_at, format: :short) %><% end %>
         </td>
+        <td><%= button_to "Revoke", invite_path(invite), method: :delete if invite.accepted_at.nil? && !invite.expires_at.past? %></td>
       </tr>
     <% end %>
   </tbody>

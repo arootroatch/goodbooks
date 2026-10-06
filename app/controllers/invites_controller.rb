@@ -12,10 +12,12 @@ class InvitesController < ApplicationController
   end
 
   def create
-    @invite = Invite.new(created_by: Current.user, email: params.dig(:invite, :email))
-    @invite.grant_roles = params.dig(:invite, :grant_roles)&.to_unsafe_h || {}
+    attrs = params[:invite].is_a?(ActionController::Parameters) ? params[:invite] : ActionController::Parameters.new
+    roles = attrs[:grant_roles]
+    @invite = Invite.new(created_by: Current.user, email: attrs[:email].to_s.presence)
+    @invite.grant_roles = roles.respond_to?(:to_unsafe_h) ? roles.to_unsafe_h : {}
     if @invite.save
-      @join_url = join_url(@invite.token)
+      @join_url = join_url(token: @invite.token)
       render :show, status: :created
     else
       @grantable = grantable_businesses
@@ -23,6 +25,12 @@ class InvitesController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     head :unprocessable_content
+  end
+
+  def destroy
+    scope = Current.user.household_owner? ? Invite.all : Invite.where(created_by: Current.user)
+    scope.find(params[:id]).update!(expires_at: Time.current)
+    redirect_to invites_path, notice: "Invite revoked.", status: :see_other
   end
 
   private
