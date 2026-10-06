@@ -1,5 +1,6 @@
 class TransactionsController < ApplicationController
   include BusinessScoped
+  include ScalarParams
 
   IMPORTED_EDITABLE = %i[memo category_id transfer excluded].freeze
   MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded].freeze
@@ -59,6 +60,6 @@ class TransactionsController < ApplicationController
   end
 
   def filter_params
-    params.permit(:from, :to, :account_id, :category_id, :status, :q, :page)
+    scalar_params(:from, :to, :account_id, :category_id, :status, :q, :page)
   end
 end
