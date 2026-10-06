@@ -3,6 +3,8 @@ class Business < ApplicationRecord
   belongs_to :person
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
+  has_many :accounts, dependent: :destroy
+  has_many :categories, dependent: :destroy
 
   scope :active, -> { where(archived_at: nil) }
 

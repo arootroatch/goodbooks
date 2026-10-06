@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_033443) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_034451) do
+  create_table "accounts", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.string "name", null: false
+    t.string "source", null: false
+    t.string "kind", null: false
+    t.json "csv_mapping"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_accounts_on_business_id"
+  end
+
   create_table "businesses", force: :cascade do |t|
     t.integer "household_id", null: false
     t.integer "person_id", null: false
@@ -20,6 +32,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_033443) do
     t.datetime "updated_at", null: false
     t.index ["household_id"], name: "index_businesses_on_household_id"
     t.index ["person_id"], name: "index_businesses_on_person_id"
+  end
+
+  create_table "categories", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.string "name", null: false
+    t.string "kind", null: false
+    t.string "schedule_c_line", null: false
+    t.integer "deductible_bps", default: 10000, null: false
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "name"], name: "index_categories_on_business_id_and_name", unique: true
+    t.index ["business_id"], name: "index_categories_on_business_id"
   end
 
   create_table "households", force: :cascade do |t|
@@ -72,8 +97,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_033443) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "accounts", "businesses"
   add_foreign_key "businesses", "households"
   add_foreign_key "businesses", "people"
+  add_foreign_key "categories", "businesses"
   add_foreign_key "memberships", "businesses"
   add_foreign_key "memberships", "users"
   add_foreign_key "people", "households"
