@@ -10,4 +10,5 @@ class Account < ApplicationRecord
   validates :name, presence: true
 
   def archived? = archived_at.present?
+  def archived = archived?
 end

@@ -1,0 +1,16 @@
+<%= business_nav @business %>
+<h1>Accounts</h1>
+<table>
+  <thead><tr><th>Name</th><th>Source</th><th>Kind</th><th></th></tr></thead>
+  <tbody>
+    <% @accounts.each do |account| %>
+      <tr id="<%= dom_id(account) %>">
+        <td><%= account.name %><%= " (archived)" if account.archived? %></td>
+        <td><%= account.source %></td>
+        <td><%= account.kind %></td>
+        <td><%= link_to "Edit", edit_business_account_path(@business, account) if current_membership.owner? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "New account", new_business_account_path(@business) if current_membership.owner? %>
