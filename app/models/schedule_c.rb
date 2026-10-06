@@ -32,6 +32,6 @@ module ScheduleC
 
   def self.options_for(kind)
     codes = kind.to_s == "income" ? INCOME_LINES : EXPENSE_LINES
-    codes.map { |code| [label(code), code] }
+    codes.map { |code| [ label(code), code ] }
   end
 end

@@ -16,7 +16,7 @@ RSpec.describe "Tax parameters" do
     expect(response).to have_http_status(:unprocessable_content)
     tp = TaxParameters.new(year: 2027, mileage_rate_cents: "72.55")
     tp.valid?
-    expect(tp.errors.full_messages).to eq(["Mileage rate cents must be a number with at most one decimal place"])
+    expect(tp.errors.full_messages).to eq([ "Mileage rate cents must be a number with at most one decimal place" ])
   end
 
   it "forbids everyone else, even business owners" do

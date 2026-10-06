@@ -27,7 +27,7 @@ class CsvImport::Mapping
     COLUMN_ATTRIBUTES.map { public_send(_1) }.compact_blank
   end
 
-  def to_h = attributes.to_h { |name, value| [name, COLUMN_ATTRIBUTES.include?(name.to_sym) ? public_send(name) : value] }
+  def to_h = attributes.to_h { |name, value| [ name, COLUMN_ATTRIBUTES.include?(name.to_sym) ? public_send(name) : value ] }
 
   private
 

@@ -12,7 +12,7 @@ RSpec.describe "Businesses" do
       post businesses_path, params: { business: { name: "Second Gig", person_id: person.id } }
       created = Business.find_by!(name: "Second Gig")
       expect(response).to redirect_to(business_path(created))
-      expect(created.accounts.pluck(:name)).to eq(["Cash"])
+      expect(created.accounts.pluck(:name)).to eq([ "Cash" ])
       expect(household_owner.membership_for(created)).to be_owner
     end
 

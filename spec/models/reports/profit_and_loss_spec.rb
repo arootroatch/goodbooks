@@ -16,12 +16,12 @@ RSpec.describe Reports::ProfitAndLoss do
   end
 
   it "keeps income signed" do
-    expect(report.income_lines.map { [_1.name, _1.actual_cents] }).to eq([["Refunds given", -5_000], ["Sales", 1_000_000]])
+    expect(report.income_lines.map { [ _1.name, _1.actual_cents ] }).to eq([ [ "Refunds given", -5_000 ], [ "Sales", 1_000_000 ] ])
     expect(report.total_income_cents).to eq(995_000)
   end
 
   it "shows expenses positive, with refunds reducing them" do
-    expect(report.expense_lines.map { [_1.name, _1.actual_cents] }).to eq([["Meals", 3_333], ["Office", 20_000], ["Software", -1_000]])
+    expect(report.expense_lines.map { [ _1.name, _1.actual_cents ] }).to eq([ [ "Meals", 3_333 ], [ "Office", 20_000 ], [ "Software", -1_000 ] ])
   end
 
   it "applies deductible percentages, rounding half up once per line" do

@@ -42,7 +42,7 @@ RSpec.describe CsvImport do
     expect(account.transactions.count).to eq(4)
     expect(account.transactions.find_by!(payee: "ADOBE CREATIVE CLOUD").category).to eq(software)
     expect(import.reload).to be_committed
-    expect([import.row_count, import.new_count, import.duplicate_count, import.error_count]).to eq([4, 4, 0, 0])
+    expect([ import.row_count, import.new_count, import.duplicate_count, import.error_count ]).to eq([ 4, 4, 0, 0 ])
   end
 
   it "imports nothing new the second time" do

@@ -14,7 +14,7 @@ RSpec.describe "Reordering rules", js: true do
     page.driver.browser.action.click_and_hold(handle).move_to(target, 0, -5).pause(duration: 0.2).move_to(target, 0, -10).release.perform
     expect(page).to have_css("tbody[data-sortable-state='saved']")
     expect(page).to have_css("tbody tr:first-child#rule_#{second_rule.id}")
-    expect(business.rules.ordered.to_a).to eq([second_rule, first_rule])
+    expect(business.rules.ordered.to_a).to eq([ second_rule, first_rule ])
   end
 
   it "puts the rule back and flags an error when the save fails" do

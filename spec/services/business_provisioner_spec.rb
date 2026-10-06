@@ -9,7 +9,7 @@ RSpec.describe BusinessProvisioner do
 
     expect(business).to be_persisted
     expect(owner.membership_for(business).role).to eq("owner")
-    expect(business.accounts.map { [_1.name, _1.source, _1.kind] }).to eq([["Cash", "manual", "cash"]])
+    expect(business.accounts.map { [ _1.name, _1.source, _1.kind ] }).to eq([ [ "Cash", "manual", "cash" ] ])
     expect(business.categories.count).to eq(CategoryTemplate::CATEGORIES.size)
     expect(business.categories.find_by!(name: "Meals").deductible_bps).to eq(5000)
   end

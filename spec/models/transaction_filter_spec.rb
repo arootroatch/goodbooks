@@ -28,7 +28,7 @@ RSpec.describe TransactionFilter do
     expect(TransactionFilter.new(scope, {}).results.first).to eq(dec)
     stub_const("TransactionFilter::PER_PAGE", 1)
     filter = TransactionFilter.new(scope, page: "1")
-    expect(filter.results.to_a).to eq([dec])
+    expect(filter.results.to_a).to eq([ dec ])
     expect(filter.next_page?).to be(true)
     expect(TransactionFilter.new(scope, page: "2").next_page?).to be(false)
   end

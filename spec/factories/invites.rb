@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :invite do
-    association :created_by, factory: [:user, :household_owner]
+    association :created_by, factory: [ :user, :household_owner ]
     transient do
       business { association :business }
       role { "viewer" }

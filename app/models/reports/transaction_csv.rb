@@ -2,7 +2,7 @@ require "csv"
 
 module Reports
   module TransactionCsv
-    HEADERS = ["Date", "Business", "Account", "Payee", "Memo", "Amount", "Category", "Schedule C line", "Transfer", "Deductible amount"].freeze
+    HEADERS = [ "Date", "Business", "Account", "Payee", "Memo", "Amount", "Category", "Schedule C line", "Transfer", "Deductible amount" ].freeze
 
     def self.generate(transactions)
       CSV.generate do |csv|

@@ -10,7 +10,7 @@ RSpec.describe MileageEntry do
   it "reports bad miles with a single error message" do
     entry = build(:mileage_entry, miles: "lots")
     expect(entry).not_to be_valid
-    expect(entry.errors.full_messages).to eq(["Miles must be a number with at most one decimal place"])
+    expect(entry.errors.full_messages).to eq([ "Miles must be a number with at most one decimal place" ])
   end
 
   it "requires a purpose and positive miles" do

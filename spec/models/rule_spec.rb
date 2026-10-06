@@ -6,7 +6,7 @@ RSpec.describe Rule do
   it "assigns increasing positions" do
     first = create(:rule, business: business)
     second = create(:rule, business: business)
-    expect([first.position, second.position]).to eq([1, 2])
+    expect([ first.position, second.position ]).to eq([ 1, 2 ])
   end
 
   it "requires a category to categorize, from the same business" do
@@ -49,12 +49,12 @@ RSpec.describe Rule do
   it "moves to a position and renumbers the rest" do
     a, b, c = Array.new(3) { create(:rule, business: business) }
     c.move_to!(1)
-    expect(business.rules.ordered).to eq([c, a, b])
-    expect(business.rules.ordered.pluck(:position)).to eq([1, 2, 3])
+    expect(business.rules.ordered).to eq([ c, a, b ])
+    expect(business.rules.ordered.pluck(:position)).to eq([ 1, 2, 3 ])
     c.move_to!(99)
-    expect(business.rules.ordered).to eq([a, b, c])
+    expect(business.rules.ordered).to eq([ a, b, c ])
     b.move_to!(0)
-    expect(business.rules.ordered).to eq([b, a, c])
+    expect(business.rules.ordered).to eq([ b, a, c ])
   end
 
   it "does not touch another business's rules" do

@@ -6,7 +6,7 @@ class HouseholdInboxesController < ApplicationController
     @groups = businesses.map do |business|
       scope = Transaction.for_businesses(business.id).inbox
       rows = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(InboxesController::LIMIT).to_a
-      [business, rows, scope.count]
+      [ business, rows, scope.count ]
     end
   end
 end

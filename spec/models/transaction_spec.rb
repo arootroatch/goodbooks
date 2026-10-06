@@ -13,13 +13,13 @@ RSpec.describe Transaction do
   it "reports a garbage amount instead of saving zero" do
     txn = Transaction.new(account: account, posted_on: Date.current, payee: "X", amount: "12a")
     expect(txn).not_to be_valid
-    expect(txn.errors.full_messages).to eq(["Amount is not a valid amount"])
+    expect(txn.errors.full_messages).to eq([ "Amount is not a valid amount" ])
   end
 
   it "reports a blank amount with a single error" do
     txn = Transaction.new(account: account, posted_on: Date.current, payee: "X", amount: "")
     expect(txn).not_to be_valid
-    expect(txn.errors.full_messages).to eq(["Amount can't be blank"])
+    expect(txn.errors.full_messages).to eq([ "Amount can't be blank" ])
   end
 
   it "requires a category from the same business" do
@@ -53,7 +53,7 @@ RSpec.describe Transaction do
 
     it "for_businesses filters by the account's business" do
       create(:transaction)
-      expect(Transaction.for_businesses([account.business_id]).count).to eq(4)
+      expect(Transaction.for_businesses([ account.business_id ]).count).to eq(4)
     end
   end
 

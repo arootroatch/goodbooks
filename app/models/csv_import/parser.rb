@@ -18,9 +18,9 @@ class CsvImport::Parser
   # Returns [text, transcoded?]; files that aren't valid UTF-8 are read as Windows-1252.
   def self.decode(content)
     text = content.to_s.dup.force_encoding(Encoding::UTF_8)
-    return [text, false] if text.valid_encoding?
+    return [ text, false ] if text.valid_encoding?
 
-    [content.to_s.dup.force_encoding("Windows-1252").encode(Encoding::UTF_8), true]
+    [ content.to_s.dup.force_encoding("Windows-1252").encode(Encoding::UTF_8), true ]
   rescue EncodingError
     raise FileError, "File must be UTF-8 or Windows-1252 encoded."
   end
@@ -77,7 +77,7 @@ class CsvImport::Parser
     end
     return failure.("Missing payee") if payee.empty?
 
-    key = [posted_on, amount_cents, payee.downcase]
+    key = [ posted_on, amount_cents, payee.downcase ]
     occurrence = occurrences[key]
     occurrences[key] += 1
     Row.new(line:, posted_on:, amount_cents:, payee:, memo:, external_id: external_id(key, occurrence), error: nil)
@@ -125,6 +125,6 @@ class CsvImport::Parser
 
   def external_id(key, occurrence)
     posted_on, amount_cents, payee = key
-    Digest::SHA256.hexdigest([@account_id, posted_on.iso8601, amount_cents, payee, occurrence].join("|"))
+    Digest::SHA256.hexdigest([ @account_id, posted_on.iso8601, amount_cents, payee, occurrence ].join("|"))
   end
 end

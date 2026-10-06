@@ -21,9 +21,9 @@ RSpec.describe Reports::HouseholdProfitAndLoss do
   end
 
   it "aligns rows by category name across businesses" do
-    expect(report.income_rows.map { [_1.name, _1.amounts, _1.total_cents] }).to eq([["Sales", { 1 => 100_00, 2 => 50_00 }, 150_00]])
-    expect(report.expense_rows.map { [_1.name, _1.amounts, _1.total_cents] }).to eq([
-      ["Office", { 1 => 10_00 }, 10_00], ["Supplies", { 2 => 2_00 }, 2_00]
+    expect(report.income_rows.map { [ _1.name, _1.amounts, _1.total_cents ] }).to eq([ [ "Sales", { 1 => 100_00, 2 => 50_00 }, 150_00 ] ])
+    expect(report.expense_rows.map { [ _1.name, _1.amounts, _1.total_cents ] }).to eq([
+      [ "Office", { 1 => 10_00 }, 10_00 ], [ "Supplies", { 2 => 2_00 }, 2_00 ]
     ])
   end
 

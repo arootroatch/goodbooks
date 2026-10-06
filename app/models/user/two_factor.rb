@@ -43,7 +43,7 @@ module User::TwoFactor
       digest = recovery_code_digests.find { |d| BCrypt::Password.new(d) == normalized }
       next false unless digest
 
-      update!(recovery_code_digests: recovery_code_digests - [digest])
+      update!(recovery_code_digests: recovery_code_digests - [ digest ])
       true
     end
   end

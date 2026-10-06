@@ -12,9 +12,9 @@ RSpec.describe CsvImport::Parser do
       01/05/2026,  ADOBE   CREATIVE ,monthly,-54.99
       01/06/2026,Client payment,,"1,500.00"
     CSV
-    expect(rows.map { [_1.line, _1.posted_on, _1.payee, _1.memo, _1.amount_cents] }).to eq([
-      [2, Date.new(2026, 1, 5), "ADOBE CREATIVE", "monthly", -5499],
-      [3, Date.new(2026, 1, 6), "Client payment", nil, 150000]
+    expect(rows.map { [ _1.line, _1.posted_on, _1.payee, _1.memo, _1.amount_cents ] }).to eq([
+      [ 2, Date.new(2026, 1, 5), "ADOBE CREATIVE", "monthly", -5499 ],
+      [ 3, Date.new(2026, 1, 6), "Client payment", nil, 150000 ]
     ])
     expect(rows).to all(be_valid)
   end
@@ -35,7 +35,7 @@ RSpec.describe CsvImport::Parser do
     CSV
     first, second = parse(content)
     expect(first.external_id).not_to eq(second.external_id)
-    expect(parse(content).map(&:external_id)).to eq([first.external_id, second.external_id])
+    expect(parse(content).map(&:external_id)).to eq([ first.external_id, second.external_id ])
   end
 
   it "gives the same id to the same row in an overlapping file" do
@@ -53,7 +53,7 @@ RSpec.describe CsvImport::Parser do
   it "supports debit and credit columns" do
     split = CsvImport::Mapping.new(date_column: "Date", payee_column: "Payee", debit_column: "Debit", credit_column: "Credit")
     rows = described_class.new(split, account_id: 1).parse("Date,Payee,Debit,Credit\n01/05/2026,Store,12.00,\n01/06/2026,Client,,500\n")
-    expect(rows.map(&:amount_cents)).to eq([-1200, 50000])
+    expect(rows.map(&:amount_cents)).to eq([ -1200, 50000 ])
   end
 
   context "with debit and credit columns" do
@@ -116,8 +116,8 @@ RSpec.describe CsvImport::Parser do
       01/05/2026,,,-1
       01/05/2026,Fine,,-1
     CSV
-    expect(rows.map { [_1.line, _1.error] }).to eq([
-      [2, "Invalid date"], [3, "Amount is not a valid amount"], [4, "Missing payee"], [5, nil]
+    expect(rows.map { [ _1.line, _1.error ] }).to eq([
+      [ 2, "Invalid date" ], [ 3, "Amount is not a valid amount" ], [ 4, "Missing payee" ], [ 5, nil ]
     ])
     expect(rows.first.external_id).to be_nil
   end
@@ -128,8 +128,8 @@ RSpec.describe CsvImport::Parser do
   end
 
   it "reports whether content was transcoded" do
-    expect(described_class.decode("Date\n".b)).to eq(["Date\n", false])
-    expect(described_class.decode("Caf\xE9".b)).to eq(["Café", true])
+    expect(described_class.decode("Date\n".b)).to eq([ "Date\n", false ])
+    expect(described_class.decode("Caf\xE9".b)).to eq([ "Café", true ])
   end
 
   it "raises FileError when transcoding also fails" do
@@ -145,7 +145,7 @@ RSpec.describe CsvImport::Parser do
   end
 
   it "reads headers after skipped rows" do
-    expect(described_class.headers("junk\n Date , Amount\n1,2\n", skip_rows: 1)).to eq(["Date", "Amount"])
+    expect(described_class.headers("junk\n Date , Amount\n1,2\n", skip_rows: 1)).to eq([ "Date", "Amount" ])
   end
 
   it "exposes rule attributes" do

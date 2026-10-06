@@ -12,7 +12,7 @@ module Reports
     def expense_rows = rows(:expense_lines)
 
     def column(metric)
-      values = @by_business.to_h { |business, pnl| [business.id, pnl.public_send(metric)] }
+      values = @by_business.to_h { |business, pnl| [ business.id, pnl.public_send(metric) ] }
       values.merge(total: values.values.sum)
     end
 

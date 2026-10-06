@@ -17,7 +17,7 @@ class TransactionsController < ApplicationController
   end
 
   def create
-    attrs = params.expect(transaction: [:account_id, *MANUAL_EDITABLE])
+    attrs = params.expect(transaction: [ :account_id, *MANUAL_EDITABLE ])
     account = @business.accounts.manual.find(attrs.delete(:account_id))
     @transaction = account.transactions.new(attrs)
     @transaction.categorized_by = "user" if @transaction.category_id.present?

@@ -18,8 +18,8 @@ RSpec.describe "Report loaders" do
       other = create(:transaction, amount_cents: -9_999)
       other.update!(category: create(:category, business: other.account.business))
 
-      totals = Reports::CategoryTotals.load(business_ids: [business.id], range: year)
-      expect(totals.map { [_1.business_id, _1.name, _1.kind, _1.sum_cents] }).to eq([[business.id, "Office", "expense", -2_500]])
+      totals = Reports::CategoryTotals.load(business_ids: [ business.id ], range: year)
+      expect(totals.map { [ _1.business_id, _1.name, _1.kind, _1.sum_cents ] }).to eq([ [ business.id, "Office", "expense", -2_500 ] ])
     end
   end
 
@@ -29,10 +29,10 @@ RSpec.describe "Report loaders" do
       create(:mileage_entry, business: business, driven_on: Date.new(2026, 12, 31), miles_tenths: 617, round_trip: true)
       create(:mileage_entry, business: business, driven_on: Date.new(2027, 1, 1), miles_tenths: 100)
 
-      result = Reports::MileageTotals.load(business_ids: [business.id], range: Date.new(2026, 1, 1)..Date.new(2027, 12, 31))
+      result = Reports::MileageTotals.load(business_ids: [ business.id ], range: Date.new(2026, 1, 1)..Date.new(2027, 12, 31))
       expect(result.miles_tenths).to eq(1334)
       expect(result.deduction_cents).to eq(8_947)
-      expect(result.missing_rate_years).to eq([2027])
+      expect(result.missing_rate_years).to eq([ 2027 ])
     end
   end
 end

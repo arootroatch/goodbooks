@@ -2,9 +2,9 @@ class DemoSeeder
   PASSWORD = "demo password 123"
   OTP_SECRET = "GOODBOOKSDEMOSECRETKEYABCDEFGHIJ"
   USERS = [
-    ["pat@example.com", "Pat Example"],
-    ["jordan@example.com", "Jordan Example"],
-    ["accountant@example.com", "Avery Accountant"]
+    [ "pat@example.com", "Pat Example" ],
+    [ "jordan@example.com", "Jordan Example" ],
+    [ "accountant@example.com", "Avery Accountant" ]
   ].freeze
 
   def initialize(out: $stdout, today: Date.current, random: Random.new(42))
@@ -40,10 +40,10 @@ class DemoSeeder
     studio = BusinessProvisioner.call(household.businesses.new(name: "Jordan Design Studio", person: jordan_person), owner: pat)
     Membership.create!(user: jordan, business: studio, role: "editor")
     Membership.create!(user: jordan, business: consulting, role: "viewer")
-    [consulting, studio].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
+    [ consulting, studio ].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
 
-    seed_business(consulting, client: "ACME CORP", income_cents: 850_000, software: ["ADOBE CREATIVE CLOUD", 5_499])
-    seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: ["FIGMA", 1_500])
+    seed_business(consulting, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
+    seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
   end
 
   def seed_business(business, client:, income_cents:, software:)
@@ -117,7 +117,7 @@ class DemoSeeder
   def years_covered_by_transactions_and_mileage
     transaction_years = Transaction.pluck(:posted_on).map(&:year).uniq
     mileage_years = MileageEntry.pluck(:driven_on).map(&:year).uniq
-    (transaction_years + mileage_years + [@today.year]).uniq.sort
+    (transaction_years + mileage_years + [ @today.year ]).uniq.sort
   end
 
   def ensure_inbox_non_empty

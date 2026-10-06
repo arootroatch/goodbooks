@@ -40,7 +40,7 @@ RSpec.describe "Rules" do
     sign_in_as user_with_role("editor", business)
     patch move_business_rule_path(business, b), params: { position: 1 }, as: :json
     expect(response).to have_http_status(:no_content)
-    expect(business.rules.ordered.to_a).to eq([b, a])
+    expect(business.rules.ordered.to_a).to eq([ b, a ])
   end
 
   it "rejects a move without a position" do
