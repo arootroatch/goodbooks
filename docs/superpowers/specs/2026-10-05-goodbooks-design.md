@@ -21,13 +21,13 @@ goodbooks is a self-hosted, Dockerized replacement for the parts of QuickBooks o
 ### Context and constraints (from the owner)
 
 - Tax situation: US federal only. Tennessee has no personal income tax, and both businesses are sole proprietorships (no TN franchise & excise). Schedule C. Filing status is married filing jointly. No W-2 or other household income.
-- Each bank or card account belongs to exactly one business; there are no mixed personal/business accounts.
+- Each bank or card account belongs to exactly one book: a business, or the household's single personal book (see `2026-10-06-goodbooks-tithing-design.md`). No account mixes personal and business activity.
 - One household per install. Not multi-tenant SaaS.
 - Hosted on a home server and exposed through Cloudflare Tunnel or Tailscale Funnel, so it is reachable from the internet.
 
 ### Explicit non-goals
 
-Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income, depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
+Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income for tax purposes (the personal book tracks personal cash flow and tithe only), depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
 
 ## 2. Stack
 
@@ -78,16 +78,17 @@ Invoice generation or sending, payroll, inventory, double-entry ledger, accrual 
 
 ## 4. Decomposition
 
-Six sub-projects, built in order. Each gets its own implementation plan.
+Seven sub-projects, built in order. Each gets its own implementation plan.
 
 1. **Core**: auth + 2FA, household/people/businesses/memberships, invite links, manual and CSV accounts, transactions, categories, rules + inbox, mileage, reports, backups, demo seed, Docker.
 2. **Invoices**
-3. **Sales tax** (Tennessee)
-4. **Plaid**
-5. **Tax engine**: quarterly estimates, home office, per-person adjustments.
-6. **Sharing polish**: email delivery of invites, session management, audit log.
+3. **Personal book + tithing** (spec: `2026-10-06-goodbooks-tithing-design.md`)
+4. **Sales tax** (Tennessee)
+5. **Plaid**
+6. **Tax engine**: quarterly estimates, home office, per-person adjustments.
+7. **Sharing polish**: email delivery of invites, session management, audit log.
 
-Sections 5–10 describe each one.
+Sections 5–10 describe the original six (in their original order); sub-project 3 has its own spec.
 
 ## 5. Sub-project 1: Core
 
