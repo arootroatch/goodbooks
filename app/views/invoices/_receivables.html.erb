@@ -1,0 +1,5 @@
+<% if totals && totals[:outstanding_cents].positive? %>
+  <span class="receivables">
+    Outstanding <%= money(totals[:outstanding_cents]) %><% if totals[:overdue_cents].positive? %> · Overdue <%= money(totals[:overdue_cents]) %><% end %>
+  </span>
+<% end %>

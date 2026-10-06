@@ -3,7 +3,10 @@
 <header class="page-header">
   <div>
     <h1><%= @business.name %></h1>
-    <p class="subtitle">Taxpayer: <%= @business.person.name %></p>
+    <p class="subtitle">
+      Taxpayer: <%= @business.person.name %>
+      <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
+    </p>
   </div>
   <div class="period-picker">
     <nav class="segmented" aria-label="Period">

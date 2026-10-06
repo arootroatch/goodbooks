@@ -1,7 +1,7 @@
 <h1>Businesses</h1>
 <ul class="business-list">
   <% @businesses.each do |business| %>
-    <li><%= link_to business.name, business_path(business) %></li>
+    <li><%= link_to business.name, business_path(business) %> <%= render "invoices/receivables", totals: @receivables[business.id] %></li>
   <% end %>
 </ul>
 <% if Current.user.household_owner? %>

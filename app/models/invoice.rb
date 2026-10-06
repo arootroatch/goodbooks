@@ -27,6 +27,13 @@ class Invoice < ApplicationRecord
   validate :no_void_with_payments
   validate :pdf_is_a_small_pdf
 
+  def self.receivables_by_business(business_ids, today: Date.current)
+    sent.where(business_id: business_ids).includes(:payments).group_by(&:business_id).transform_values do |invoices|
+      { outstanding_cents: invoices.sum(&:outstanding_cents),
+        overdue_cents: invoices.select { _1.overdue?(today) }.sum(&:outstanding_cents) }
+    end
+  end
+
   def paid_cents = payments.loaded? ? payments.sum(&:amount_cents) : payments.sum(:amount_cents)
   def outstanding_cents = amount_cents.to_i - paid_cents
   def partial? = sent? && paid_cents.positive?
