@@ -1,0 +1,106 @@
+require "csv"
+
+class CsvImport::Parser
+  DATE_FORMATS = {
+    "MM/DD/YYYY" => "%m/%d/%Y",
+    "YYYY-MM-DD" => "%Y-%m-%d",
+    "MM/DD/YY" => "%m/%d/%y",
+    "DD/MM/YYYY" => "%d/%m/%Y"
+  }.freeze
+
+  class FileError < StandardError; end
+
+  Row = Data.define(:line, :posted_on, :amount_cents, :payee, :memo, :external_id, :error) do
+    def valid? = error.nil?
+    def rule_attributes = { payee: payee, memo: memo, amount_cents: amount_cents }
+  end
+
+  def self.table(content, skip_rows: 0)
+    text = content.to_s.dup.force_encoding(Encoding::UTF_8)
+    raise FileError, "File must be UTF-8 encoded." unless text.valid_encoding?
+
+    CSV.parse(text.delete_prefix("﻿"), liberal_parsing: true).drop(skip_rows)
+  rescue CSV::MalformedCSVError => e
+    raise FileError, "Could not read CSV: #{e.message}"
+  end
+
+  def self.headers(content, skip_rows: 0)
+    table(content, skip_rows: skip_rows).first.to_a.map { _1.to_s.strip }
+  end
+
+  def initialize(mapping, account_id:)
+    @mapping = mapping
+    @account_id = account_id
+  end
+
+  def parse(content)
+    header, *data = self.class.table(content, skip_rows: @mapping.skip_rows.to_i)
+    raise FileError, "File has no header row." if header.nil?
+
+    @columns = header.map { _1.to_s.strip }
+    missing = @mapping.columns - @columns
+    raise FileError, "Column not found: #{missing.join(", ")}" if missing.any?
+
+    occurrences = Hash.new(0)
+    data.each_with_index.filter_map do |cells, index|
+      next if cells.all? { _1.to_s.strip.empty? }
+
+      build_row(cells, @mapping.skip_rows.to_i + index + 2, occurrences)
+    end
+  end
+
+  private
+
+  def build_row(cells, line, occurrences)
+    payee = cell(cells, @mapping.payee_column).squish
+    memo = cell(cells, @mapping.memo_column).squish.presence
+    failure = ->(message) { Row.new(line:, posted_on: nil, amount_cents: nil, payee:, memo:, external_id: nil, error: message) }
+
+    posted_on = parse_date(cell(cells, @mapping.date_column))
+    return failure.("Invalid date") unless posted_on
+
+    amount_cents = begin
+      parse_amount(cells)
+    rescue Money::ParseError => e
+      return failure.("Amount #{e.message}")
+    end
+    return failure.("Missing payee") if payee.empty?
+
+    key = [posted_on, amount_cents, payee.downcase]
+    occurrence = occurrences[key]
+    occurrences[key] += 1
+    Row.new(line:, posted_on:, amount_cents:, payee:, memo:, external_id: external_id(key, occurrence), error: nil)
+  end
+
+  def cell(cells, column)
+    return "" if column.blank?
+
+    cells[@columns.index(column)].to_s.strip
+  end
+
+  def parse_date(value)
+    Date.strptime(value, DATE_FORMATS.fetch(@mapping.date_format))
+  rescue Date::Error
+    nil
+  end
+
+  def parse_amount(cells)
+    cents =
+      if @mapping.amount_column.present?
+        Money.parse(cell(cells, @mapping.amount_column)).cents
+      else
+        debit = cell(cells, @mapping.debit_column)
+        credit = cell(cells, @mapping.credit_column)
+        if debit.present? then -Money.parse(debit).cents.abs
+        elsif credit.present? then Money.parse(credit).cents.abs
+        else raise Money::ParseError, "can't be blank"
+        end
+      end
+    @mapping.invert_sign ? -cents : cents
+  end
+
+  def external_id(key, occurrence)
+    posted_on, amount_cents, payee = key
+    Digest::SHA256.hexdigest([@account_id, posted_on.iso8601, amount_cents, payee, occurrence].join("|"))
+  end
+end

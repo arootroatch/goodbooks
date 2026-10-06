@@ -56,6 +56,8 @@ end
 gem "bcrypt", "~> 3.1.7"
 gem "rotp", "~> 6.3"
 gem "rqrcode", "~> 2.2"
+# CSV parsing for bank statement imports (bundled gem, not default, since Ruby 3.4)
+gem "csv"
 
 group :development, :test do
   gem "rspec-rails", "~> 7.1"
