@@ -1,0 +1,6 @@
+<h1>Two-factor verification</h1>
+<%= form_with url: two_factor_path do |f| %>
+  <%= f.label :code, "Authenticator code or recovery code" %>
+  <%= f.text_field :code, autocomplete: "one-time-code", autofocus: true, required: true %>
+  <%= f.submit "Verify" %>
+<% end %>

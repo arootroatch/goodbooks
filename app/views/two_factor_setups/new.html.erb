@@ -1,0 +1,9 @@
+<h1>Set up two-factor authentication</h1>
+<p>Scan this with your authenticator app, then enter the 6-digit code.</p>
+<div class="qr"><%= raw @qr_svg %></div>
+<p>Or enter this key manually: <code><%= @user.otp_secret %></code></p>
+<%= form_with url: two_factor_setup_path do |f| %>
+  <%= f.label :code, "Code" %>
+  <%= f.text_field :code, autocomplete: "one-time-code", autofocus: true, required: true %>
+  <%= f.submit "Verify" %>
+<% end %>

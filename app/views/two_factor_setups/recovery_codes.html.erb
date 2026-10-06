@@ -1,0 +1,8 @@
+<h1>Save your recovery codes</h1>
+<p>Each code works once if you lose your authenticator. They won't be shown again.</p>
+<ul class="recovery-codes">
+  <% @recovery_codes.each do |code| %>
+    <li class="recovery-code"><code><%= code %></code></li>
+  <% end %>
+</ul>
+<%= link_to "Continue", root_path %>

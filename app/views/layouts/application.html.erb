@@ -24,6 +24,19 @@
   </head>
 
   <body>
-    <%= yield %>
+    <header class="site-header no-print">
+      <%= link_to "goodbooks", root_path, class: "brand" %>
+      <% if authenticated? %>
+        <nav class="site-nav">
+          <%= button_to "Sign out", session_path, method: :delete %>
+        </nav>
+      <% end %>
+    </header>
+    <main>
+      <% flash.each do |type, message| %>
+        <p class="flash flash-<%= type %>"><%= message %></p>
+      <% end %>
+      <%= yield %>
+    </main>
   </body>
 </html>
