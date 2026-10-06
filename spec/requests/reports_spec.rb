@@ -50,6 +50,22 @@ RSpec.describe "Reports" do
     expect(response.body).to include(business_inbox_path(pat))
   end
 
+  it "warns when a Schedule C expense line is negative" do
+    supplies = create(:category, business: pat, name: "Supplies", schedule_c_line: "22")
+    create(:transaction, account: account, category: supplies, amount_cents: 5_000, posted_on: Date.new(2026, 4, 1))
+    sign_in_as accountant
+    get business_schedule_c_path(pat, year: 2026)
+    expect(response.body).to include("Negative — refunds exceed expenses on this line; check categorization.")
+  end
+
+  it "does not warn on Schedule C when expense lines are positive" do
+    supplies = create(:category, business: pat, name: "Supplies", schedule_c_line: "22")
+    create(:transaction, account: account, category: supplies, amount_cents: -5_000, posted_on: Date.new(2026, 4, 1))
+    sign_in_as accountant
+    get business_schedule_c_path(pat, year: 2026)
+    expect(response.body).not_to include("Negative")
+  end
+
   it "notes uncategorized transactions on the household P&L, linking to the household inbox" do
     create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
     sign_in_as accountant

@@ -11,7 +11,13 @@
 <table>
   <tbody>
     <% @summary.lines.each do |code, cents| %>
-      <tr><td><%= ScheduleC.label(code) %></td><td class="num"><%= money(cents) %></td></tr>
+      <tr>
+        <td><%= ScheduleC.label(code) %></td>
+        <td class="num"><%= money(cents) %></td>
+        <% if cents.negative? && ScheduleC::INCOME_LINES.exclude?(code) %>
+          <td class="flash-alert">Negative — refunds exceed expenses on this line; check categorization.</td>
+        <% end %>
+      </tr>
     <% end %>
     <tr><td><%= ScheduleC.label("30") %></td><td class="num">—</td></tr>
     <tr><th>Gross income</th><th class="num"><%= money(@summary.gross_income_cents) %></th></tr>
