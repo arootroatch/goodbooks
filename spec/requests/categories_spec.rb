@@ -43,4 +43,63 @@ RSpec.describe "Categories" do
     get business_categories_path(business)
     expect(response).to have_http_status(:not_found)
   end
+
+  it "shows new form for editors" do
+    sign_in_as user_with_role("editor", business)
+    get new_business_category_path(business)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("New category")
+  end
+
+  it "shows edit form for editors with archived checkbox" do
+    sign_in_as user_with_role("editor", business)
+    get edit_business_category_path(business, category)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Office expense")
+    expect(response.body).to include("category[archived]")
+  end
+
+  it "forbids viewers from accessing new form" do
+    sign_in_as user_with_role("viewer", business)
+    get new_business_category_path(business)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "forbids viewers from accessing edit form" do
+    sign_in_as user_with_role("viewer", business)
+    get edit_business_category_path(business, category)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "lets editors update name, line, and deductible percent" do
+    sign_in_as user_with_role("editor", business)
+    patch business_category_path(business, category), params: { category: { name: "Office supplies", schedule_c_line: "22", deductible_percent: "75" } }
+    expect(response).to redirect_to(business_categories_path(business))
+    category.reload
+    expect(category.name).to eq("Office supplies")
+    expect(category.schedule_c_line).to eq("22")
+    expect(category.deductible_bps).to eq(7500)
+  end
+
+  it "lets editors un-archive" do
+    archived_category = create(:category, business: business, archived_at: 1.day.ago)
+    sign_in_as user_with_role("editor", business)
+    patch business_category_path(business, archived_category), params: { category: { archived: "0" } }
+    expect(archived_category.reload.archived_at).to be_nil
+  end
+
+  it "returns not found for category from another business" do
+    other_category = create(:category)
+    sign_in_as user_with_role("editor", business)
+    get edit_business_category_path(business, other_category)
+    expect(response).to have_http_status(:not_found)
+  end
+
+  it "rejects invalid deductible percent with error message and value" do
+    sign_in_as user_with_role("editor", business)
+    post business_categories_path(business), params: { category: { name: "Test", kind: "expense", schedule_c_line: "18", deductible_percent: "half" } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("half")
+    expect(response.body).to include("is not a number")
+  end
 end
