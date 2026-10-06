@@ -10,7 +10,45 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_032940) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_033443) do
+  create_table "businesses", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "person_id", null: false
+    t.string "name", null: false
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_businesses_on_household_id"
+    t.index ["person_id"], name: "index_businesses_on_person_id"
+  end
+
+  create_table "households", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "memberships", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "business_id", null: false
+    t.string "role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_memberships_on_business_id"
+    t.index ["user_id", "business_id"], name: "index_memberships_on_user_id_and_business_id", unique: true
+    t.index ["user_id"], name: "index_memberships_on_user_id"
+  end
+
+  create_table "people", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "user_id"
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_people_on_household_id"
+    t.index ["user_id"], name: "index_people_on_user_id", unique: true
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -34,5 +72,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_032940) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "businesses", "households"
+  add_foreign_key "businesses", "people"
+  add_foreign_key "memberships", "businesses"
+  add_foreign_key "memberships", "users"
+  add_foreign_key "people", "households"
+  add_foreign_key "people", "users"
   add_foreign_key "sessions", "users"
 end
