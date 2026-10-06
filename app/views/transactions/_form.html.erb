@@ -21,7 +21,8 @@
   <p>
     <%= f.label :category_id %>
     <%= f.grouped_collection_select :category_id,
-          [["Income", @business.categories.active.income.order(:name)], ["Expense", @business.categories.active.expense.order(:name)]],
+          [["Income", @business.categories.income.active.or(@business.categories.income.where(id: transaction.category_id)).order(:name)],
+           ["Expense", @business.categories.expense.active.or(@business.categories.expense.where(id: transaction.category_id)).order(:name)]],
           :last, :first, :id, :name, include_blank: "Uncategorized" %>
   </p>
   <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>

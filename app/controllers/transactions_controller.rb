@@ -35,7 +35,7 @@ class TransactionsController < ApplicationController
     permitted = @transaction.account.manual? ? MANUAL_EDITABLE : IMPORTED_EDITABLE
     attrs = params.expect(transaction: permitted)
     @transaction.assign_attributes(attrs)
-    @transaction.categorized_by = "user" if attrs.key?(:category_id) || attrs.key?(:transfer)
+    @transaction.categorized_by = "user" if @transaction.category_id_changed? || @transaction.transfer_changed?
     if @transaction.save
       redirect_to business_transactions_path(@business), notice: "Transaction updated."
     else

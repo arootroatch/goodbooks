@@ -53,6 +53,32 @@ RSpec.describe "Transactions" do
     expect(imported.category).to eq(category)
   end
 
+  context "with an archived category" do
+    let!(:old) { create(:category, business: business, name: "Old", archived_at: Time.current) }
+
+    before { imported.update!(category: old, categorized_by: "user") }
+
+    it "keeps the archived category selected on edit" do
+      sign_in_as user_with_role("editor", business)
+      get edit_business_transaction_path(business, imported)
+      expect(response.body).to include(%(<option selected="selected" value="#{old.id}"))
+    end
+
+    it "keeps the category when the form is saved" do
+      sign_in_as user_with_role("editor", business)
+      patch business_transaction_path(business, imported), params: { transaction: { memo: "n", category_id: old.id, transfer: "0" } }
+      expect(imported.reload.category).to eq(old)
+    end
+  end
+
+  it "marks user-categorized only when category or transfer changes" do
+    sign_in_as user_with_role("editor", business)
+    patch business_transaction_path(business, imported), params: { transaction: { memo: "note", category_id: "", transfer: "0" } }
+    expect(imported.reload.categorized_by).to be_nil
+    patch business_transaction_path(business, imported), params: { transaction: { memo: "note", category_id: category.id, transfer: "0" } }
+    expect(imported.reload.categorized_by).to eq("user")
+  end
+
   it "deletes manual transactions but not imported ones" do
     manual = create(:transaction, account: cash)
     sign_in_as user_with_role("editor", business)
