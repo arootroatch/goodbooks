@@ -19,6 +19,11 @@ RSpec.describe "Report CSVs" do
       end
     end
 
+    it "neutralizes NBSP and ideographic space before dangerous characters" do
+      expect(Reports::CsvSafe.text(" =x")).to eq("' =x")
+      expect(Reports::CsvSafe.text("　=x")).to eq("'　=x")
+    end
+
     it "leaves ordinary text alone" do
       expect(Reports::CsvSafe.text("Office Depot")).to eq("Office Depot")
       expect(Reports::CsvSafe.text("Client - ACME")).to eq("Client - ACME")

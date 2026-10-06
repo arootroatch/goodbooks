@@ -1,6 +1,6 @@
 module Reports
   module CsvSafe
-    DANGEROUS = /\A(?:[\t\r\n]|\s*[=+\-@|%＝])/
+    DANGEROUS = /\A(?:[\t\r\n]|[[:space:]]*[=+\-@|%＝])/
 
     def self.text(value)
       return value if value.nil?
