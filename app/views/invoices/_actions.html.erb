@@ -1,5 +1,6 @@
 <% if current_membership.can_edit? %>
   <p class="actions">
+    <%= link_to "Record payment", new_business_invoice_payment_path(@business, invoice) if invoice.can_take_payment? %>
     <%= link_to "Edit", edit_business_invoice_path(@business, invoice) %>
     <%= button_to "Mark sent", mark_sent_business_invoice_path(@business, invoice), method: :patch, form_class: "inline-form" if invoice.draft? %>
     <%= button_to "Void", void_business_invoice_path(@business, invoice), method: :patch, form_class: "inline-form" if (invoice.draft? || invoice.sent?) && invoice.payments.none? %>

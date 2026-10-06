@@ -1,0 +1,28 @@
+<table id="<%= id %>">
+  <thead>
+    <tr><th>Date</th><th>Account</th><th>Payee</th><th>Category</th><th class="num">Amount</th><th class="num">Unallocated</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% deposits.each do |deposit| %>
+      <tr id="<%= dom_id(deposit, :deposit) %>">
+        <td><%= deposit.posted_on %></td>
+        <td><%= deposit.account.name %></td>
+        <td><%= deposit.payee %></td>
+        <td><%= deposit.category&.name || "Uncategorized" %></td>
+        <td class="num"><%= money(deposit.amount_cents) %></td>
+        <td class="num"><%= money(deposit.unallocated_cents) %></td>
+        <td>
+          <%= form_with url: business_invoice_payments_path(business, invoice), class: "inline-form" do |f| %>
+            <%= hidden_field_tag :deposit_id, deposit.id, id: nil %>
+            <%= text_field_tag :amount, Money.new([ deposit.unallocated_cents, invoice.outstanding_cents ].min).to_input,
+                  id: nil, size: 10, inputmode: "decimal", aria: { label: "Amount" } %>
+            <% if deposit.category_id.nil? && gross_receipts.size != 1 %>
+              <%= select_tag :category_id, options_from_collection_for_select(income_categories, :id, :name), id: nil, aria: { label: "Income category" } %>
+            <% end %>
+            <%= f.submit "Link" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
