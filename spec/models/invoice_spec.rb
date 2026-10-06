@@ -141,4 +141,16 @@ RSpec.describe Invoice do
       expect(invoice.errors[:pdf]).to include("must be smaller than 10 MB")
     end
   end
+
+  describe ".receivables_by_business" do
+    it "sums outstanding and overdue over sent invoices per business" do
+      create(:invoice, business: business, amount_cents: 10_000, due_date: today + 5)
+      late = create(:invoice, business: business, amount_cents: 30_000, due_date: today - 1)
+      create(:invoice_payment, invoice: late, amount_cents: 5_000)
+      create(:invoice, business: business, amount_cents: 99_000, status: "draft")
+
+      totals = Invoice.receivables_by_business([ business.id ], today: today)
+      expect(totals).to eq(business.id => { outstanding_cents: 35_000, overdue_cents: 25_000 })
+    end
+  end
 end

@@ -1,6 +1,7 @@
 <%= business_nav @business %>
 <h1><%= @business.name %></h1>
 <p>Taxpayer: <%= @business.person.name %></p>
+<p><%= render "invoices/receivables", totals: @receivables %></p>
 <h2>Accounts</h2>
 <ul>
   <% @accounts.each do |account| %>
