@@ -5,6 +5,8 @@ class ClassificationsController < ApplicationController
 
   def update
     @transaction = Transaction.for_businesses(@business.id).find(params[:transaction_id])
+    return head :unprocessable_content unless %w[categorize transfer exclude].include?(params[:outcome])
+
     attrs = classification_attributes
     return redirect_back_or_to(business_inbox_path(@business), alert: "Choose a category.") unless attrs
 
@@ -24,11 +26,11 @@ class ClassificationsController < ApplicationController
 
   def classification_attributes
     case params[:outcome]
-    when "transfer" then { transfer: true, excluded: false }
-    when "exclude" then { excluded: true }
-    else
-      category = @business.categories.find_by(id: params[:category_id])
-      category && { category: category, transfer: false }
+    when "transfer" then { category: nil, transfer: true, excluded: false }
+    when "exclude" then { category: nil, transfer: false, excluded: true }
+    when "categorize"
+      category = @business.categories.active.find_by(id: params[:category_id])
+      category && { category: category, transfer: false, excluded: false }
     end
   end
 end
