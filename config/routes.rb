@@ -31,6 +31,7 @@ Rails.application.routes.draw do
       post :apply, on: :collection
     end
     resources :mileage_entries, except: :show
+    resources :memberships, only: %i[index update destroy]
     resource :inbox, only: :show
     get "reports/profit_and_loss", to: "profit_and_losses#show", as: :profit_and_loss
     get "reports/schedule_c", to: "schedule_cs#show", as: :schedule_c
@@ -39,6 +40,11 @@ Rails.application.routes.draw do
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
+
+  resources :invites, only: %i[index new create]
+  get "join/:token", to: "invite_acceptances#show", as: :join
+  post "join/:token", to: "invite_acceptances#create"
+  resources :people, only: %i[index new create edit update]
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

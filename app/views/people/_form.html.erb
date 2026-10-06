@@ -1,0 +1,9 @@
+<%= form_with model: person do |f| %>
+  <%= render "shared/errors", record: person %>
+  <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
+  <p>
+    <%= f.label :user_id, "Login" %>
+    <%= f.collection_select :user_id, User.where.missing(:person).or(User.where(id: person.user_id)).order(:name), :id, :email_address, include_blank: "None" %>
+  </p>
+  <%= f.submit %>
+<% end %>

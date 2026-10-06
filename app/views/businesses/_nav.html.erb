@@ -10,5 +10,8 @@
     <li><%= link_to "Mileage", business_mileage_entries_path(business) %></li>
     <li><%= link_to "P&L", business_profit_and_loss_path(business) %></li>
     <li><%= link_to "Schedule C", business_schedule_c_path(business) %></li>
+    <% if current_membership&.owner? %>
+      <li><%= link_to "Members", business_memberships_path(business) %></li>
+    <% end %>
   </ul>
 </nav>

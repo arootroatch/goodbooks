@@ -9,4 +9,5 @@ class Membership < ApplicationRecord
   validates :business_id, uniqueness: { scope: :user_id }
 
   def can_edit? = owner? || editor?
+  def last_owner? = owner? && business.memberships.owner.where.not(id: id).none?
 end

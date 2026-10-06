@@ -1,0 +1,10 @@
+<h1>People (taxpayers)</h1>
+<table>
+  <thead><tr><th>Name</th><th>Login</th><th></th></tr></thead>
+  <tbody>
+    <% @people.each do |person| %>
+      <tr><td><%= person.name %></td><td><%= person.user&.email_address || "—" %></td><td><%= link_to "Edit", edit_person_path(person) %></td></tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "Add person", new_person_path if @people.size < Person::MAX_PER_HOUSEHOLD %>

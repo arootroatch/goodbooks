@@ -1,0 +1,21 @@
+<%= business_nav @business %>
+<h1>Members</h1>
+<table>
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+  <tbody>
+    <% @memberships.each do |membership| %>
+      <tr>
+        <td><%= membership.user.name %></td>
+        <td><%= membership.user.email_address %></td>
+        <td>
+          <%= form_with model: [@business, membership], class: "inline-form" do |f| %>
+            <%= f.select :role, Membership::RANK.keys.map { [_1.humanize, _1] } %>
+            <%= f.submit "Save" %>
+          <% end %>
+        </td>
+        <td><%= button_to "Remove", business_membership_path(@business, membership), method: :delete %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "Invite someone", new_invite_path %>

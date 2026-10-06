@@ -32,6 +32,8 @@
           <%= link_to "Inbox", household_inbox_path %>
           <%= link_to "Household", household_profit_and_loss_path if Current.user.can_view_household? %>
           <%= link_to "Tax parameters", tax_parameters_path if Current.user.household_owner? %>
+          <%= link_to "Invites", invites_path if Current.user.household_owner? || Current.user.memberships.owner.exists? %>
+          <%= link_to "People", people_path if Current.user.household_owner? %>
           <%= button_to "Sign out", session_path, method: :delete %>
         </nav>
       <% end %>

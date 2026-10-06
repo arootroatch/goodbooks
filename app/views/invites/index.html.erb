@@ -1,0 +1,18 @@
+<h1>Invites</h1>
+<table>
+  <thead><tr><th>Email</th><th>Access</th><th>Status</th></tr></thead>
+  <tbody>
+    <% @invites.each do |invite| %>
+      <tr>
+        <td><%= invite.email %></td>
+        <td><%= invite.grants.map { "#{_1.business.name}: #{_1.role}" }.join(", ") %></td>
+        <td>
+          <% if invite.accepted_at %>Accepted by <%= invite.accepted_by.name %>
+          <% elsif invite.expires_at.past? %>Expired
+          <% else %>Pending until <%= l(invite.expires_at, format: :short) %><% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= link_to "New invite", new_invite_path %>

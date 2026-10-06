@@ -1,0 +1,4 @@
+<h1>Invite created</h1>
+<p>Send this link to <%= @invite.email.presence || "the person you're inviting" %>. It works once and expires <%= l(@invite.expires_at, format: :long) %>. It won't be shown again.</p>
+<p><code id="join-url"><%= @join_url %></code></p>
+<%= link_to "Back to invites", invites_path %>

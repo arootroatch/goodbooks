@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_043047) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_044427) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -94,6 +94,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_043047) do
     t.datetime "updated_at", null: false
     t.boolean "singleton", default: true, null: false
     t.index ["singleton"], name: "index_households_on_singleton", unique: true
+  end
+
+  create_table "invite_grants", force: :cascade do |t|
+    t.integer "invite_id", null: false
+    t.integer "business_id", null: false
+    t.string "role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_invite_grants_on_business_id"
+    t.index ["invite_id"], name: "index_invite_grants_on_invite_id"
+  end
+
+  create_table "invites", force: :cascade do |t|
+    t.integer "created_by_id", null: false
+    t.string "email"
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "accepted_at"
+    t.integer "accepted_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accepted_by_id"], name: "index_invites_on_accepted_by_id"
+    t.index ["created_by_id"], name: "index_invites_on_created_by_id"
+    t.index ["token_digest"], name: "index_invites_on_token_digest", unique: true
   end
 
   create_table "memberships", force: :cascade do |t|
@@ -206,6 +230,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_043047) do
   add_foreign_key "businesses", "people"
   add_foreign_key "categories", "businesses"
   add_foreign_key "csv_imports", "accounts"
+  add_foreign_key "invite_grants", "businesses"
+  add_foreign_key "invite_grants", "invites"
+  add_foreign_key "invites", "users", column: "accepted_by_id"
+  add_foreign_key "invites", "users", column: "created_by_id"
   add_foreign_key "memberships", "businesses"
   add_foreign_key "memberships", "users"
   add_foreign_key "mileage_entries", "businesses"

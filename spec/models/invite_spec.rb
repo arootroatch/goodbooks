@@ -1,0 +1,61 @@
+require "rails_helper"
+
+RSpec.describe Invite do
+  let(:business) { create(:business) }
+
+  it "stores only a digest of the token and expires in 7 days" do
+    invite = create(:invite, business: business)
+    expect(invite.token).to be_present
+    expect(invite.token_digest).to eq(Invite.digest(invite.token))
+    expect(invite.expires_at).to be_within(1.minute).of(7.days.from_now)
+    expect(Invite.find_usable(invite.token)).to eq(invite)
+  end
+
+  it "is not usable after it expires or is accepted" do
+    invite = create(:invite, business: business)
+    travel 8.days
+    expect(Invite.find_usable(invite.token)).to be_nil
+  end
+
+  it "requires at least one grant" do
+    invite = Invite.new(created_by: create(:user, :household_owner))
+    expect(invite).not_to be_valid
+    expect(invite.errors[:base]).to include("Grant access to at least one business")
+  end
+
+  it "only lets creators grant businesses they own" do
+    editor = user_with_role("editor", business)
+    invite = Invite.new(created_by: editor)
+    invite.grant_roles = { business.id.to_s => "viewer" }
+    expect(invite).not_to be_valid
+    owner = user_with_role("owner", business)
+    invite = Invite.new(created_by: owner)
+    invite.grant_roles = { business.id.to_s => "viewer" }
+    expect(invite).to be_valid
+  end
+
+  it "ignores blank roles and rejects unknown ones" do
+    invite = Invite.new(created_by: create(:user, :household_owner))
+    invite.grant_roles = { business.id.to_s => "", create(:business).id.to_s => "admin" }
+    expect(invite.grants.size).to eq(1)
+    expect(invite).not_to be_valid
+  end
+
+  describe "#accept!" do
+    let(:invite) { create(:invite, business: business, role: "editor") }
+    let(:user) { create(:user) }
+
+    it "grants memberships once" do
+      invite.accept!(user)
+      expect(user.membership_for(business)).to be_editor
+      expect(invite.reload.accepted_by).to eq(user)
+      expect { invite.accept!(create(:user)) }.to raise_error(Invite::AlreadyUsed)
+    end
+
+    it "upgrades but never downgrades" do
+      create(:membership, user: user, business: business, role: "owner")
+      invite.accept!(user)
+      expect(user.membership_for(business)).to be_owner
+    end
+  end
+end

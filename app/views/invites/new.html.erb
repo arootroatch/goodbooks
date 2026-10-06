@@ -1,0 +1,19 @@
+<h1>Invite someone</h1>
+<%= form_with model: @invite do |f| %>
+  <%= render "shared/errors", record: @invite %>
+  <p><%= f.label :email, "Email (optional)" %> <%= f.email_field :email %></p>
+  <table>
+    <thead><tr><th>Business</th><th>Access</th></tr></thead>
+    <tbody>
+      <% @grantable.each do |business| %>
+        <tr>
+          <td><label for="invite_grant_roles_<%= business.id %>"><%= business.name %></label></td>
+          <td><%= select_tag "invite[grant_roles][#{business.id}]",
+                options_for_select([["No access", ""], ["Viewer", "viewer"], ["Editor", "editor"], ["Owner", "owner"]]),
+                id: "invite_grant_roles_#{business.id}" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= f.submit "Create invite" %>
+<% end %>
