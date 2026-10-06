@@ -1,0 +1,23 @@
+<table>
+  <thead>
+    <tr>
+      <th>Number</th><% if show_business %><th>Business</th><% end %><th>Client</th><th>Issued</th><th>Due</th>
+      <th class="num">Amount</th><th class="num">Paid</th><th class="num">Outstanding</th><th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% invoices.each do |invoice| %>
+      <tr id="<%= dom_id(invoice) %>">
+        <td><%= link_to invoice.number, business_invoice_path(invoice.business, invoice) %></td>
+        <% if show_business %><td><%= invoice.business.name %></td><% end %>
+        <td><%= invoice.client.name %></td>
+        <td><%= invoice.issue_date %></td>
+        <td><%= invoice.due_date %></td>
+        <td class="num"><%= money(invoice.amount_cents) %></td>
+        <td class="num"><%= money(invoice.paid_cents) %></td>
+        <td class="num"><%= invoice_outstanding(invoice) %></td>
+        <td><%= invoice_status_badge(invoice) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

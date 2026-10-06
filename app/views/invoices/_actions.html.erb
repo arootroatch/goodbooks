@@ -1,0 +1,10 @@
+<% if current_membership.can_edit? %>
+  <p class="actions">
+    <%= link_to "Edit", edit_business_invoice_path(@business, invoice) %>
+    <%= button_to "Mark sent", mark_sent_business_invoice_path(@business, invoice), method: :patch, form_class: "inline-form" if invoice.draft? %>
+    <%= button_to "Void", void_business_invoice_path(@business, invoice), method: :patch, form_class: "inline-form" if (invoice.draft? || invoice.sent?) && invoice.payments.none? %>
+    <%= button_to "Reopen", reopen_business_invoice_path(@business, invoice), method: :patch, form_class: "inline-form" if invoice.void? %>
+    <%= button_to "Delete", business_invoice_path(@business, invoice), method: :delete, form_class: "inline-form" if invoice.payments.none? %>
+  </p>
+<% end %>
+<%= link_to "All invoices", business_invoices_path(@business) %>

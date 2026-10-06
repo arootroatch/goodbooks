@@ -14,3 +14,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 @media print { .no-print, .business-nav, .site-header { display: none; } }
 .drag-handle { cursor: grab; user-select: none; padding: 0 .5rem; font-size: 1.2rem; }
 .sortable-ghost { opacity: .4; }
+.badge { display: inline-block; padding: 0 .4rem; border: 1px solid var(--line); border-radius: .6rem; font-size: .8rem; font-weight: normal; }
+.badge-paid { color: var(--accent); border-color: var(--accent); }
+.badge-overdue { color: var(--bad); border-color: var(--bad); }
+.badge-draft, .badge-void { color: var(--muted); }
+dl.details { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
+.actions { display: flex; gap: .5rem; align-items: center; }

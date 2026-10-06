@@ -1,0 +1,15 @@
+<%= business_nav @business %>
+<h1>Invoice <%= @invoice.number %> <%= invoice_status_badge(@invoice) %></h1>
+<dl class="details">
+  <dt>Client</dt><dd><%= @invoice.client.name %></dd>
+  <dt>Issued</dt><dd><%= @invoice.issue_date %></dd>
+  <dt>Due</dt><dd><%= @invoice.due_date %><%= " (#{pluralize(@invoice.days_past_due, "day")} past due)" if @invoice.overdue? %></dd>
+  <dt>Amount</dt><dd><%= money(@invoice.amount_cents) %></dd>
+  <dt>Paid</dt><dd><%= money(@invoice.paid_cents) %><%= " on #{@invoice.paid_on}" if @invoice.paid? %></dd>
+  <dt>Outstanding</dt><dd><%= invoice_outstanding(@invoice) %></dd>
+  <% if @invoice.description.present? %>
+    <dt>Description</dt><dd><%= @invoice.description %></dd>
+  <% end %>
+</dl>
+<%= render "invoices/payments", invoice: @invoice, payments: @payments %>
+<%= render "invoices/actions", invoice: @invoice %>
