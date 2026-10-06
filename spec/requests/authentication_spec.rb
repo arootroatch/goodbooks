@@ -80,6 +80,34 @@ RSpec.describe "Authentication" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
+  it "rejects and destroys sessions older than 30 days even if the cookie survives" do
+    sign_in_as(user)
+    get root_path
+    expect(response).to have_http_status(:ok)
+    Session.update_all(created_at: 31.days.ago)
+    get root_path
+    expect(response).to redirect_to(new_session_path)
+    expect(Session.count).to eq(0)
+  end
+
+  it "sets the session cookie to expire in about 30 days" do
+    log_in_password
+    post two_factor_path, params: { code: user.totp.now }
+    cookie = Array(response.headers["set-cookie"]).flat_map(&:lines).find { |l| l.start_with?("session_id=") }
+    expires = Time.httpdate(cookie[/expires=([^;]+)/i, 1])
+    expect(expires).to be_within(1.minute).of(30.days.from_now)
+    expect(cookie).to match(/httponly/i)
+  end
+
+  it "rotates the Rails session id at the password step while keeping the return-to path" do
+    get root_path
+    get new_session_path
+    before_id = session.id.to_s
+    log_in_password
+    expect(session[:return_to_after_authenticating]).to be_present
+    expect(session.id.to_s).not_to eq(before_id)
+  end
+
   it "expires the pending login after 10 minutes" do
     log_in_password
     travel 11.minutes
