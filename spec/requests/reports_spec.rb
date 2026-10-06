@@ -117,6 +117,41 @@ RSpec.describe "Reports" do
     expect(response).to have_http_status(:ok)
   end
 
+  it "exports household transactions CSV with rows from all businesses including archived" do
+    archived = create(:business, name: "Old Venture", archived_at: 1.day.ago)
+    jordan_account = create(:account, business: jordan)
+    jordan_sales = create(:category, :income, business: jordan, name: "Jordan sales")
+    archived_account = create(:account, business: archived)
+    archived_sales = create(:category, :income, business: archived, name: "Archived sales")
+    create(:transaction, account: jordan_account, category: jordan_sales, amount_cents: 2_000_00, posted_on: Date.new(2026, 2, 15))
+    create(:transaction, account: archived_account, category: archived_sales, amount_cents: 3_000_00, posted_on: Date.new(2026, 5, 10))
+    create(:membership, user: accountant, business: archived, role: "viewer")
+    sign_in_as accountant
+    get household_transaction_export_path(format: :csv, from: "2026-01-01", to: "2026-12-31")
+    expect(response.media_type).to eq("text/csv")
+    csv = CSV.parse(response.body)
+    expect(csv.size).to eq(4)
+    expect(response.body).to include("Pat Consulting")
+    expect(response.body).to include("Jordan Studio")
+    expect(response.body).to include("Old Venture")
+  end
+
+  it "uses default date range for household transaction export: Jan 1 to today when no params given" do
+    travel_to Date.new(2026, 6, 15) do
+      jordan_account = create(:account, business: jordan)
+      jordan_sales = create(:category, :income, business: jordan, name: "Jordan sales")
+      old_transaction = create(:transaction, account: account, category: sales, amount_cents: 1_000_00, posted_on: Date.new(2025, 12, 31))
+      current_transaction = create(:transaction, account: jordan_account, category: jordan_sales, amount_cents: 2_000_00, posted_on: Date.new(2026, 6, 15))
+      sign_in_as accountant
+      get household_transaction_export_path(format: :csv)
+      expect(response.media_type).to eq("text/csv")
+      csv = CSV.parse(response.body)
+      expect(csv.size).to eq(3)
+      expect(response.body).not_to include("2025-12-31")
+      expect(response.body).to include("2026-06-15")
+    end
+  end
+
   it "includes archived businesses in the household P&L" do
     archived = create(:business, name: "Old Venture", archived_at: 1.day.ago)
     create(:membership, user: accountant, business: archived, role: "viewer")
