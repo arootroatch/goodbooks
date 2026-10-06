@@ -22,6 +22,20 @@ RSpec.describe "Invoice reports" do
     expect(response.body).to include("INV-OLD")
   end
 
+  it "shows the Business column only in the household aging report" do
+    sign_in_as household_user
+    get business_invoice_aging_path(business)
+    expect(response.body).not_to include("<th>Business</th>")
+    get household_invoice_aging_path
+    expect(response.body).to include("<th>Business</th>")
+  end
+
+  it "links to household aging from the household nav" do
+    sign_in_as household_user
+    get household_profit_and_loss_path
+    expect(response.body).to include(%(href="#{household_invoice_aging_path}"))
+  end
+
   it "exports the filtered invoice list as CSV" do
     sign_in_as user_with_role("viewer", business)
     get business_invoices_path(business, format: :csv, status: "overdue")

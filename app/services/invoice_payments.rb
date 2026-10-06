@@ -1,4 +1,3 @@
-# app/services/invoice_payments.rb
 # The only writer of InvoicePayment rows. Locks (and so re-reads) the invoice and the deposit,
 # then lets Invoice#sync_payment_status! decide paid vs. sent.
 class InvoicePayments
@@ -7,7 +6,7 @@ class InvoicePayments
   end
 
   def self.gross_receipts_categories(business)
-    business.categories.active.income.where(schedule_c_line: "1").order(:name).to_a
+    business.categories.gross_receipts.order(:name).to_a
   end
 
   def self.link(invoice:, deposit:, amount_cents: nil, category: nil)

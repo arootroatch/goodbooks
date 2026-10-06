@@ -3,7 +3,7 @@ module InvoiceAgingReport
   private
 
   def render_aging(invoices, title:, filename:)
-    today = Date.current
+    today = @as_of = Date.current
     open_invoices = invoices.sent.includes(:client, :business, :payments).to_a.select { _1.outstanding_cents.positive? }
     @report = Reports::InvoiceAging.new(Reports::InvoiceAging.rows_from(open_invoices), as_of: today)
     @title = title

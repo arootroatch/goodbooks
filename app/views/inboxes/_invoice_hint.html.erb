@@ -1,4 +1,4 @@
-<% gross_receipts = categories.select { _1.income? && _1.schedule_c_line == "1" } %>
+<% gross_receipts = categories.select(&:gross_receipts?) %>
 <div class="invoice-hint">
   <% invoices.each do |invoice| %>
     <div>

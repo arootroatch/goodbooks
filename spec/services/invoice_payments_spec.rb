@@ -1,4 +1,3 @@
-# spec/services/invoice_payments_spec.rb
 require "rails_helper"
 
 RSpec.describe InvoicePayments do
