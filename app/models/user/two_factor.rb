@@ -20,11 +20,13 @@ module User::TwoFactor
   def verify_otp(code)
     return false if otp_secret.blank? || code.blank?
 
-    timestamp = totp.verify(code.to_s.gsub(/\s/, ""), drift_behind: 30, after: otp_last_verified_at)
-    return false unless timestamp
+    with_lock do
+      timestamp = totp.verify(code.to_s.gsub(/\s/, ""), drift_behind: 30, after: otp_last_verified_at)
+      next false unless timestamp
 
-    update!(otp_last_verified_at: timestamp)
-    true
+      update!(otp_last_verified_at: timestamp)
+      true
+    end
   end
 
   def enable_otp!
@@ -37,11 +39,13 @@ module User::TwoFactor
     normalized = code.to_s.strip.downcase
     return false if normalized.empty?
 
-    digest = recovery_code_digests.find { |d| BCrypt::Password.new(d) == normalized }
-    return false unless digest
+    with_lock do
+      digest = recovery_code_digests.find { |d| BCrypt::Password.new(d) == normalized }
+      next false unless digest
 
-    update!(recovery_code_digests: recovery_code_digests - [digest])
-    true
+      update!(recovery_code_digests: recovery_code_digests - [digest])
+      true
+    end
   end
 
   private

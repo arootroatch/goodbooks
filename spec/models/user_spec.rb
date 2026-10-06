@@ -37,6 +37,16 @@ RSpec.describe User do
       end
     end
 
+    it "rejects a code already used through another loaded instance of the same user" do
+      freeze_time do
+        first = User.find(user.id)
+        second = User.find(user.id)
+        code = user.totp.now
+        expect(first.verify_otp(code)).to be(true)
+        expect(second.verify_otp(code)).to be(false)
+      end
+    end
+
     it "rejects when no secret is set" do
       expect(build(:user, :without_otp).verify_otp("123456")).to be(false)
     end
@@ -53,6 +63,15 @@ RSpec.describe User do
       expect(user.consume_recovery_code(codes.first.upcase)).to be(true)
       expect(user.reload.consume_recovery_code(codes.first)).to be(false)
       expect(user.recovery_code_digests.size).to eq(9)
+    end
+
+    it "consumes a recovery code only once across separately loaded instances" do
+      codes = user.enable_otp!
+      first = User.find(user.id)
+      second = User.find(user.id)
+      expect(first.consume_recovery_code(codes.first)).to be(true)
+      expect(second.consume_recovery_code(codes.first)).to be(false)
+      expect(user.reload.recovery_code_digests.size).to eq(9)
     end
 
     it "does not store recovery codes in plain text" do

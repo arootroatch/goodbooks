@@ -49,6 +49,14 @@ RSpec.describe "Authentication" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
+  it "does not try recovery codes for a wrong 6-digit code" do
+    log_in_password
+    wrong = user.totp.now == "000000" ? "111111" : "000000"
+    expect_any_instance_of(User).not_to receive(:consume_recovery_code)
+    post two_factor_path, params: { code: " #{wrong[0, 3]} #{wrong[3, 3]} " }
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+
   it "rejects a replayed code on a second login in the same window" do
     freeze_time do
       code = user.totp.now

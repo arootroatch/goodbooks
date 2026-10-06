@@ -9,7 +9,7 @@ class TwoFactorsController < ApplicationController
   end
 
   def create
-    if @user.verify_otp(params[:code]) || @user.consume_recovery_code(params[:code])
+    if code_accepted?(params[:code])
       complete_two_factor(@user)
       redirect_to after_authentication_url
     else
@@ -19,6 +19,12 @@ class TwoFactorsController < ApplicationController
   end
 
   private
+
+  def code_accepted?(code)
+    return @user.verify_otp(code) if code.to_s.gsub(/\s/, "").match?(/\A\d{6}\z/)
+
+    @user.verify_otp(code) || @user.consume_recovery_code(code)
+  end
 
   def require_pending_user
     @user = pending_user
