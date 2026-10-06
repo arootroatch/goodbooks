@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    image: goodbooks:latest
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?set RAILS_MASTER_KEY in .env}
+      APP_HOST: ${APP_HOST:?set APP_HOST in .env}
+      SOLID_QUEUE_IN_PUMA: "true"
+    volumes:
+      - goodbooks_storage:/rails/storage
+
+volumes:
+  goodbooks_storage:
