@@ -18,10 +18,11 @@ class Rule < ApplicationRecord
   validates :field, inclusion: { in: FIELDS }
   validates :operator, inclusion: { in: OPERATORS }
   validates :outcome, inclusion: { in: OUTCOMES }
-  validates :value, presence: true
+  validates :value, presence: true, length: { maximum: 100 }
   validates :category, presence: true, if: -> { outcome == "categorize" }
   validates :amount_min_cents, :amount_max_cents, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validate :category_in_business
+  validate :amount_range_ordered
 
   before_validation { self.category = nil if outcome == "transfer" }
   before_create { self.position = (business.rules.maximum(:position) || 0) + 1 }
@@ -43,6 +44,12 @@ class Rule < ApplicationRecord
   end
 
   private
+
+  def amount_range_ordered
+    return unless amount_min_cents && amount_max_cents && amount_min_cents > amount_max_cents
+
+    errors.add(:amount_min, "must be less than or equal to amount max")
+  end
 
   def category_in_business
     errors.add(:category, "must belong to this business") if category && category.business_id != business_id

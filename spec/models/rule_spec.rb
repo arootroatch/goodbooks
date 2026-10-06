@@ -33,6 +33,19 @@ RSpec.describe Rule do
     expect(build(:rule, business: business, amount_min: "-5")).not_to be_valid
   end
 
+  it "requires amount min to be at most amount max" do
+    rule = build(:rule, business: business, amount_min: "$200", amount_max: "$100")
+    expect(rule).not_to be_valid
+    expect(rule.errors.full_messages).to include("Amount min must be less than or equal to amount max")
+    expect(build(:rule, business: business, amount_min: "$100", amount_max: "$100")).to be_valid
+    expect(build(:rule, business: business, amount_min: "$100", amount_max: "")).to be_valid
+  end
+
+  it "limits the value to 100 characters" do
+    expect(build(:rule, value: "a" * 100)).to be_valid
+    expect(build(:rule, value: "a" * 101)).not_to be_valid
+  end
+
   it "moves to a position and renumbers the rest" do
     a, b, c = Array.new(3) { create(:rule, business: business) }
     c.move_to!(1)
