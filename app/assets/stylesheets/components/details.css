@@ -1,0 +1,8 @@
+dl.details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-5);
+}
+dl.details dt { color: var(--muted); font-size: var(--text-sm); }
+dl.details dd { margin: 0; }

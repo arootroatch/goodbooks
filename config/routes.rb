@@ -25,6 +25,13 @@ Rails.application.routes.draw do
     end
     resources :categories, only: %i[index new create edit update]
     resources :clients, only: %i[index new create edit update]
+    resources :invoices do
+      member do
+        patch :mark_sent
+        patch :void
+        patch :reopen
+      end
+    end
     resources :transactions, except: :show do
       resource :classification, only: :update
     end
