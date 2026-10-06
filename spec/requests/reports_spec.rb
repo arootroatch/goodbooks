@@ -32,7 +32,7 @@ RSpec.describe "Reports" do
     create(:transaction, account: account, category: nil, posted_on: Date.new(2025, 5, 1))
     sign_in_as accountant
     get business_profit_and_loss_path(pat, from: "2026-01-01", to: "2026-12-31")
-    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include("1 uncategorized transaction in this range is not included.")
     expect(response.body).to include(business_inbox_path(pat))
   end
 
@@ -46,7 +46,7 @@ RSpec.describe "Reports" do
     create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
     sign_in_as accountant
     get business_schedule_c_path(pat, year: 2026)
-    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include("1 uncategorized transaction in this range is not included.")
     expect(response.body).to include(business_inbox_path(pat))
   end
 
@@ -54,7 +54,7 @@ RSpec.describe "Reports" do
     create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
     sign_in_as accountant
     get household_profit_and_loss_path(from: "2026-01-01", to: "2026-12-31")
-    expect(response.body).to include("1 uncategorized transactions in this range are not included.")
+    expect(response.body).to include("1 uncategorized transaction in this range is not included.")
     expect(response.body).to include(%(href="#{household_inbox_path}"))
   end
 
@@ -156,5 +156,13 @@ RSpec.describe "Reports" do
       get household_transaction_export_path(format: :csv)
       expect(response).to have_http_status(:not_found)
     end
+  end
+
+  it "pluralizes the uncategorized notice for multiple transactions" do
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 5, 1))
+    create(:transaction, account: account, category: nil, posted_on: Date.new(2026, 6, 1))
+    sign_in_as accountant
+    get business_profit_and_loss_path(pat, from: "2026-01-01", to: "2026-12-31")
+    expect(response.body).to include("2 uncategorized transactions in this range are not included.")
   end
 end
