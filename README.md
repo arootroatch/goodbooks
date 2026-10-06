@@ -1,6 +1,6 @@
 # goodbooks
 
-Self-hosted bookkeeping for a freelancing household: income and expenses per business, CSV imports, a rules-driven categorization inbox, mileage, P&L and Schedule C reports, and role-based sharing with your accountant. Design: `docs/superpowers/specs/2026-10-05-goodbooks-design.md`.
+Self-hosted bookkeeping for a freelancing household: income and expenses per business, CSV imports, a rules-driven categorization inbox, invoice tracking with payments linked to deposits, mileage, P&L and Schedule C reports, and role-based sharing with your accountant. Design: `docs/superpowers/specs/2026-10-05-goodbooks-design.md` (invoices: `docs/superpowers/specs/2026-10-06-goodbooks-invoices-design.md`).
 
 ## Development
 
