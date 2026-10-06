@@ -40,17 +40,26 @@ RSpec.describe DemoSeeder do
     expect(Household.count).to eq(0)
   end
 
-  it "creates TaxParameters for years covered by demo transactions" do
-    run
-    expect(TaxParameters.for_year(2026)).not_to be_nil
-    expect(TaxParameters.for_year(2025)).not_to be_nil
+  it "copies mileage rate from latest existing TaxParameters year" do
+    TaxParameters.create!(year: 2026, standard_mileage_rate_tenth_cents: 700)
+    today_early_month = Date.new(2026, 1, 1)
+    DemoSeeder.new(out: out, today: today_early_month).run
+    expect(TaxParameters.for_year(2025).standard_mileage_rate_tenth_cents).to eq(700)
+    expect(TaxParameters.for_year(2026).standard_mileage_rate_tenth_cents).to eq(700)
+    expect(out.string).to include("Demo: copied")
+  end
+
+  it "uses default mileage rate when no TaxParameters exist" do
+    today_early_month = Date.new(2026, 1, 1)
+    DemoSeeder.new(out: out, today: today_early_month).run
+    expect(TaxParameters.for_year(2025).standard_mileage_rate_tenth_cents).to eq(725)
+    expect(TaxParameters.for_year(2026).standard_mileage_rate_tenth_cents).to eq(725)
+    expect(out.string).to include("Demo: no tax parameters found; seeded 2025 with default 72.5¢ mileage rate")
   end
 
   it "ensures inbox is non-empty on days 1-2 when seeding on those dates" do
     today_early_month = Date.new(2026, 1, 1)
     DemoSeeder.new(out: out, today: today_early_month).run
     expect(Transaction.inbox.count).to be > 0
-    expect(TaxParameters.for_year(2025)).not_to be_nil
-    expect(TaxParameters.for_year(2026)).not_to be_nil
   end
 end

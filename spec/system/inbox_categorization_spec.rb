@@ -10,6 +10,8 @@ RSpec.describe "Inbox categorization", js: true do
     system_sign_in_as user_with_role("editor", business)
     visit business_inbox_path(business)
 
+    page.execute_script("window.__noReload = true")
+
     transaction_id = "transaction_#{transaction.id}"
     expect(page).to have_css("##{transaction_id}")
     expect(page).to have_content("Adobe Inc")
@@ -21,6 +23,7 @@ RSpec.describe "Inbox categorization", js: true do
 
     expect(page).not_to have_css("##{transaction_id}")
     expect(current_path).to eq(business_inbox_path(business))
+    expect(page.evaluate_script("window.__noReload")).to be(true)
     expect(transaction.reload.category).to eq(category)
   end
 end
