@@ -24,7 +24,28 @@ module CategoryTemplate
     { name: "Education", kind: "expense", schedule_c_line: "27a" }
   ].freeze
 
+  PERSONAL = [
+    { name: "Owner draws", kind: "income" },
+    { name: "Paychecks and other income", kind: "income" },
+    { name: "Refunds and reimbursements", kind: "income", tithable: false },
+    { name: "Tithe", kind: "expense", tithe: true },
+    { name: "Offerings and giving", kind: "expense" },
+    { name: "Groceries", kind: "expense" },
+    { name: "Dining", kind: "expense" },
+    { name: "Housing", kind: "expense" },
+    { name: "Utilities", kind: "expense" },
+    { name: "Transportation", kind: "expense" },
+    { name: "Insurance", kind: "expense" },
+    { name: "Medical", kind: "expense" },
+    { name: "Kids", kind: "expense" },
+    { name: "Household", kind: "expense" },
+    { name: "Personal", kind: "expense" },
+    { name: "Gifts", kind: "expense" },
+    { name: "Subscriptions", kind: "expense" },
+    { name: "Other", kind: "expense" }
+  ].freeze
+
   def self.apply_to(business)
-    CATEGORIES.each { |attrs| business.categories.create!(attrs) }
+    (business.personal? ? PERSONAL : CATEGORIES).each { |attrs| business.categories.create!(attrs) }
   end
 end

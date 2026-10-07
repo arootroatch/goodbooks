@@ -8,7 +8,10 @@ class Category < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { scope: :business_id }
   validates :deductible_bps, numericality: { only_integer: true, in: 0..10_000 }
+  before_validation :normalize_tithe_flags
+
   validate :schedule_c_line_matches_kind
+  validate :tithe_flags_only_on_personal
   validate :deductible_percent_parses
   validate :kind_stays_income_while_linked, on: :update
 
@@ -41,8 +44,25 @@ class Category < ApplicationRecord
   private
 
   def schedule_c_line_matches_kind
+    if business&.personal?
+      errors.add(:schedule_c_line, "must be blank for personal categories") if schedule_c_line.present?
+      return
+    end
+
     allowed = ScheduleC.options_for(kind).map(&:last)
     errors.add(:schedule_c_line, "is not valid for #{kind} categories") unless allowed.include?(schedule_c_line)
+  end
+
+  # Tithable only means something on income, tithe only on expense; the form shows both, so normalize instead of erroring.
+  def normalize_tithe_flags
+    self.tithable = true if expense?
+    self.tithe = false if income?
+  end
+
+  def tithe_flags_only_on_personal
+    return if business&.personal? || (tithable? && !tithe?)
+
+    errors.add(:base, "Tithe settings are only for personal categories")
   end
 
   def kind_stays_income_while_linked

@@ -1,6 +1,6 @@
 class Business < ApplicationRecord
   belongs_to :household
-  belongs_to :person
+  belongs_to :person, optional: true
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :accounts, dependent: :destroy
@@ -11,14 +11,39 @@ class Business < ApplicationRecord
   has_many :invoices, dependent: :restrict_with_error
   has_many :transactions, through: :accounts
 
+  enum :kind, { business: "business", personal: "personal" }, validate: true, scopes: false
+
   scope :active, -> { where(archived_at: nil) }
+  scope :business_kind, -> { where(kind: "business") }
+  scope :personal, -> { where(kind: "personal") }
 
   validates :name, presence: true
+  validates :person, presence: true, if: :business?
+  validates :kind, uniqueness: { scope: :household_id, message: "already exists for this household" }, if: :personal?
   validate :person_in_household
+  validate :personal_has_no_person
+  validate :tithe_start_on_allowed
+  validate :personal_not_archived
 
   private
 
   def person_in_household
     errors.add(:person, "must belong to this household") if person && person.household_id != household_id
+  end
+
+  def personal_has_no_person
+    errors.add(:person, "must be blank for the personal book") if personal? && person_id.present?
+  end
+
+  def tithe_start_on_allowed
+    return if tithe_start_on.nil?
+
+    if business? then errors.add(:tithe_start_on, "is only for the personal book")
+    elsif tithe_start_on > Date.current then errors.add(:tithe_start_on, "can't be in the future")
+    end
+  end
+
+  def personal_not_archived
+    errors.add(:base, "The personal book can't be archived") if personal? && archived_at.present?
   end
 end
