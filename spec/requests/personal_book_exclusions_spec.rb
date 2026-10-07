@@ -59,4 +59,43 @@ RSpec.describe "Personal book exclusions" do
     }.not_to change(Invite, :count)
     expect(response).to have_http_status(:unprocessable_content)
   end
+
+  context "with a sent, overdue personal invoice" do
+    let!(:personal_invoice) do
+      create(:invoice, business: book, client: create(:client, business: book, name: "SECRET CLIENT"),
+                       number: "PERS-1", amount_cents: 77_700, due_date: Date.current - 10)
+    end
+
+    before do
+      create(:membership, user: owner, business: business, role: "owner")
+      create(:invoice, business: business, client: create(:client, business: business, name: "Pat Client"),
+                       number: "BIZ-1", amount_cents: 55_500, due_date: Date.current - 10)
+      sign_in_as owner
+    end
+
+    it "leaves it out of household invoices and aging, HTML and CSV" do
+      [ household_invoices_path, household_invoices_path(format: :csv),
+        household_invoice_aging_path, household_invoice_aging_path(format: :csv) ].each do |path|
+        get path
+        expect(response.body.include?("BIZ-1") || response.body.include?("Pat Client")).to be(true), path
+        expect(response.body).not_to include("PERS-1"), path
+        expect(response.body).not_to include("SECRET CLIENT"), path
+      end
+    end
+
+    it "leaves its receivables off the dashboard" do
+      get root_path
+      expect(response.body).to include("555.00")
+      expect(response.body).not_to include("777.00")
+    end
+
+    it "does not offer it as a match for a personal deposit in the household inbox" do
+      create(:transaction, account: create(:account, business: book), payee: "SECRET DEPOSIT", amount_cents: 77_700,
+                           posted_on: Date.current)
+      get household_inbox_path
+      expect(response.body).to include("SECRET DEPOSIT")
+      expect(response.body).not_to include("PERS-1")
+      expect(response.body).not_to include("Mark paid")
+    end
+  end
 end
