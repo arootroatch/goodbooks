@@ -29,6 +29,7 @@ RSpec.describe "Tithe" do
     get business_tithe_path(book, format: :csv)
     expect(response.media_type).to eq("text/csv")
     expect(response.body.lines.first).to start_with("Week starting,Week ending,Income,Owed")
+    expect(response.body.lines.first).to end_with("Balance (positive = behind)\n")
     get root_path
     expect(response.body).to include("Tithe: Behind $50.00")
   end

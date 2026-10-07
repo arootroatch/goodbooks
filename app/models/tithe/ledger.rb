@@ -17,7 +17,7 @@ module Tithe
       @owed_cents = 0
       @paid_cents = 0
       totals = starts.map do |starts_on|
-        week_entries = (by_week[starts_on] || []).sort_by(&:posted_on)
+        week_entries = (by_week[starts_on] || []).sort_by { [ _1.posted_on, _1.kind == :income ? 0 : 1, _1.source&.id.to_i ] }
         income = week_entries.select { _1.kind == :income }.sum(&:cents)
         paid = week_entries.select { _1.kind == :payment }.sum(&:cents)
         owed = Money.round_rational(income * RATE)

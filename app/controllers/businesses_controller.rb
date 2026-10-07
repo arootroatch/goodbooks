@@ -29,7 +29,7 @@ class BusinessesController < ApplicationController
 
   def update
     if @business.update(params.expect(business: %i[name]))
-      redirect_to business_path(@business), notice: "Business updated."
+      redirect_to business_path(@business), notice: @business.personal? ? "Personal book updated." : "Business updated."
     else
       render :edit, status: :unprocessable_content
     end

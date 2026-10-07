@@ -1,7 +1,7 @@
 class MembershipsController < ApplicationController
   include BusinessScoped
 
-  LAST_OWNER = "A business needs at least one owner."
+  LAST_OWNER = "Every book needs at least one owner."
   HOUSEHOLD_OWNER = "The household owner's access can only be changed by the household owner."
 
   before_action :require_owner!
