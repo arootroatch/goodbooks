@@ -76,7 +76,7 @@ Users add, rename, and archive personal categories and toggle the two flags, as 
 
 Inputs are the personal book's transactions, across all its accounts, with `transfer = false`, `excluded = false`, and `posted_on >= tithe_start_on`.
 
-- **Tithable income**: `amount_cents > 0` and (category is nil or category `tithable`). Uncategorized deposits count.
+- **Tithable income**: `amount_cents > 0` and (category is nil, or category is an `income` category with `tithable: true`). Uncategorized deposits count. Positive amounts in expense categories (a grocery refund, a refunded tithe) are never income.
 - **Tithe paid**: transactions whose category has `tithe: true`, contributing `-amount_cents` (so a check of −$100 pays $100, and a refunded tithe of +$100 un-pays $100). The category's `archived_at` does not matter; its `tithe` flag does.
 - **Weeks** run Sunday through Saturday by `posted_on`. The first week starts on the Sunday on or before `tithe_start_on` but counts only transactions on or after it.
 - **Owed per week** = `Money.round_rational(Rational(income_cents, 10))`, rounded once per week.
@@ -91,7 +91,7 @@ Nothing is stored: the ledger is recomputed on every request, so recategorizing,
 
 ### Pure (no database)
 
-- `Tithe::Ledger.call(entries:, start_on:, today:)` where `entries` are `Data` structs `(posted_on, amount_cents, kind: :income|:payment)`. Returns weeks (`starts_on, ends_on, income_cents, owed_cents, paid_cents, paid_toward_cents, status, balance_cents`) plus totals (`owed_cents, paid_cents, balance_cents, credit_cents`) and `year_to_date(owed_cents, paid_cents)`.
+- `Tithe::Ledger.new(entries:, start_on:, today:)` where `entries` are `Tithe::Ledger::Entry` structs `(posted_on, cents, kind: :income|:payment, source)`; for payments `cents` is the amount paid (a refunded tithe is negative). Exposes `weeks` (`starts_on, ends_on, income_cents, owed_cents, paid_cents, paid_toward_cents, status, balance_cents, entries`), totals (`owed_cents, paid_cents, balance_cents, credit_cents`), and `ytd_owed_cents` / `ytd_paid_cents` (weeks that end in `today`'s year).
 - `Reports::Spending.call(rows:, months:)` where `rows` are `(month, category_id, amount_cents)`; returns a category × month grid with row and column totals, income and expense sections separated. Expenses display as positive numbers (negated sum), per parent §3.
 
 ### Query
