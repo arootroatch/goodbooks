@@ -9,6 +9,7 @@
     <li><%= link_to "Inbox", business_inbox_path(business) %></li>
     <% if business.personal? %>
       <li><%= link_to "Tithe", business_tithe_path(business) %></li>
+      <li><%= link_to "Spending", business_spending_report_path(business) %></li>
     <% end %>
     <% unless business.personal? %>
       <li><%= link_to "Mileage", business_mileage_entries_path(business) %></li>

@@ -1,0 +1,20 @@
+<%= business_nav @business %>
+<h1>Spending</h1>
+<%= render "shared/date_range_form", url: business_spending_report_path(@business) %>
+<%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: business_inbox_path(@business) %>
+<p><%= link_to "Download CSV", business_spending_report_path(@business, format: :csv, from: date_range.first, to: date_range.last) %></p>
+<table>
+  <thead>
+    <tr><th>Category</th><% @report.months.each do |month| %><th class="num"><%= month %></th><% end %><th class="num">Total</th></tr>
+  </thead>
+  <tbody>
+    <% [ [ "Income", @report.income_lines, @report.income_total ], [ "Spending", @report.expense_lines, @report.expense_total ] ].each do |heading, lines, total| %>
+      <tr><th colspan="<%= @report.months.size + 2 %>"><%= heading %></th></tr>
+      <% lines.each do |line| %>
+        <tr><td><%= line.name %></td><% @report.months.each do |month| %><td class="num"><%= money(line.amounts[month]) %></td><% end %><td class="num"><%= money(line.total_cents) %></td></tr>
+      <% end %>
+      <tr><th><%= total.name %></th><% @report.months.each do |month| %><th class="num"><%= money(total.amounts[month]) %></th><% end %><th class="num"><%= money(total.total_cents) %></th></tr>
+    <% end %>
+    <tr><th><%= @report.net.name %></th><% @report.months.each do |month| %><th class="num"><%= money(@report.net.amounts[month]) %></th><% end %><th class="num"><%= money(@report.net.total_cents) %></th></tr>
+  </tbody>
+</table>
