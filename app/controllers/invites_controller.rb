@@ -40,8 +40,8 @@ class InvitesController < ApplicationController
   end
 
   def grantable_businesses
-    return Business.active.order(:name) if Current.user.household_owner?
+    return Business.business_kind.active.order(:name) if Current.user.household_owner?
 
-    Business.active.where(id: Current.user.memberships.owner.select(:business_id)).order(:name)
+    Business.business_kind.active.where(id: Current.user.memberships.owner.select(:business_id)).order(:name)
   end
 end
