@@ -21,6 +21,13 @@ RSpec.describe Business do
     expect(build(:business, :personal, person: create(:person))).not_to be_valid
   end
 
+  it "bounds the tithe start date below at 2000-01-01" do
+    book = create(:business, :personal)
+    expect(book.update(tithe_start_on: Date.new(1999, 12, 31))).to be(false)
+    expect(book.errors[:tithe_start_on]).to include("can't be before 2000-01-01")
+    expect(book.update(tithe_start_on: Date.new(2000, 1, 1))).to be(true)
+  end
+
   it "accepts a past or today tithe start date only on the personal book" do
     book = create(:business, :personal)
     expect(book.update(tithe_start_on: Date.current)).to be(true)

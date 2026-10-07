@@ -51,6 +51,23 @@ RSpec.describe "Tithe" do
     expect(book.reload.tithe_start_on).to be_nil
   end
 
+  it "rejects a start date before the floor" do
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    patch business_tithe_path(book), params: { business: { tithe_start_on: "0202-01-04" } }
+    expect(flash[:alert]).to include("can't be before 2000-01-01")
+    expect(book.reload.tithe_start_on).to eq(start_on)
+  end
+
+  it "escapes payee text on the tithe page" do
+    create(:transaction, account: checking, payee: "<script>alert(1)</script>", amount_cents: 150_000, posted_on: start_on)
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    expect(response.body).to include("&lt;script&gt;")
+    expect(response.body).not_to include("<script>alert(1)")
+  end
+
   it "lets editors read but not change the start date" do
     spouse = create(:user)
     create(:person, household: household, user: spouse)
