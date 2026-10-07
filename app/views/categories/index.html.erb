@@ -1,14 +1,24 @@
 <%= business_nav @business %>
 <h1>Categories</h1>
 <table>
-  <thead><tr><th>Name</th><th>Kind</th><th>Schedule C</th><th class="num">Deductible</th><th></th></tr></thead>
+  <thead>
+    <tr>
+      <th>Name</th><th>Kind</th>
+      <% if @business.personal? %><th>Tithe</th><% else %><th>Schedule C</th><th class="num">Deductible</th><% end %>
+      <th></th>
+    </tr>
+  </thead>
   <tbody>
     <% @categories.each do |category| %>
       <tr>
         <td><%= category.name %><%= " (archived)" if category.archived? %></td>
         <td><%= category.kind %></td>
-        <td><%= ScheduleC.label(category.schedule_c_line) %></td>
-        <td class="num"><%= category.deductible_percent %>%</td>
+        <% if @business.personal? %>
+          <td><%= category_tithe_label(category) %></td>
+        <% else %>
+          <td><%= ScheduleC.label(category.schedule_c_line) %></td>
+          <td class="num"><%= category.deductible_percent %>%</td>
+        <% end %>
         <td><%= link_to "Edit", edit_business_category_path(@business, category) if current_membership.can_edit? %></td>
       </tr>
     <% end %>

@@ -21,7 +21,7 @@ class BusinessesController < ApplicationController
 
   def show
     @accounts = @business.accounts.active.order(:name)
-    @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id]
+    @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id] if @business.business?
   end
 
   def edit

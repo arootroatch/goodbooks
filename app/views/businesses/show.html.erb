@@ -1,7 +1,11 @@
 <%= business_nav @business %>
 <h1><%= @business.name %></h1>
-<p>Taxpayer: <%= @business.person.name %></p>
-<p><%= render "invoices/receivables", totals: @receivables %></p>
+<% if @business.personal? %>
+  <p>The household's personal accounts and tithe. Only household members can see this.</p>
+<% else %>
+  <p>Taxpayer: <%= @business.person.name %></p>
+  <p><%= render "invoices/receivables", totals: @receivables %></p>
+<% end %>
 <h2>Accounts</h2>
 <ul>
   <% @accounts.each do |account| %>
@@ -9,5 +13,5 @@
   <% end %>
 </ul>
 <% if current_membership.owner? %>
-  <%= link_to "Edit business", edit_business_path(@business) %>
+  <%= link_to(@business.personal? ? "Rename" : "Edit business", edit_business_path(@business)) %>
 <% end %>

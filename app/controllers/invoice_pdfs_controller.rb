@@ -1,6 +1,7 @@
 # Streams the PDF after the business access check; Active Storage's public blob routes are disabled.
 class InvoicePdfsController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
 
   def show
     invoice = @business.invoices.find(params[:invoice_id])

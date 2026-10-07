@@ -1,5 +1,6 @@
 class InvoicePaymentsController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
   include DateRangeParams
   include ScalarParams
 
