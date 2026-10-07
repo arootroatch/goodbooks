@@ -131,8 +131,8 @@ class DemoSeeder
                               external_id: "demo-#{business.id}-match")
   end
 
-  # Weekly owner draws (tithable), groceries, monthly utilities and refunds (not tithable), a savings transfer,
-  # and Grace Church checks every other week that stop two weeks short of today, so the household is a little behind.
+  # Weekly owner draws from each business (tithable), groceries and dining, monthly utilities and refunds
+  # (not tithable), a savings transfer, and Grace Church checks that leave one or two weeks of tithe unpaid.
   def seed_personal(household)
     book = PersonalBookProvisioner.call(household)
     start = @today << 12
@@ -157,19 +157,25 @@ class DemoSeeder
     end
 
     sundays = start.step(@today, 7).to_a
-    sundays.each_with_index do |sunday, i|
+    sundays.each do |sunday|
       add.(sunday + 1, "KROGER", -(9_000 + @random.rand(6_000)), "Groceries")
+      add.(sunday + 3, "LOCAL TAQUERIA", -(2_000 + @random.rand(3_000)), "Dining")
       add.(sunday + 5, "TRANSFER FROM PAT CONSULTING", 150_000, "Owner draws")
-      if i.odd? && i <= sundays.size - 3
-        add.(sunday + 9, "CHECK #{1000 + i} GRACE CHURCH", -30_000, "Tithe", rule: tithe_rule, categorized_by: "rule")
-      end
+      add.(sunday + 5, "TRANSFER FROM JORDAN DESIGN STUDIO", 80_000, "Owner draws")
+    end
+
+    # Weeks whose Friday draws have landed owe tithe; pay them in pairs, leaving the last one or two weeks unpaid.
+    drawn = sundays.select { _1 + 5 <= @today }
+    unpaid = drawn.size.even? ? 2 : 1
+    drawn.first([ drawn.size - unpaid, 0 ].max).each_slice(2).with_index do |(_, second), index|
+      add.(second + 9, "CHECK #{1000 + index} GRACE CHURCH", -46_000, "Tithe", rule: tithe_rule, categorized_by: "rule")
     end
     12.downto(0) do |months_ago|
       month = (@today << months_ago).beginning_of_month
       add.(month + 14, "NASHVILLE ELECTRIC", -(11_000 + @random.rand(5_000)), "Utilities")
       add.(month + 20, "AMAZON REFUND", 2_500 + @random.rand(3_000), "Refunds and reimbursements")
     end
-    add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "rule")
+    add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "user")
   end
 
   def ensure_tax_parameters

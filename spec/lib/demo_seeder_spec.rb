@@ -23,7 +23,7 @@ RSpec.describe DemoSeeder do
     expect(Transaction.maximum(:posted_on)).to be <= today
   end
 
-  it "seeds a personal book that is a week or three behind on tithe, hidden from the accountant" do
+  it "seeds a personal book that is one or two weeks behind on tithe, hidden from the accountant" do
     run
     book = Business.personal.sole
     pat, jordan, accountant = %w[pat jordan accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
@@ -32,10 +32,20 @@ RSpec.describe DemoSeeder do
     expect(accountant.membership_for(book)).to be_nil
     expect(book.tithe_start_on).to be_sunday
     ledger = Tithe.ledger_for(book, today: today)
-    expect(ledger.balance_cents).to be_between(15_000, 45_000)
+    expect(ledger.balance_cents).to be_between(23_000, 46_000)
     expect(ledger.paid_cents).to be > 0
     expect(book.transactions.where(transfer: true)).to exist
     expect(book.transactions.joins(:category).where(categories: { tithable: false })).to exist
+  end
+
+  (0..13).each do |offset|
+    it "is one or two weeks behind on tithe whatever the weekday (#{offset} days after 2026-10-05)" do
+      day = Date.new(2026, 10, 5) + offset
+      DemoSeeder.new(out: out, today: day).run
+      ledger = Tithe.ledger_for(Business.personal.sole, today: day)
+      expect(ledger.balance_cents).to be_between(23_000, 46_000)
+      expect(Transaction.maximum(:posted_on)).to be <= day
+    end
   end
 
   it "uses a known TOTP secret and prints the logins" do
