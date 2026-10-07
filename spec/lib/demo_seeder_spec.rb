@@ -9,7 +9,7 @@ RSpec.describe DemoSeeder do
   it "builds a household with two businesses, three users, and a year of activity" do
     run
     expect(Household.count).to eq(1)
-    expect(Business.pluck(:name)).to contain_exactly("Pat Consulting", "Jordan Design Studio")
+    expect(Business.business_kind.pluck(:name)).to contain_exactly("Pat Consulting", "Jordan Design Studio")
     pat, jordan, accountant = %w[pat jordan accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
     expect(pat).to be_household_owner
     expect(jordan.membership_for(Business.find_by!(name: "Jordan Design Studio"))).to be_editor
@@ -19,8 +19,23 @@ RSpec.describe DemoSeeder do
     expect(Transaction.where.not(category_id: nil).count).to be > 50
     expect(Transaction.where(transfer: true).count).to be > 0
     expect(MileageEntry.count).to be > 10
-    expect(Rule.count).to eq(4)
+    expect(Rule.count).to eq(5)
     expect(Transaction.maximum(:posted_on)).to be <= today
+  end
+
+  it "seeds a personal book that is a week or three behind on tithe, hidden from the accountant" do
+    run
+    book = Business.personal.sole
+    pat, jordan, accountant = %w[pat jordan accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
+    expect(pat.membership_for(book)).to be_owner
+    expect(jordan.membership_for(book)).to be_editor
+    expect(accountant.membership_for(book)).to be_nil
+    expect(book.tithe_start_on).to be_sunday
+    ledger = Tithe.ledger_for(book, today: today)
+    expect(ledger.balance_cents).to be_between(15_000, 45_000)
+    expect(ledger.paid_cents).to be > 0
+    expect(book.transactions.where(transfer: true)).to exist
+    expect(book.transactions.joins(:category).where(categories: { tithable: false })).to exist
   end
 
   it "uses a known TOTP secret and prints the logins" do

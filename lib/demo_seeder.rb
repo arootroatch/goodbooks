@@ -46,6 +46,7 @@ class DemoSeeder
     seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
     seed_invoices(consulting, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
     seed_invoices(studio, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "JDS-")
+    seed_personal(household)
   end
 
   def seed_business(business, client:, income_cents:, software:)
@@ -128,6 +129,47 @@ class DemoSeeder
     match = add_invoice.(third, 245_000, @today - 20)
     bank.transactions.create!(posted_on: @today, payee: "#{third.name.upcase} ACH", amount_cents: match.amount_cents,
                               external_id: "demo-#{business.id}-match")
+  end
+
+  # Weekly owner draws (tithable), groceries, monthly utilities and refunds (not tithable), a savings transfer,
+  # and Grace Church checks every other week that stop two weeks short of today, so the household is a little behind.
+  def seed_personal(household)
+    book = PersonalBookProvisioner.call(household)
+    start = @today << 12
+    start += (7 - start.wday) % 7
+    book.update!(tithe_start_on: start)
+    checking = book.accounts.create!(
+      name: "Joint Checking", source: "csv", kind: "checking",
+      csv_mapping: CsvImport::Mapping.new(date_column: "Date", payee_column: "Description", amount_column: "Amount").to_h
+    )
+    categories = book.categories.index_by(&:name)
+    tithe_rule = book.rules.create!(field: "payee", operator: "contains", value: "GRACE CHURCH", outcome: "categorize",
+                                    category: categories.fetch("Tithe"))
+
+    sequence = 0
+    add = lambda do |date, payee, cents, category, **extra|
+      next if date > @today
+
+      sequence += 1
+      attrs = { posted_on: date, payee: payee, amount_cents: cents, external_id: "demo-personal-#{sequence}" }
+      attrs.merge!(category: categories.fetch(category), categorized_by: "user") if category
+      checking.transactions.create!(attrs.merge(extra))
+    end
+
+    sundays = start.step(@today, 7).to_a
+    sundays.each_with_index do |sunday, i|
+      add.(sunday + 1, "KROGER", -(9_000 + @random.rand(6_000)), "Groceries")
+      add.(sunday + 5, "TRANSFER FROM PAT CONSULTING", 150_000, "Owner draws")
+      if i.odd? && i <= sundays.size - 3
+        add.(sunday + 9, "CHECK #{1000 + i} GRACE CHURCH", -30_000, "Tithe", rule: tithe_rule, categorized_by: "rule")
+      end
+    end
+    12.downto(0) do |months_ago|
+      month = (@today << months_ago).beginning_of_month
+      add.(month + 14, "NASHVILLE ELECTRIC", -(11_000 + @random.rand(5_000)), "Utilities")
+      add.(month + 20, "AMAZON REFUND", 2_500 + @random.rand(3_000), "Refunds and reimbursements")
+    end
+    add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "rule")
   end
 
   def ensure_tax_parameters
