@@ -14,7 +14,9 @@
     <%= nav_link "Accounts", business_accounts_path(business) %>
     <%= nav_link "Categories", business_categories_path(business) %>
     <%= nav_link "Rules", business_rules_path(business) %>
-    <% unless business.personal? %>
+    <% if business.personal? %>
+      <%= nav_link "Tithe", business_tithe_path(business) %>
+    <% else %>
       <%= nav_link "Mileage", business_mileage_entries_path(business) %>
       <%= nav_link "Invoices", business_invoices_path(business) %>
       <%= nav_link "Clients", business_clients_path(business) %>

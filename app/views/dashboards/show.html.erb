@@ -10,6 +10,9 @@
 <% if current_personal_book %>
   <h2>Personal</h2>
   <p><%= link_to "Personal", business_path(current_personal_book) %></p>
+  <% if @tithe %>
+    <p><%= link_to "Tithe: #{tithe_balance_label(@tithe.balance_cents)}", business_tithe_path(current_personal_book) %></p>
+  <% end %>
 <% elsif Current.user.household_owner? %>
   <h2>Personal</h2>
   <p>Track the joint checking account and the tithe. The accountant never sees it.</p>

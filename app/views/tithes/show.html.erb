@@ -1,0 +1,42 @@
+<h1>Tithe</h1>
+<% if current_membership.owner? %>
+  <%= form_with model: @business, url: business_tithe_path(@business), method: :patch, class: "inline-form" do |f| %>
+    <%= f.label :tithe_start_on, "Track tithe from" %>
+    <%= f.date_field :tithe_start_on %>
+    <%= f.submit "Save" %>
+  <% end %>
+<% end %>
+<% if @ledger.nil? %>
+  <p><%= current_membership.owner? ? "Choose the date to start tracking from; earlier activity is ignored." : "The household owner hasn't set a tithe start date yet." %></p>
+<% else %>
+  <p class="tithe-balance"><strong><%= tithe_balance_label(@ledger.balance_cents) %></strong></p>
+  <p>This year: owed <%= money(@ledger.ytd_owed_cents) %> · paid <%= money(@ledger.ytd_paid_cents) %></p>
+  <p><%= link_to "Download CSV", business_tithe_path(@business, format: :csv) %></p>
+  <table>
+    <thead>
+      <tr><th>Week</th><th class="num">Income</th><th class="num">Owed</th><th class="num">Paid this week</th><th class="num">Applied</th><th>Status</th><th class="num">Balance</th></tr>
+    </thead>
+    <tbody>
+      <% @ledger.weeks.reverse_each do |week| %>
+        <tr>
+          <td>
+            <details>
+              <summary><%= tithe_week_label(week) %></summary>
+              <ul>
+                <% week.entries.each do |entry| %>
+                  <li><%= entry.posted_on.iso8601 %> <%= entry.source.payee %> (<%= entry.kind == :income ? "income" : "tithe" %>) <%= money(entry.cents) %></li>
+                <% end %>
+              </ul>
+            </details>
+          </td>
+          <td class="num"><%= money(week.income_cents) %></td>
+          <td class="num"><%= money(week.owed_cents) %></td>
+          <td class="num"><%= money(week.paid_cents) %></td>
+          <td class="num"><%= money(week.paid_toward_cents) %></td>
+          <td><%= week.status %></td>
+          <td class="num"><%= tithe_balance_label(week.balance_cents) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

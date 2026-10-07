@@ -152,7 +152,17 @@ RSpec.describe "Navigation" do
     sign_in_as household_owner
     get root_path
     expect(sidebar.all(".switcher li a", visible: :all).map(&:text)).to eq([ "Household", "Personal", "Aardvark Co", "Studio LLC" ])
-    expect(Capybara.string(response.body)).to have_link("Personal", count: 2) # switcher + dashboard card
+    expect(sidebar).to have_link("Personal", count: 1, visible: :all) # the switcher entry, no separate nav link
+  end
+
+  it "shows the personal book's own links and hides business-only ones" do
+    book = PersonalBookProvisioner.call(household)
+    sign_in_as household_owner
+    get business_accounts_path(book)
+    expect(sidebar).to have_link("Tithe", href: business_tithe_path(book))
+    expect(sidebar).to have_no_link("Mileage")
+    expect(sidebar).to have_no_link("Invoices")
+    expect(sidebar).to have_no_css(".nav-group", text: "Reports")
   end
 
   it "renders for a user with no memberships" do
