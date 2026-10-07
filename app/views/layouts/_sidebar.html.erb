@@ -23,8 +23,10 @@
     <% end %>
     <%= nav_link "Members", business_memberships_path(business) if sidebar_membership&.owner? %>
 
-    <% unless business.personal? %>
-      <p class="nav-group">Reports</p>
+    <p class="nav-group">Reports</p>
+    <% if business.personal? %>
+      <%= nav_link "Spending", business_spending_report_path(business) %>
+    <% else %>
       <%= nav_link "Profit & loss", business_profit_and_loss_path(business) %>
       <%= nav_link "Schedule C", business_schedule_c_path(business) %>
       <%= nav_link "Invoice aging", business_invoice_aging_path(business) %>

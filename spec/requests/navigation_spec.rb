@@ -160,9 +160,11 @@ RSpec.describe "Navigation" do
     sign_in_as household_owner
     get business_accounts_path(book)
     expect(sidebar).to have_link("Tithe", href: business_tithe_path(book))
+    expect(sidebar).to have_link("Spending", href: business_spending_report_path(book))
     expect(sidebar).to have_no_link("Mileage")
     expect(sidebar).to have_no_link("Invoices")
-    expect(sidebar).to have_no_css(".nav-group", text: "Reports")
+    expect(sidebar).to have_no_link("Profit & loss")
+    expect(sidebar).to have_no_link("Schedule C")
   end
 
   it "renders for a user with no memberships" do

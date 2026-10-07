@@ -50,6 +50,7 @@ Rails.application.routes.draw do
     get "reports/mileage_log", to: "mileage_logs#show", as: :mileage_log
     get "reports/transactions", to: "transaction_exports#show", as: :transaction_export
     get "reports/aging", to: "invoice_agings#show", as: :invoice_aging
+    get "reports/spending", to: "spending_reports#show", as: :spending_report
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
