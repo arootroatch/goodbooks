@@ -8,6 +8,6 @@ class HouseholdInboxesController < ApplicationController
       rows = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(InboxesController::LIMIT).to_a
       [ business, rows, scope.count ]
     end
-    @matcher = InvoiceMatcher.for_businesses(businesses.map(&:id))
+    @matcher = InvoiceMatcher.for_businesses(businesses.select(&:business?).map(&:id))
   end
 end

@@ -21,6 +21,9 @@ class User < ApplicationRecord
   end
 
   def can_view_household?
-    household_owner? || (memberships.exists? && Business.where.not(id: memberships.select(:business_id)).none?)
+    return true if household_owner?
+
+    businesses = Business.business_kind
+    memberships.where(business: businesses).exists? && businesses.where.not(id: memberships.select(:business_id)).none?
   end
 end
