@@ -7,6 +7,9 @@
     <li><%= link_to "Transactions", business_transactions_path(business) %></li>
     <li><%= link_to "Rules", business_rules_path(business) %></li>
     <li><%= link_to "Inbox", business_inbox_path(business) %></li>
+    <% if business.personal? %>
+      <li><%= link_to "Tithe", business_tithe_path(business) %></li>
+    <% end %>
     <% unless business.personal? %>
       <li><%= link_to "Mileage", business_mileage_entries_path(business) %></li>
       <li><%= link_to "Invoices", business_invoices_path(business) %></li>
