@@ -63,6 +63,24 @@ RSpec.describe "Businesses" do
       expect(sidebar).to have_css(".switcher summary", text: "Pat Consulting")
     end
 
+    it "words the personal book as Personal, not a business" do
+      owner = create(:user, :household_owner)
+      book = PersonalBookProvisioner.call(Household.instance)
+      sign_in_as owner
+      get edit_business_path(book)
+      expect(response.body).to include("<h1>Rename</h1>")
+      patch business_path(book), params: { business: { name: "Us" } }
+      expect(flash[:notice]).to eq("Personal book updated.")
+    end
+
+    it "keeps business wording for a business" do
+      sign_in_as user_with_role("owner", business)
+      get edit_business_path(business)
+      expect(response.body).to include("<h1>Edit business</h1>")
+      patch business_path(business), params: { business: { name: "Renamed" } }
+      expect(flash[:notice]).to eq("Business updated.")
+    end
+
     it "forbids editors and viewers" do
       %w[editor viewer].each do |role|
         sign_in_as user_with_role(role, business)

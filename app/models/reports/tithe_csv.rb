@@ -2,7 +2,7 @@ require "csv"
 
 module Reports
   module TitheCsv
-    HEADERS = [ "Week starting", "Week ending", "Income", "Owed", "Paid this week", "Applied to this week", "Status", "Balance" ].freeze
+    HEADERS = [ "Week starting", "Week ending", "Income", "Owed", "Paid this week", "Applied to this week", "Status", "Balance (positive = behind)" ].freeze
 
     def self.generate(ledger)
       CSV.generate do |csv|

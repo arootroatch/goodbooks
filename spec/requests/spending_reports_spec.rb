@@ -19,6 +19,24 @@ RSpec.describe "Spending report" do
     expect(response.body).to include("Groceries")
   end
 
+  it "clamps an absurd date range to 2000-01-01 through today and says so" do
+    sign_in_as owner
+    get business_spending_report_path(book, from: "0202-01-01", to: "9999-12-31")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("the report covers 2000-01-01 through today")
+    expect(response.body).to include("2000-01")
+    expect(response.body).not_to include("0202-01")
+    expect(response.body).not_to include("9999-12")
+    get business_spending_report_path(book, from: "0202-01-01", to: "9999-12-31", format: :csv)
+    expect(response.body.lines.first.split(",").size).to be <= 12 * 27 + 3
+  end
+
+  it "does not show the notice for an in-range request" do
+    sign_in_as owner
+    get business_spending_report_path(book, from: "2026-01-01", to: "2026-03-31")
+    expect(response.body).not_to include("the report covers")
+  end
+
   it "is not found for non-members and on business books" do
     business = create(:business)
     sign_in_as user_with_role("owner", business)

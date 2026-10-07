@@ -19,6 +19,11 @@ RSpec.describe Tithe::Ledger do
     expect(result.weeks.last.status).to eq("paid")
   end
 
+  it "orders same-day entries income before payments regardless of input order" do
+    result = ledger([ paid("2026-01-06", 500), income("2026-01-06", 10_000) ], today: "2026-01-10")
+    expect(result.weeks.first.entries.map(&:kind)).to eq(%i[income payment])
+  end
+
   it "rounds once per week, half up" do
     result = ledger([ income("2026-01-05", 333), income("2026-01-06", 333), income("2026-01-07", 333) ], today: "2026-01-07")
     expect(result.weeks.sole.owed_cents).to eq(100) # 99.9 → 100, not 3 × 33
