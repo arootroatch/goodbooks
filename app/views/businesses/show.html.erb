@@ -3,10 +3,14 @@
 <header class="page-header">
   <div>
     <h1><%= @business.name %></h1>
-    <p class="subtitle">
-      Taxpayer: <%= @business.person.name %>
-      <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
-    </p>
+    <% if @business.personal? %>
+      <p class="subtitle">The household's personal accounts and tithe. Only household members can see this.</p>
+    <% else %>
+      <p class="subtitle">
+        Taxpayer: <%= @business.person.name %>
+        <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
+      </p>
+    <% end %>
   </div>
   <div class="period-picker">
     <nav class="segmented" aria-label="Period">
@@ -97,7 +101,7 @@
 <section class="card">
   <h2 class="card-title">
     Accounts
-    <% if current_membership.owner? %><small><%= link_to "Edit business", edit_business_path(@business) %></small><% end %>
+    <% if current_membership.owner? %><small><%= link_to(@business.personal? ? "Rename" : "Edit business", edit_business_path(@business)) %></small><% end %>
   </h2>
   <ul class="plain-list">
     <% @accounts.each do |account| %>

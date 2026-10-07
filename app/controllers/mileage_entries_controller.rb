@@ -1,5 +1,6 @@
 class MileageEntriesController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
 
   PERMITTED = %i[driven_on purpose from_location to_location miles round_trip].freeze
 
