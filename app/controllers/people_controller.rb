@@ -14,6 +14,7 @@ class PeopleController < ApplicationController
     household = Household.instance
     @person = household.people.new(person_params)
     if household.with_lock { @person.save }
+      PersonalBookProvisioner.sync(household)
       redirect_to people_path, notice: "Person added."
     else
       render :new, status: :unprocessable_content
@@ -25,6 +26,7 @@ class PeopleController < ApplicationController
 
   def update
     if @person.update(person_params)
+      PersonalBookProvisioner.sync(Household.instance)
       redirect_to people_path, notice: "Person updated."
     else
       render :edit, status: :unprocessable_content

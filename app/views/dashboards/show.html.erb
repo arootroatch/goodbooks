@@ -7,3 +7,11 @@
 <% if Current.user.household_owner? %>
   <%= link_to "New business", new_business_path %>
 <% end %>
+<% if current_personal_book %>
+  <h2>Personal</h2>
+  <p><%= link_to "Personal", business_path(current_personal_book) %></p>
+<% elsif Current.user.household_owner? %>
+  <h2>Personal</h2>
+  <p>Track the joint checking account and the tithe. The accountant never sees it.</p>
+  <%= button_to "Set up personal book", personal_book_path %>
+<% end %>

@@ -38,4 +38,12 @@ RSpec.describe "People" do
     get people_path
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "gives a newly linked spouse editor access to the personal book" do
+    book = PersonalBookProvisioner.call(household)
+    spouse_user = create(:user)
+    sign_in_as household_owner
+    patch person_path(spouse), params: { person: { name: "Jordan", user_id: spouse_user.id } }
+    expect(spouse_user.membership_for(book)).to be_editor
+  end
 end

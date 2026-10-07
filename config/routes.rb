@@ -56,6 +56,7 @@ Rails.application.routes.draw do
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
+  resource :personal_book, only: :create
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

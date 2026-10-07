@@ -30,6 +30,7 @@
         <nav class="site-nav">
           <%= link_to "Businesses", root_path %>
           <%= link_to "Inbox", household_inbox_path %>
+          <%= link_to "Personal", business_path(current_personal_book) if current_personal_book %>
           <%= link_to "Household", household_profit_and_loss_path if Current.user.can_view_household? %>
           <%= link_to "Invoices", household_invoices_path if Current.user.can_view_household? %>
           <%= link_to "Aging", household_invoice_aging_path if Current.user.can_view_household? %>
