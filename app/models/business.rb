@@ -25,6 +25,8 @@ class Business < ApplicationRecord
   validate :tithe_start_on_allowed
   validate :personal_not_archived
 
+  TITHE_START_FLOOR = Date.new(2000, 1, 1)
+
   private
 
   def person_in_household
@@ -40,6 +42,7 @@ class Business < ApplicationRecord
 
     if business? then errors.add(:tithe_start_on, "is only for the personal book")
     elsif tithe_start_on > Date.current then errors.add(:tithe_start_on, "can't be in the future")
+    elsif tithe_start_on < TITHE_START_FLOOR then errors.add(:tithe_start_on, "can't be before 2000-01-01")
     end
   end
 
