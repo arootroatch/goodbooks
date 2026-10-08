@@ -43,7 +43,7 @@ RSpec.describe Category do
     expect(build(:category, kind: "expense", schedule_c_line: "1")).not_to be_valid
   end
 
-  it "does not allow line 30 (home office comes from sub-project 5)" do
+  it "does not allow line 30 (home office comes from sub-project 6)" do
     expect(build(:category, schedule_c_line: "30")).not_to be_valid
   end
 
