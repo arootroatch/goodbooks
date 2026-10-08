@@ -30,7 +30,7 @@ Give the household a book for its joint personal checking account: import it, ca
 
 ### Out of scope
 
-A configurable tithe rate (it is a constant 10%), tithing on business profit, offerings/giving goals, budgets, savings accounts as a separate concept, Plaid (sub-project 4 feeds this account automatically once it lands), and personal tax effects of giving (itemized deductions remain a non-goal).
+A configurable tithe rate (it is a constant 10%), tithing on business profit, offerings/giving goals, budgets, savings accounts as a separate concept, Plaid (sub-project 5 feeds this account automatically once it lands), and personal tax effects of giving (itemized deductions remain a non-goal).
 
 ## 2. Approach
 
