@@ -14,7 +14,7 @@
         <td><%= account.source %></td>
         <td><%= account.kind %></td>
         <td>
-          <%= link_to "Import CSV", new_business_account_csv_import_path(@business, account) if account.csv? && !account.archived? && current_membership.can_edit? %>
+          <%= link_to "Import CSV", new_business_account_csv_import_path(@business, account) if account.csv_importable? && !account.archived? && current_membership.can_edit? %>
           <%= link_to "Edit", edit_business_account_path(@business, account) if current_membership.owner? %>
         </td>
       </tr>
