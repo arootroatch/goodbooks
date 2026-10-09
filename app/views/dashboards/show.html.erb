@@ -95,3 +95,11 @@
     <%= button_to "Set up personal book", personal_book_path, class: "primary" %>
   </section>
 <% end %>
+<% if @review_counts.any? %>
+  <h2>Needs review</h2>
+  <ul>
+    <% @review_books.each do |book| %>
+      <li><%= link_to "#{book_label(book)}: #{pluralize(@review_counts[book.id], "transaction")}", business_inbox_path(book) %></li>
+    <% end %>
+  </ul>
+<% end %>
