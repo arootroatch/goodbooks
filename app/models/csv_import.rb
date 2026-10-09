@@ -38,8 +38,9 @@ class CsvImport < ApplicationRecord
                                      memo: row.memo, external_id: row.external_id)
       end
       RuleApplier.new(account.business).apply(created)
+      result.synced_entries.each { _1.match.update!(external_id: _1.row.external_id) }
       update!(status: "committed", committed_at: Time.current, row_count: result.entries.size, new_count: created.size,
-              duplicate_count: result.duplicate_entries.size, error_count: result.error_entries.size)
+              duplicate_count: result.duplicate_entries.size, synced_count: result.synced_entries.size, error_count: result.error_entries.size)
     end
   end
 

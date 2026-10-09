@@ -37,8 +37,9 @@ class CsvImportsController < ApplicationController
 
   def commit
     @import.commit!
+    synced = @import.synced_count.positive? ? ", #{@import.synced_count} already synced from the bank" : ""
     redirect_to business_transactions_path(@business, account_id: @account.id),
-      notice: "Imported #{@import.new_count} new transactions (#{@import.duplicate_count} duplicates skipped, " \
+      notice: "Imported #{@import.new_count} new transactions (#{@import.duplicate_count} duplicates skipped#{synced}, " \
               "#{@import.error_count} rows with errors)."
   rescue CsvImport::NotPreviewed, CsvImport::Parser::FileError => e
     redirect_to import_path, alert: e.message
