@@ -102,6 +102,7 @@ Guards (same style as the linked-deposit guard, one message per case):
 - A transaction with a fee > 0 cannot be made a transfer, excluded, or moved to a non-income category or nil: "Clear the processor fee first."
 - A transaction with total tax > 0 cannot be made a transfer, excluded, or moved to anything but a `taxable` income category: "Clear the sales tax first." (Invoice tax is cleared by unlinking, which the existing linked-deposit guard already requires.)
 - A category's treatment cannot move away from `taxable` while any of its transactions carry total tax > 0; its kind cannot change while any carry a fee > 0.
+- A category's kind cannot change to or from `sales_tax_remittance` while it has transactions: "can't change to or from a remittance category while it has transactions".
 - A profile cannot be deleted, only deactivated. Deactivating hides the sales tax screens and fields but keeps every number; reactivating restores them.
 - `RuleApplier` is unaffected: it only touches inbox rows, which have no category and so, by the rules above, no direct tax.
 
@@ -113,7 +114,7 @@ Guards (same style as the linked-deposit guard, one message per case):
 
 ### 4.3 Invoiced sales
 
-- The invoice form gains **Sales tax** (≥ 0, < amount, shown when the business collects sales tax). It is part of `amount_cents`. With payments linked, it cannot be changed: "Unlink payments before changing sales tax."
+- The invoice form gains **Sales tax** (≥ 0, < amount, shown when the business collects sales tax). It is part of `amount_cents`. With payments linked, neither the amount nor the sales tax of a taxed invoice can change: "Unlink payments before changing the amount or sales tax."
 - `InvoicePayments.link` computes the payment's share = `Money.round_rational(Rational(payment_cents × invoice.sales_tax_cents, invoice.amount_cents))`, rounded once per payment, and stores it on the new `InvoicePayment`. The deposit's own `sales_tax_cents` is never touched. When the payment completes the invoice, the share is adjusted to `invoice.sales_tax_cents − sum of earlier shares` so an invoice's shares always sum to its tax exactly.
 - An invoice with tax > 0 can only be linked to a deposit whose category is nil or `taxable`: "This invoice includes sales tax — categorize the deposit as a taxable sale." When the deposit is uncategorized, the default category is the business's single active `taxable` line-1 category (falling back to the existing gross-receipts picker when there are several).
 - `unlink` destroys the payment, and with it the share. Nothing else to reverse.
@@ -124,7 +125,7 @@ Guards (same style as the linked-deposit guard, one message per case):
 
 - A remittance is a transaction in the `sales_tax_remittance` category (usually a negative ACH to the TN DOR; a positive refund of an overpayment is allowed). Rules can categorize into it.
 - When a transaction enters the remittance category with `sales_tax_period_starts_on` nil, a `before_save` sets it to `SalesTax::RemittancePeriod.default_for(business, posted_on)`: the oldest ended period (ends_on < posted_on) with a balance owed > 0, else the most recent ended period, else the current one.
-- The value must be the start of a period in the profile's calendar (validation). Leaving the category clears it.
+- The value must be the start of a period in the profile's calendar (validation). Leaving the category clears it. A remittance dated before the profile's `starts_on` has no period and is rejected: "is before the first sales tax period" (on `sales_tax_period_starts_on`).
 - The transaction form and the period page let an editor change the period from a select of the calendar's periods.
 
 ## 5. Periods
@@ -207,6 +208,7 @@ Every new controller includes `BusinessScoped` then `BusinessKindOnly`. Viewers 
 
 - Every validation failure is a form error or flash with a specific message (§4.1); nothing fails silently or 500s.
 - A remittance whose period start is not in the calendar: validation error on the transaction.
+- A period cannot be filed before it ends: "can't be filed before the period ends" (`filed_on` must be after the period's `ends_on`).
 - Deactivating the profile: screens hidden, data kept, remittance category left as is.
 - Profile `starts_on` in the future or a rate outside 0.01%–20%: validation errors.
 - Changing `filing_frequency` or `starts_on` after filings or remittances exist would orphan them: blocked with "Filings or remittances exist for the current periods."
