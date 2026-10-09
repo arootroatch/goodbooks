@@ -50,6 +50,14 @@ RSpec.describe PlaidSyncJob do
     expect(item.last_error).to include("not a whole number of cents")
   end
 
+  it "records only the class of an unexpected error, marks the item errored, and re-raises without retrying" do
+    plaid_gateway.add_page("access-1", added: [ plaid("t1", amount: nil) ])
+    expect {
+      expect { described_class.perform_now(item) }.to raise_error(ArgumentError)
+    }.not_to have_enqueued_job(described_class)
+    expect(item.reload).to have_attributes(status: "error", last_error: "Unexpected error (ArgumentError)", cursor: nil)
+  end
+
   it "does nothing when Plaid is disabled" do
     fake = plaid_gateway
     PlaidGateway.current = nil
