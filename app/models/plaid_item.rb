@@ -13,5 +13,11 @@ class PlaidItem < ApplicationRecord
 
   scope :manageable_by, ->(user) { user.household_owner? ? all : where(created_by: user) }
 
+  def self.sync_all_later
+    return unless PlaidGateway.enabled?
+
+    ok.find_each { PlaidSyncJob.perform_later(_1) }
+  end
+
   def manageable_by?(user) = user.household_owner? || created_by_id == user.id
 end
