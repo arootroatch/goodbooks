@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -76,8 +76,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.datetime "updated_at", null: false
     t.boolean "tithable", default: true, null: false
     t.boolean "tithe", default: false, null: false
+    t.string "sales_tax_treatment"
+    t.boolean "processor_fees", default: false, null: false
     t.index ["business_id", "name"], name: "index_categories_on_business_id_and_name", unique: true
     t.index ["business_id"], name: "index_categories_on_business_id"
+    t.index ["business_id"], name: "index_categories_one_processor_fees_per_business", unique: true, where: "processor_fees"
   end
 
   create_table "clients", force: :cascade do |t|
@@ -144,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.integer "amount_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
     t.index ["deposit_id"], name: "index_invoice_payments_on_deposit_id"
     t.index ["invoice_id", "deposit_id"], name: "index_invoice_payments_on_invoice_id_and_deposit_id", unique: true
     t.index ["invoice_id"], name: "index_invoice_payments_on_invoice_id"
@@ -161,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.date "paid_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
     t.index ["business_id", "number"], name: "index_invoices_on_business_id_and_number", unique: true
     t.index ["business_id", "status"], name: "index_invoices_on_business_id_and_status"
     t.index ["business_id"], name: "index_invoices_on_business_id"
@@ -218,6 +223,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.index ["category_id"], name: "index_rules_on_category_id"
   end
 
+  create_table "sales_tax_filings", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.date "period_starts_on", null: false
+    t.date "filed_on", null: false
+    t.string "confirmation_number"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "period_starts_on"], name: "index_sales_tax_filings_on_business_id_and_period_starts_on", unique: true
+    t.index ["business_id"], name: "index_sales_tax_filings_on_business_id"
+  end
+
+  create_table "sales_tax_profiles", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.string "tn_account_number"
+    t.string "filing_frequency", default: "quarterly", null: false
+    t.integer "default_rate_bps", null: false
+    t.date "starts_on", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_sales_tax_profiles_on_business_id", unique: true
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -249,6 +277,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.integer "rule_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
+    t.integer "processor_fee_cents", default: 0, null: false
+    t.date "sales_tax_period_starts_on"
     t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
@@ -293,6 +324,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
   add_foreign_key "people", "users"
   add_foreign_key "rules", "businesses"
   add_foreign_key "rules", "categories"
+  add_foreign_key "sales_tax_filings", "businesses"
+  add_foreign_key "sales_tax_profiles", "businesses"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"

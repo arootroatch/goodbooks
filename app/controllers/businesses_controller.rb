@@ -22,6 +22,7 @@ class BusinessesController < ApplicationController
   def show
     @accounts = @business.accounts.active.order(:name)
     @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id] if @business.business?
+    @sales_tax = SalesTax.summary_for(@business) if @business.business?
   end
 
   def edit

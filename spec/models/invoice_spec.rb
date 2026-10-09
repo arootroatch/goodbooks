@@ -153,4 +153,43 @@ RSpec.describe Invoice do
       expect(totals).to eq(business.id => { outstanding_cents: 35_000, overdue_cents: 25_000 })
     end
   end
+
+  describe "sales tax" do
+    let(:business) { create(:business) }
+
+    before { create(:sales_tax_profile, business: business) }
+
+    it "is part of the amount and must be below it" do
+      expect(build(:invoice, business: business, amount_cents: 109_250, sales_tax: "92.50")).to be_valid
+      expect(build(:invoice, business: business, amount_cents: 10_000, sales_tax_cents: 10_000)).not_to be_valid
+      expect(build(:invoice, business: business, sales_tax: "-1")).not_to be_valid
+      expect(build(:invoice, business: business, sales_tax: "").tap(&:valid?).sales_tax_cents).to eq(0)
+    end
+
+    it "needs an active sales tax profile" do
+      invoice = build(:invoice, sales_tax_cents: 100)
+      expect(invoice).not_to be_valid
+      expect(invoice.errors[:sales_tax]).to include("needs an active sales tax profile")
+    end
+
+    it "can't change once payments are linked" do
+      invoice = create(:invoice, business: business, amount_cents: 109_250, sales_tax_cents: 9_250)
+      create(:invoice_payment, invoice: invoice, amount_cents: 10_000)
+      expect(invoice.reload.update(sales_tax_cents: 0)).to be(false)
+      expect(invoice.errors[:base]).to include("Unlink payments before changing the amount or sales tax.")
+    end
+
+    it "can't have its amount lowered once payments are linked to a taxed invoice" do
+      invoice = create(:invoice, business: business, amount_cents: 100_000, sales_tax_cents: 8_000)
+      create(:invoice_payment, invoice: invoice, amount_cents: 50_000)
+      expect(invoice.reload.update(amount_cents: 50_000)).to be(false)
+      expect(invoice.errors[:base]).to include("Unlink payments before changing the amount or sales tax.")
+    end
+
+    it "still lets an untaxed invoice's amount change above what is paid" do
+      invoice = create(:invoice, business: business, amount_cents: 100_000)
+      create(:invoice_payment, invoice: invoice, amount_cents: 50_000)
+      expect(invoice.reload.update(amount_cents: 60_000)).to be(true)
+    end
+  end
 end

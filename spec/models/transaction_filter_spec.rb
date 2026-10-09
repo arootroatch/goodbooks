@@ -44,4 +44,16 @@ RSpec.describe TransactionFilter do
     filter = TransactionFilter.new(scope, page: "abc")
     expect(filter.page).to eq(1)
   end
+
+  it "filters taxable deposits with no direct tax and no invoice links" do
+    business = create(:business)
+    create(:sales_tax_profile, business: business)
+    account = create(:account, business: business)
+    sales = create(:category, :income, business: business)
+    missing = create(:transaction, account: account, amount_cents: 5_000, category: sales)
+    create(:transaction, account: account, amount_cents: 5_000, category: sales, sales_tax_cents: 400)
+    create(:invoice_payment, invoice: create(:invoice, business: business, amount_cents: 5_000), amount_cents: 5_000,
+                             deposit: create(:transaction, account: account, amount_cents: 5_000, category: sales))
+    expect(TransactionFilter.new(Transaction.for_businesses(business.id), status: "needs_tax").results).to eq([ missing ])
+  end
 end

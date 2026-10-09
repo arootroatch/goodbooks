@@ -1,7 +1,7 @@
 class CategoriesController < ApplicationController
   include BusinessScoped
 
-  PERMITTED = %i[name kind schedule_c_line deductible_percent tithable tithe].freeze
+  PERMITTED = %i[name kind schedule_c_line deductible_percent tithable tithe sales_tax_treatment].freeze
 
   before_action :require_editor!, except: :index
   before_action :set_category, only: %i[edit update]

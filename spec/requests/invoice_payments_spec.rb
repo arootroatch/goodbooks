@@ -111,4 +111,49 @@ RSpec.describe "Invoice payments" do
     get new_business_invoice_payment_path(business, invoice)
     expect(response).to have_http_status(:not_found)
   end
+
+  it "lets an untouched amount follow a fee typed on the same row" do
+    sign_in_as user_with_role("editor", business)
+    payout = create(:transaction, account: account, amount_cents: 116_490, payee: "STRIPE PAYOUT", posted_on: Date.current - 1)
+    post business_invoice_payments_path(business, invoice),
+      params: { deposit_id: payout.id, processor_fee: "35.10", amount: "1164.90", proposed_amount: "1164.90" }
+    expect(invoice.reload).to be_paid
+    expect(payout.reload.processor_fee_cents).to eq(3_510)
+  end
+
+  it "respects an amount the editor changed even with a fee" do
+    sign_in_as user_with_role("editor", business)
+    payout = create(:transaction, account: account, amount_cents: 116_490, payee: "STRIPE PAYOUT", posted_on: Date.current - 1)
+    post business_invoice_payments_path(business, invoice),
+      params: { deposit_id: payout.id, processor_fee: "35.10", amount: "500.00", proposed_amount: "1164.90" }
+    expect(invoice.reload.paid_cents).to eq(50_000)
+  end
+
+  it "rejects a negative or unreadable fee" do
+    sign_in_as user_with_role("editor", business)
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: exact.id, processor_fee: "-1" }
+    expect(flash[:alert]).to eq("Processor fee can't be negative.")
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: exact.id, processor_fee: "abc" }
+    expect(flash[:alert]).to eq("Processor fee is not a valid amount.")
+    expect(InvoicePayment.count).to eq(0)
+  end
+
+  it "shows a fee field for deposits without a fee" do
+    sign_in_as user_with_role("editor", business)
+    get new_business_invoice_payment_path(business, invoice)
+    expect(response.body).to include('aria-label="Processor fee"', 'name="proposed_amount"')
+  end
+
+  it "offers only taxable categories for a taxed invoice so the single-taxable default links" do
+    create(:sales_tax_profile, business: business)
+    create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    taxed = create(:invoice, business: business, number: "INV-TAX", amount_cents: 109_250, sales_tax_cents: 9_250)
+    deposit = create(:transaction, account: account, amount_cents: 109_250, payee: "TAXED CHECK", posted_on: Date.current - 1)
+    sign_in_as user_with_role("editor", business)
+    get new_business_invoice_payment_path(business, taxed)
+    expect(response.body).not_to include('aria-label="Income category"')
+    post business_invoice_payments_path(business, taxed), params: { deposit_id: deposit.id }
+    expect(flash[:notice]).to eq("Payment recorded.")
+    expect(deposit.reload.category).to eq(sales)
+  end
 end

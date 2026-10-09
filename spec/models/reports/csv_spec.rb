@@ -35,7 +35,18 @@ RSpec.describe "Report CSVs" do
       create(:transaction, account: account, category: meals, payee: "=cmd", amount_cents: -3_333, posted_on: Date.new(2026, 2, 1))
       rows = CSV.parse(Reports::TransactionCsv.generate(Transaction.includes(:category, account: :business)))
       expect(rows.first).to eq(Reports::TransactionCsv::HEADERS)
-      expect(rows.second).to eq([ "2026-02-01", "Pat Consulting", "Checking", "'=cmd", nil, "-33.33", "Meals", "24b", "no", "16.67" ])
+      expect(rows.second).to eq([ "2026-02-01", "Pat Consulting", "Checking", "'=cmd", nil, "-33.33", "Meals", "24b", "no", "16.67", "0.00", "0.00", nil ])
+    end
+
+    it "writes the fee, the total sales tax, and net income for income" do
+      create(:sales_tax_profile, business: business)
+      sales = create(:category, :income, business: business, name: "Sales")
+      create(:transaction, account: account, category: sales, payee: "STRIPE", amount_cents: 97_070, processor_fee_cents: 2_930,
+                           sales_tax_cents: 8_467, posted_on: Date.new(2026, 2, 2))
+      row = CSV.parse(Reports::TransactionCsv.generate(Transaction.includes(:category, :invoice_payments, account: :business)), headers: true)
+        .find { _1["Payee"] == "STRIPE" }
+      expect(row.to_h.slice("Processor fee", "Sales tax", "Net income", "Deductible amount"))
+        .to eq("Processor fee" => "29.30", "Sales tax" => "84.67", "Net income" => "915.33", "Deductible amount" => "915.33")
     end
 
     it "leaves the deductible amount blank for personal expenses" do

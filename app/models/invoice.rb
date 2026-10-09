@@ -9,6 +9,7 @@ class Invoice < ApplicationRecord
   PDF_MAX_BYTES = 10.megabytes
 
   money_attribute :amount
+  money_attribute :sales_tax, allow_blank: true
 
   belongs_to :business
   belongs_to :client
@@ -21,7 +22,10 @@ class Invoice < ApplicationRecord
   validates :issue_date, :due_date, presence: true
   validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :description, length: { maximum: 2_000 }
+  before_validation { self.sales_tax_cents ||= 0 }
+
   validate :due_on_or_after_issue
+  validate :sales_tax_valid
   validate :client_in_business
   validate :amount_covers_payments
   validate :no_void_with_payments
@@ -77,6 +81,19 @@ class Invoice < ApplicationRecord
 
   def client_in_business
     errors.add(:client, "must belong to this business") if client && client.business_id != business_id
+  end
+
+  def sales_tax_valid
+    tax = sales_tax_cents.to_i
+    if tax.negative? then errors.add(:sales_tax, "can't be negative")
+    elsif amount_cents && tax.positive? && tax >= amount_cents then errors.add(:sales_tax, "must be less than the invoice amount")
+    elsif tax.positive? && will_save_change_to_sales_tax_cents? && !business&.collects_sales_tax?
+      errors.add(:sales_tax, "needs an active sales tax profile")
+    end
+    return unless persisted? && payments.exists?
+    return unless will_save_change_to_sales_tax_cents? || (will_save_change_to_amount_cents? && (tax.positive? || sales_tax_cents_was.to_i.positive?))
+
+    errors.add(:base, "Unlink payments before changing the amount or sales tax.")
   end
 
   def amount_covers_payments

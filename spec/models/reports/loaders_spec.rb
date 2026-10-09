@@ -21,6 +21,51 @@ RSpec.describe "Report loaders" do
       totals = Reports::CategoryTotals.load(business_ids: [ business.id ], range: year)
       expect(totals.map { [ _1.business_id, _1.name, _1.kind, _1.sum_cents ] }).to eq([ [ business.id, "Office", "expense", -2_500 ] ])
     end
+
+    context "with sales tax and processor fees" do
+      let!(:profile) { create(:sales_tax_profile, business: business) }
+      let(:sales) { create(:category, :income, business: business, name: "Sales") }
+      let!(:fees) { create(:category, business: business, name: "Merchant fees", schedule_c_line: "10", processor_fees: true) }
+
+      before do
+        create(:transaction, account: account, category: sales, amount_cents: 97_070, processor_fee_cents: 2_930, sales_tax_cents: 8_241,
+                             posted_on: Date.new(2026, 3, 6))
+      end
+
+      def totals = Reports::CategoryTotals.load(business_ids: [ business.id ], range: year).to_h { [ _1.name, _1.sum_cents ] }
+
+      it "nets out sales tax and adds the fee back to income, showing the fee as an expense" do
+        expect(totals).to eq("Sales" => 91_759, "Merchant fees" => -2_930)
+      end
+
+      it "merges fees with real transactions in the fee category" do
+        create(:transaction, account: account, category: fees, amount_cents: -1_500, posted_on: Date.new(2026, 3, 7))
+        expect(totals["Merchant fees"]).to eq(-4_430)
+      end
+
+      it "nets out invoice tax shares" do
+        invoice = create(:invoice, business: business, amount_cents: 54_625, sales_tax_cents: 4_625)
+        create(:invoice_payment, invoice: invoice, amount_cents: 54_625, sales_tax_cents: 4_625,
+                                 deposit: create(:transaction, account: account, category: sales, amount_cents: 54_625, posted_on: Date.new(2026, 3, 8)))
+        expect(totals["Sales"]).to eq(91_759 + 50_000)
+      end
+
+      it "leaves remittances out of income and expense" do
+        remittance = business.categories.sales_tax_remittance.sole
+        create(:transaction, account: account, category: remittance, amount_cents: -8_241, posted_on: Date.new(2026, 4, 15))
+        expect(totals.keys).to contain_exactly("Sales", "Merchant fees")
+      end
+
+      it "agrees on the P&L, Schedule C, and the household P&L" do
+        loaded = Reports::CategoryTotals.load(business_ids: [ business.id ], range: year)
+        pnl = Reports::ProfitAndLoss.new(category_totals: loaded, mileage_deduction_cents: 0)
+        expect(pnl.net_profit_cents).to eq(91_759 - 2_930)
+        lines = Reports::ScheduleCSummary.new(category_totals: loaded, mileage_deduction_cents: 0).lines
+        expect(lines.slice("1", "10")).to eq("1" => 91_759, "10" => 2_930)
+        household = Reports::HouseholdProfitAndLoss.new({ business => pnl })
+        expect(household.column(:net_profit_cents)[:total]).to eq(pnl.net_profit_cents)
+      end
+    end
   end
 
   describe Reports::MileageTotals do

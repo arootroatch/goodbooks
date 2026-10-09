@@ -19,8 +19,26 @@ RSpec.describe DemoSeeder do
     expect(Transaction.where.not(category_id: nil).count).to be > 50
     expect(Transaction.where(transfer: true).count).to be > 0
     expect(MileageEntry.count).to be > 10
-    expect(Rule.count).to eq(5)
+    expect(Rule.count).to eq(6)
     expect(Transaction.maximum(:posted_on)).to be <= today
+  end
+
+  it "seeds a sales tax business with paid, due, and open periods" do
+    run
+    business = Business.find_by!(name: "Pat Consulting")
+    expect(business).to be_collects_sales_tax
+    reports = SalesTax.reports_for(business, today: today)
+    completed = reports.select { _1.period.ends_on < today }
+    expect(completed.size).to eq(5)
+    expect(completed[0...-1].map(&:status)).to all(eq("paid"))
+    expect(%w[due overdue]).to include(completed.last.status)
+    expect(reports.last.status).to eq("open")
+    expect(reports.sum(&:exempt_sales_cents)).to be > 0
+    expect(business.transactions.where("processor_fee_cents > 0").count).to be > 50
+    expect(InvoicePayment.where("sales_tax_cents > 0").count).to eq(2)
+    expect(business.invoices.where("sales_tax_cents > 0").where(status: "sent")).to exist
+    expect(Transaction.needing_sales_tax.for_businesses(business.id)).to exist
+    expect(business.categories.find_by!(name: "Consulting").sales_tax_treatment).to eq("exempt")
   end
 
   it "seeds a personal book that is one or two weeks behind on tithe, hidden from the accountant" do
@@ -79,7 +97,7 @@ RSpec.describe DemoSeeder do
     DemoSeeder.new(out: out, today: today_early_month).run
     expect(TaxParameters.for_year(2025).standard_mileage_rate_tenth_cents).to eq(725)
     expect(TaxParameters.for_year(2026).standard_mileage_rate_tenth_cents).to eq(725)
-    expect(out.string).to include("Demo: no tax parameters found; seeded 2025 with default 72.5¢ mileage rate")
+    expect(out.string).to include("Demo: no tax parameters found; seeded 2024 with default 72.5¢ mileage rate")
   end
 
   it "ensures inbox is non-empty on days 1-2 when seeding on those dates" do
@@ -90,7 +108,7 @@ RSpec.describe DemoSeeder do
 
   it "seeds clients and invoices in every state, with inbox deposits that match open invoices" do
     run
-    expect(Client.count).to eq(6)
+    expect(Client.count).to eq(8)
     expect(Invoice.paid.count).to be >= 20
     expect(Invoice.paid.all? { _1.paid_cents == _1.amount_cents && _1.paid_on.present? }).to be(true)
     expect(Invoice.sent.select(&:partial?).size).to eq(2)

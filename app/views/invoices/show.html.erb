@@ -5,6 +5,9 @@
   <dt>Issued</dt><dd><%= @invoice.issue_date %></dd>
   <dt>Due</dt><dd><%= @invoice.due_date %><%= " (#{pluralize(@invoice.days_past_due, "day")} past due)" if @invoice.overdue? %></dd>
   <dt>Amount</dt><dd><%= money(@invoice.amount_cents) %></dd>
+  <% if @invoice.sales_tax_cents.positive? %>
+    <dt>Sales tax</dt><dd><%= money(@invoice.sales_tax_cents) %> (included)</dd>
+  <% end %>
   <dt>Paid</dt><dd><%= money(@invoice.paid_cents) %><%= " on #{@invoice.paid_on}" if @invoice.paid? %></dd>
   <dt>Outstanding</dt><dd><%= invoice_outstanding(@invoice) %></dd>
   <% if @invoice.pdf.attached? %>

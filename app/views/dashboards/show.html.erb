@@ -1,7 +1,10 @@
+<% @sales_tax.each do |business, summary| %>
+  <%= render "sales_tax/overdue_banner", business: business, summary: summary %>
+<% end %>
 <h1>Businesses</h1>
 <ul class="business-list">
   <% @businesses.each do |business| %>
-    <li><%= link_to business.name, business_path(business) %> <%= render "invoices/receivables", totals: @receivables[business.id] %></li>
+    <li><%= link_to business.name, business_path(business) %> <%= render "invoices/receivables", totals: @receivables[business.id] %> <%= render "sales_tax/summary", business: business, summary: @sales_tax[business] %></li>
   <% end %>
 </ul>
 <% if Current.user.household_owner? %>

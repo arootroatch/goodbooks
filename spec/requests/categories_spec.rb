@@ -111,4 +111,27 @@ RSpec.describe "Categories" do
     expect(response.body).to include("half")
     expect(response.body).to include("is not a number")
   end
+
+  it "offers sales tax treatment and the remittance kind only when the business collects sales tax" do
+    business = create(:business)
+    sign_in_as user_with_role("editor", business)
+    get new_business_category_path(business)
+    expect(response.body).not_to include("Sales tax treatment")
+    create(:sales_tax_profile, business: business)
+    get new_business_category_path(business)
+    expect(response.body).to include("Sales tax treatment", "sales_tax_remittance")
+    post business_categories_path(business), params: { category: { name: "Consulting", kind: "income", schedule_c_line: "1", sales_tax_treatment: "exempt" } }
+    expect(business.categories.find_by!(name: "Consulting").sales_tax_treatment).to eq("exempt")
+    get business_categories_path(business)
+    expect(response.body).to include("Exempt sales")
+  end
+
+  it "saves an income category with the blank Default treatment as the derived default (taxable on line 1)" do
+    business = create(:business)
+    create(:sales_tax_profile, business: business)
+    sign_in_as user_with_role("editor", business)
+    post business_categories_path(business), params: { category: { name: "Retainers", kind: "income", schedule_c_line: "1", sales_tax_treatment: "" } }
+    expect(response).to redirect_to(business_categories_path(business))
+    expect(business.categories.find_by!(name: "Retainers").sales_tax_treatment).to eq("taxable")
+  end
 end

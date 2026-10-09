@@ -138,4 +138,106 @@ RSpec.describe Category do
     expect(book.categories.find_by!(name: "Refunds and reimbursements")).not_to be_tithable
     expect(book.categories.where.not(schedule_c_line: nil)).to be_empty
   end
+
+  describe "sales tax treatment" do
+    let(:business) { create(:business) }
+
+    it "defaults income on line 1 to taxable and other income to not a sale" do
+      expect(create(:category, :income, business: business).sales_tax_treatment).to eq("taxable")
+      other = create(:category, business: business, kind: "income", schedule_c_line: "6")
+      expect(other.sales_tax_treatment).to eq("not_a_sale")
+    end
+
+    it "treats a blank treatment as the default" do
+      expect(create(:category, :income, business: business, sales_tax_treatment: "").sales_tax_treatment).to eq("taxable")
+    end
+
+    it "keeps an explicit treatment and rejects unknown ones" do
+      exempt = create(:category, :income, business: business, sales_tax_treatment: "exempt")
+      expect(exempt.sales_tax_treatment).to eq("exempt")
+      expect(exempt).not_to be_taxable
+      expect(exempt).to be_sale
+      expect(build(:category, :income, business: business, sales_tax_treatment: "wholesale")).not_to be_valid
+    end
+
+    it "clears the treatment on expense and personal categories" do
+      expect(create(:category, business: business, sales_tax_treatment: "taxable").sales_tax_treatment).to be_nil
+      book = create(:business, :personal)
+      expect(create(:category, :income, business: book).sales_tax_treatment).to be_nil
+    end
+
+    it "clears the treatment when an income category becomes an expense" do
+      category = create(:category, :income, business: business)
+      category.update!(kind: "expense", schedule_c_line: "18")
+      expect(category.sales_tax_treatment).to be_nil
+    end
+  end
+
+  describe "sales tax remittance kind" do
+    it "has no Schedule C line and belongs only to business books" do
+      remittance = create(:category, kind: "sales_tax_remittance", schedule_c_line: "18")
+      expect(remittance.schedule_c_line).to be_nil
+      expect(remittance).to be_sales_tax_remittance
+      expect(remittance).not_to be_income
+
+      book = create(:business, :personal)
+      personal = build(:category, business: book, kind: "sales_tax_remittance")
+      expect(personal).not_to be_valid
+      expect(personal.errors[:kind]).to include("can't be a sales tax remittance on the personal book")
+    end
+
+    it "allows one active remittance category per business" do
+      first = create(:category, kind: "sales_tax_remittance", name: "Sales tax remittance")
+      second = build(:category, business: first.business, kind: "sales_tax_remittance", name: "TN remittance")
+      expect(second).not_to be_valid
+      expect(second.errors[:kind]).to include("already has a sales tax remittance category")
+      first.update!(archived_at: Time.current)
+      expect(second).to be_valid
+    end
+  end
+
+  describe "changing to or from the remittance kind" do
+    let(:business) { create(:business) }
+    let!(:profile) { create(:sales_tax_profile, business: business) }
+    let(:account) { create(:account, business: business) }
+
+    it "is blocked while the category has transactions" do
+      remittance = business.categories.sales_tax_remittance.sole
+      create(:transaction, account: account, amount_cents: -5_000, category: remittance)
+      remittance.kind = "expense"
+      remittance.schedule_c_line = "18"
+      expect(remittance).not_to be_valid
+      expect(remittance.errors[:kind]).to include("can't change to or from a remittance category while it has transactions")
+
+      expense = create(:category, business: business, name: "Supplies")
+      create(:transaction, account: account, amount_cents: -1_000, category: expense)
+      business.categories.sales_tax_remittance.sole.update!(archived_at: Time.current)
+      expense.kind = "sales_tax_remittance"
+      expect(expense).not_to be_valid
+      expect(expense.errors[:kind]).to include("can't change to or from a remittance category while it has transactions")
+    end
+
+    it "is allowed when the category has no transactions" do
+      expense = create(:category, business: business, name: "Supplies")
+      business.categories.sales_tax_remittance.sole.update!(archived_at: Time.current)
+      expect(expense.update(kind: "sales_tax_remittance")).to be(true)
+    end
+  end
+
+  describe "processor fees flag" do
+    let(:business) { create(:business) }
+
+    it "is allowed on one business expense category" do
+      create(:category, business: business, name: "Merchant fees", schedule_c_line: "10", processor_fees: true)
+      second = build(:category, business: business, name: "Stripe fees", schedule_c_line: "10", processor_fees: true)
+      expect(second).not_to be_valid
+      expect(second.errors[:processor_fees]).to include("is already set on another category")
+    end
+
+    it "is rejected on income and on the personal book" do
+      expect(build(:category, :income, business: business, processor_fees: true)).not_to be_valid
+      book = create(:business, :personal)
+      expect(build(:category, business: book, processor_fees: true)).not_to be_valid
+    end
+  end
 end

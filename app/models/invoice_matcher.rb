@@ -13,6 +13,6 @@ class InvoiceMatcher
   def for(txn, business_id)
     return [] unless txn.amount_cents.positive?
 
-    @index.fetch([ business_id, txn.amount_cents ], []).sort_by { [ _1.due_date, _1.id ] }.first(LIMIT)
+    @index.fetch([ business_id, txn.gross_cents ], []).sort_by { [ _1.due_date, _1.id ] }.first(LIMIT)
   end
 end

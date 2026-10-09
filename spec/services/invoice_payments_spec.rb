@@ -102,11 +102,95 @@ RSpec.describe InvoicePayments do
       expect(invoice.paid_on).to be_nil
       expect(deposit.reload.category).to eq(sales)
     end
+
+    context "with a processor fee" do
+      let(:payout) { create(:transaction, account: account, amount_cents: 116_490, payee: "STRIPE", posted_on: Date.new(2026, 2, 3)) }
+
+      it "records the fee and pays the invoice in full from the payout's gross" do
+        result = described_class.link(invoice: invoice, deposit: payout, processor_fee_cents: 3_510)
+        expect(result).to be_ok
+        expect(result.payment.amount_cents).to eq(120_000)
+        expect(payout.reload.processor_fee_cents).to eq(3_510)
+        expect(invoice.reload).to be_paid
+      end
+
+      it "keeps a fee the deposit already has" do
+        payout.update!(processor_fee_cents: 3_510)
+        described_class.link(invoice: invoice, deposit: payout, processor_fee_cents: 99)
+        expect(payout.reload.processor_fee_cents).to eq(3_510)
+        expect(invoice.reload).to be_paid
+      end
+    end
   end
 
   it "lists gross-receipts categories" do
     create(:category, :income, business: business, name: "Archived", archived_at: Time.current)
     create(:category, :income, business: business, name: "Other income", schedule_c_line: "6")
     expect(described_class.gross_receipts_categories(business)).to eq([ sales ])
+  end
+
+  describe "invoice sales tax" do
+    let!(:profile) { create(:sales_tax_profile, business: business) }
+    let!(:consulting) { create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt") }
+    let(:taxed) { create(:invoice, business: business, amount_cents: 109_250, sales_tax_cents: 9_250) }
+
+    it "stores the payment's share and leaves the deposit's direct tax alone" do
+      check = create(:transaction, account: account, amount_cents: 109_250, payee: "RIVERSIDE CHECK")
+      result = described_class.link(invoice: taxed, deposit: check)
+      expect(result.payment.sales_tax_cents).to eq(9_250)
+      expect(check.reload.sales_tax_cents).to eq(0)
+      expect(check.total_sales_tax_cents).to eq(9_250)
+      expect(check.category).to eq(sales)
+    end
+
+    it "keeps a batched payout's direct tax and invoice share apart, and unlink removes only the share" do
+      invoice = create(:invoice, business: business, amount_cents: 54_625, sales_tax_cents: 4_625)
+      payout = create(:transaction, account: account, amount_cents: 82_000, processor_fee_cents: 2_625, payee: "STRIPE",
+                                    category: sales, sales_tax_cents: 2_540)
+      result = described_class.link(invoice: invoice, deposit: payout, amount_cents: 54_625)
+      expect(result.payment.sales_tax_cents).to eq(4_625)
+      expect(payout.reload.total_sales_tax_cents).to eq(7_165)
+      described_class.unlink(result.payment)
+      expect(payout.reload.total_sales_tax_cents).to eq(2_540)
+      expect(payout.sales_tax_cents).to eq(2_540)
+    end
+
+    it "makes the final partial payment's share absorb rounding" do
+      first = create(:transaction, account: account, amount_cents: 33_333, payee: "PART ONE")
+      second = create(:transaction, account: account, amount_cents: 75_917, payee: "PART TWO")
+      one = described_class.link(invoice: taxed, deposit: first).payment
+      two = described_class.link(invoice: taxed, deposit: second).payment
+      expect(one.sales_tax_cents).to eq(2_822)
+      expect(one.sales_tax_cents + two.sales_tax_cents).to eq(9_250)
+    end
+
+    it "rejects an exempt deposit for a taxed invoice" do
+      deposit.update!(category: consulting)
+      result = described_class.link(invoice: taxed, deposit: deposit)
+      expect(result.error).to eq("This invoice includes sales tax — categorize the deposit as a taxable sale.")
+      requested = create(:transaction, account: account, amount_cents: 109_250)
+      expect(described_class.link(invoice: taxed, deposit: requested, category: consulting).error)
+        .to eq("This invoice includes sales tax — categorize the deposit as a taxable sale.")
+    end
+
+    it "picks the single taxable gross-receipts category even when an exempt one is also on line 1" do
+      check = create(:transaction, account: account, amount_cents: 109_250)
+      expect(described_class.link(invoice: taxed, deposit: check)).to be_ok
+      expect(check.reload.category).to eq(sales)
+    end
+
+    it "refuses a share that would push the deposit's tax to its gross" do
+      invoice = create(:invoice, business: business, amount_cents: 10_000, sales_tax_cents: 9_000)
+      payout = create(:transaction, account: account, amount_cents: 10_000, category: sales, sales_tax_cents: 1_500)
+      result = described_class.link(invoice: invoice, deposit: payout)
+      expect(result.error).to eq("Sales tax on this deposit would reach its gross amount — lower its direct sales tax first.")
+      expect(InvoicePayment.count).to eq(0)
+    end
+
+    it "doesn't keep a processor fee when the payment amount is refused" do
+      result = described_class.link(invoice: taxed, deposit: deposit, amount_cents: 200_000, processor_fee_cents: 500)
+      expect(result).not_to be_ok
+      expect(deposit.reload.processor_fee_cents).to eq(0)
+    end
   end
 end

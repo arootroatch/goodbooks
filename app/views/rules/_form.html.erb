@@ -13,7 +13,7 @@
   <p>
     then <%= f.select :outcome, [["categorize as", "categorize"], ["mark as transfer", "transfer"]] %>
     <%= f.grouped_collection_select :category_id,
-          [["Income", @business.categories.active.income.order(:name)], ["Expense", @business.categories.active.expense.order(:name)]],
+          category_groups(@business.categories.active.order(:name)),
           :last, :first, :id, :name, include_blank: "—" %>
   </p>
   <%= f.submit %>

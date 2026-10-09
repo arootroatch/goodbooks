@@ -5,6 +5,8 @@
 <% else %>
   <p>Taxpayer: <%= @business.person.name %></p>
   <p><%= render "invoices/receivables", totals: @receivables %></p>
+  <%= render "sales_tax/overdue_banner", business: @business, summary: @sales_tax %>
+  <p><%= render "sales_tax/summary", business: @business, summary: @sales_tax %></p>
 <% end %>
 <h2>Accounts</h2>
 <ul>
