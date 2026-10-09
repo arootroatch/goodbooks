@@ -54,7 +54,7 @@ InvoicePayment  invoice, deposit (FK `deposit_id` → transactions), amount_cent
 - **Open** = status `sent` (includes partial and overdue).
 - **Partial** = `sent` and `paid_cents > 0`.
 - **Overdue** = `sent` and `due_date < Date.current`. `days_past_due` = `Date.current − due_date` when overdue.
-- A deposit's `allocated_cents` = sum of its invoice payments; `unallocated_cents` = `amount_cents − allocated_cents`.
+- A deposit's `allocated_cents` = sum of its invoice payments; `unallocated_cents` = `amount_cents − allocated_cents` Amended by sales tax (`2026-10-08-goodbooks-sales-tax-design.md` §3.1): `unallocated_cents` = gross (`amount_cents + processor_fee_cents`) − `allocated_cents`.
 
 ## 3. Rules
 

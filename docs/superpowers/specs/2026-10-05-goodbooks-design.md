@@ -27,7 +27,7 @@ goodbooks is a self-hosted, Dockerized replacement for the parts of QuickBooks o
 
 ### Explicit non-goals
 
-Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income for tax purposes (the personal book tracks personal cash flow and tithe only), depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
+Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, marketplace and out-of-state sales tracking, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income for tax purposes (the personal book tracks personal cash flow and tithe only), depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
 
 ## 2. Stack
 
@@ -217,41 +217,9 @@ InvoicePayment  invoice, transaction (a deposit in the same business), amount_ce
 
 ## 7. Sub-project 4: Sales tax (Tennessee)
 
-The app records sales tax; it does not compute it per item or act as a point of sale. Collected tax is a liability, not income. Remittances are not expenses. Gross receipts on the P&L, Schedule C, and the tax engine exclude collected sales tax, and remittances are not deducted (the "exclude from both" method).
+Refined and superseded by `2026-10-08-goodbooks-sales-tax-design.md`.
 
-### 7.1 Data model
-
-```
-SalesTaxProfile  business (unique), tn_account_number, filing_frequency: monthly|quarterly|annual,
-                 default_rate_bps (state 7% + local), active:boolean
-Transaction      + sales_channel: direct_tn|invoiced|marketplace|out_of_state (nullable; income only),
-                 + sales_tax_cents (default 0), + destination_state (2-letter, out_of_state only),
-                 + sales_tax_period (nullable; set on remittances)
-Invoice          + sales_tax_cents (default 0; part of amount_cents)
-Category         kind gains a third value: sales_tax_remittance (one per business, auto-created
-                 when a SalesTaxProfile is activated; not on Schedule C)
-SalesTaxPeriod   business, starts_on, ends_on, due_on, status: open|filed|paid, filed_on,
-                 confirmation_number                     unique(business, starts_on)
-```
-
-### 7.2 Recording collected tax
-
-- Only businesses with an active `SalesTaxProfile` show sales tax fields.
-- **Direct TN** (POS payouts, direct deposits): the editor enters `sales_tax_cents` from their processor report, or clicks "tax-inclusive at default rate", which sets tax = amount × r / (1 + r) via `Money.round_rational`. The value stays editable to cover the single-article cap and exemptions.
-- **Invoiced**: linking an `InvoicePayment` to a deposit sets the deposit's `sales_tax_cents` += payment amount × (invoice sales tax / invoice amount), rounded once per payment. The channel becomes `invoiced`.
-- **Marketplace**: tagged `marketplace`, `sales_tax_cents` stays 0 (the facilitator remitted it). Reported separately for reconciliation.
-- **Out of state**: tagged `out_of_state` with `destination_state`, `sales_tax_cents` 0.
-- Validation: `sales_tax_cents` ≥ 0 and < `amount_cents`, and only on positive transactions in income categories.
-- Rules gain an optional `sales_channel` to set when they categorize (e.g. payee contains "ETSY" → Sales, marketplace).
-
-### 7.3 Periods and remittance
-
-- Periods are generated from the profile's filing frequency (calendar months, quarters, or year). `due_on` = the 20th of the month after the period ends, rolled forward past weekends and state holidays.
-- A transaction in the `sales_tax_remittance` category is linked to a period (default: the most recent period that is filed or past due and not paid).
-- **Period report**: gross sales (all income in the period, including tax), marketplace sales, out-of-state sales, TN taxable sales (direct TN + invoiced, excluding tax), tax collected, remitted, and balance owed (collected − remitted). The editor marks the period filed (date + confirmation number). It becomes paid when remitted ≥ collected.
-- A dashboard card per business shows the next due date and the current open balance. Overdue unfiled periods show a banner.
-- Income totals across P&L, Schedule C, and the tax engine use `amount_cents − sales_tax_cents`. The `sales_tax_remittance` category is excluded from expenses. Report calculators get specs that prove both.
-- `demo:seed` gives one business an active profile (quarterly), a mix of direct, invoiced, and marketplace sales, and one filed + paid period.
+Summary: the app records Tennessee sales tax; it does not compute it per item. Collected tax is a liability, not income, and remittances are not expenses ("exclude from both"). Income categories carry a sales tax treatment (taxable, exempt, not a sale). Deposits carry direct sales tax and a processor fee (Stripe); invoices carry sales tax that is pro-rated onto the payments linking them. Filing periods are derived from a per-business profile; only filings are stored. Reports count income net of sales tax and gross of processor fees, with fees as an expense.
 
 ## 8. Sub-project 5: Plaid
 
@@ -293,7 +261,7 @@ The seeded values for the current year are entered from IRS publications (the an
 
 For a tax year, as of a quarter:
 
-1. **Net profit per business** = income (net of collected sales tax, §7) − deductible expenses (with `deductible_bps` applied) − mileage deduction − home office deduction.
+1. **Net profit per business** = income (net of collected sales tax and gross of processor fees, with processor fees as an expense; see the sales tax spec §6) − deductible expenses (with `deductible_bps` applied) − mileage deduction − home office deduction.
    - Simplified home office: min(office_sqft, max_sqft) × rate.
    - Regular: (office_sqft / home_sqft) × sum of home costs + depreciation.
    - Either way, capped at the business's profit before home office (no loss created). The excess is reported as carryover, informational only.
