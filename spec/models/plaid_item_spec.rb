@@ -30,11 +30,12 @@ RSpec.describe PlaidItem do
     expect(item.manageable_by?(other)).to be(false)
   end
 
-  it "enqueues a sync for every connected item, and nothing when Plaid is disabled" do
+  it "enqueues a sync for every item except those needing a login, and nothing when Plaid is disabled" do
     ok = create(:plaid_item)
+    failed = create(:plaid_item, status: "error")
     create(:plaid_item, status: "login_required")
-    create(:plaid_item, status: "error")
-    expect { PlaidItem.sync_all_later }.to have_enqueued_job(PlaidSyncJob).with(ok).exactly(:once)
+    expect { PlaidItem.sync_all_later }.to have_enqueued_job(PlaidSyncJob).exactly(:twice)
+      .and have_enqueued_job(PlaidSyncJob).with(ok).and have_enqueued_job(PlaidSyncJob).with(failed)
     PlaidGateway.current = nil
     expect { PlaidItem.sync_all_later }.not_to have_enqueued_job(PlaidSyncJob)
   end

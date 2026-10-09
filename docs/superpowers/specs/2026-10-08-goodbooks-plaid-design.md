@@ -122,7 +122,7 @@ Given incoming rows and candidate existing rows (both as structs of id/key, post
    - else claim: candidates are the account's rows with `plaid_transaction_id IS NULL` and `posted_on` within ±3 days of any incoming row. A claimed row gets `plaid_transaction_id` set and nothing else changes (its date, amount, payee, category, and links stay as the user knew them);
    - else insert with `plaid_transaction_id`.
    - `RuleApplier.new(book).apply(inserted)` runs per book on the inserted rows only.
-4. **modified**: find by `plaid_transaction_id`. Skip if not found or `excluded`. Otherwise assign date, amount, and payee, and never overwrite the memo (users edit memos on imported rows); if the row is invalid (for example, a linked invoice deposit whose amount would fall below its allocations), discard the changes and set `review_reason: "changed_by_bank"` instead.
+4. **modified**: find by `plaid_transaction_id`. Skip if not found or `excluded`. Otherwise assign date and amount; never overwrite payee or memo (users' text); if the row is invalid (for example, a linked invoice deposit whose amount would fall below its allocations), discard the changes and set `review_reason: "changed_by_bank"` instead.
 5. **removed**: find by `plaid_transaction_id`. If the row has invoice payments or `categorized_by: "user"`, set `review_reason: "removed_by_bank"`; otherwise set `excluded: true`.
 6. Returns a result (inserted, claimed, modified, flagged, excluded counts) for the flash and logs.
 
@@ -138,7 +138,7 @@ Row writes use `update!`/`create!` so model validations and guards apply; the on
 - Skips items whose status is `login_required` (a reconnect clears it).
 
 Triggers:
-- **Daily**: `config/recurring.yml` production entry `plaid_sync` at 4am, command `PlaidItem.ok.find_each { PlaidSyncJob.perform_later(_1) }`, guarded by `PlaidGateway.enabled?`.
+- **Daily**: `config/recurring.yml` production entry `plaid_sync` at 4am, command `PlaidItem.sync_all_later`, which enqueues every item not in `login_required`, guarded by `PlaidGateway.enabled?`.
 - **Webhook**: `TRANSACTIONS` / `SYNC_UPDATES_AVAILABLE`.
 - **Sync now**: `POST /plaid_items/:id/sync` (manager only), flash "Sync started".
 
@@ -164,7 +164,7 @@ The preview's existing counts gain `synced_count` (stored on `CsvImport` as a ne
 - Skips authentication, the setup redirect, and CSRF. `rate_limit to: 60, within: 1.minute`.
 - **Verification** (`Plaid::WebhookVerifier`, given the raw body, the `Plaid-Verification` header, a key fetcher, and now):
   1. decode the JWT header without verifying; `alg` must be `ES256`, `kid` present;
-  2. fetch the JWK for `kid` (cached in `Rails.cache` for 24 hours; a key with `expired_at` set is rejected);
+  2. fetch the JWK for `kid` (cached in `Rails.cache` for 1 hour; a key with `expired_at` set is rejected);
   3. verify the signature with the `jwt` gem (`algorithms: ["ES256"]`);
   4. `iat` must be no more than 5 minutes before now;
   5. `request_body_sha256` must equal the SHA-256 hex of the raw body (constant-time compare).

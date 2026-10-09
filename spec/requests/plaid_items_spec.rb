@@ -46,6 +46,14 @@ RSpec.describe "Plaid items" do
     expect(response).to redirect_to(plaid_item_assignment_path(item))
   end
 
+  it "still creates the item, named generically, when the institution lookup fails after the exchange" do
+    sign_in_as owner
+    plaid_gateway.fail_next(:institution_name, PlaidGateway::TransientError.new("Plaid connection failed (Faraday::SSLError)"))
+    expect { post plaid_items_path, params: { public_token: "public-x" } }.to change(PlaidItem, :count).by(1)
+    expect(PlaidItem.last.institution_name).to eq("Your bank")
+    expect(response).to redirect_to(plaid_item_assignment_path(PlaidItem.last))
+  end
+
   it "reports a missing token or a Plaid failure without creating anything" do
     sign_in_as owner
     post plaid_items_path, params: { public_token: "" }

@@ -70,14 +70,24 @@ RSpec.describe PlaidFeed::Sync do
     expect(checking.transactions.count).to eq(2)
   end
 
-  it "applies bank modifications to date, amount, and payee, but never the memo" do
+  it "applies bank modifications to date and amount, but never the payee or memo" do
     page(added: [ plaid("t1", amount: 4.5, date: "2026-10-01", name: "PENDING NAME") ])
     sync
-    checking.transactions.sole.update!(memo: "my note")
+    checking.transactions.sole.update!(memo: "my note", payee: "My payee")
     page(modified: [ plaid("t1", amount: 5.25, date: "2026-10-03", name: "FINAL NAME") ])
     expect(sync.modified).to eq(1)
-    expect(checking.transactions.sole).to have_attributes(posted_on: Date.new(2026, 10, 3), amount_cents: -525, payee: "FINAL NAME",
+    expect(checking.transactions.sole).to have_attributes(posted_on: Date.new(2026, 10, 3), amount_cents: -525, payee: "My payee",
                                                           memo: "my note")
+  end
+
+  it "keeps the hand-typed payee of a claimed row when the bank modifies it" do
+    manual = create(:transaction, account: checking, posted_on: Date.new(2026, 10, 1), amount_cents: -450, payee: "coffee")
+    page(added: [ plaid("t1", amount: 4.5, date: "2026-10-01", name: "SQ *COFFEE 8475") ])
+    sync
+    expect(manual.reload.plaid_transaction_id).to eq("t1")
+    page(modified: [ plaid("t1", amount: 4.75, date: "2026-10-02", name: "SQ *COFFEE FINAL") ])
+    sync
+    expect(manual.reload).to have_attributes(payee: "coffee", amount_cents: -475, posted_on: Date.new(2026, 10, 2))
   end
 
   it "ignores modifications to an excluded row" do

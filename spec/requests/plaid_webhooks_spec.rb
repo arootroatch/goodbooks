@@ -58,6 +58,41 @@ RSpec.describe "Plaid webhooks" do
     expect(response).to have_http_status(:unauthorized)
   end
 
+  describe "key lookup hardening" do
+    let(:store) { ActiveSupport::Cache::MemoryStore.new }
+
+    before { allow(Rails).to receive(:cache).and_return(store) }
+
+    def forged(kid)
+      JWT.encode({ iat: Time.now.to_i, request_body_sha256: "x" }, OpenSSL::PKey::EC.generate("prime256v1"), "ES256", { kid: kid })
+    end
+
+    it "rejects a malformed or oversized kid without asking Plaid" do
+      expect(plaid_gateway).not_to receive(:webhook_verification_key)
+      [ "bad kid!", "../etc", "a" * 65 ].each do |kid|
+        deliver(nil, token: forged(kid), raw: "{}")
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    it "asks Plaid once for a repeated unknown kid within the window" do
+      allow(plaid_gateway).to receive(:webhook_verification_key).and_raise(PlaidGateway::Error.new("INVALID_KEY_ID: no such key"))
+      3.times do
+        deliver(nil, token: forged("unknown-kid"), raw: "{}")
+        expect(response).to have_http_status(:unauthorized)
+      end
+      expect(plaid_gateway).to have_received(:webhook_verification_key).once
+    end
+
+    it "caches a valid key for an hour" do
+      deliver(sync_available)
+      key = "plaid/webhook_key/#{FakePlaidGateway::KID}"
+      expect(store.read(key)).to be_present
+      travel(59.minutes) { expect(store.read(key)).to be_present }
+      travel(61.minutes) { expect(store.read(key)).to be_nil }
+    end
+  end
+
   it "returns 400 for a verified body that isn't JSON" do
     deliver(nil, raw: "not json")
     expect(response).to have_http_status(:bad_request)

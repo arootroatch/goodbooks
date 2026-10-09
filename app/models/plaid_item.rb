@@ -16,7 +16,7 @@ class PlaidItem < ApplicationRecord
   def self.sync_all_later
     return unless PlaidGateway.enabled?
 
-    ok.find_each { PlaidSyncJob.perform_later(_1) }
+    where.not(status: "login_required").find_each { PlaidSyncJob.perform_later(_1) }
   end
 
   # Items that need the user to log in again, for the dashboard banner.

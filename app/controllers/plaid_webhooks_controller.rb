@@ -2,6 +2,9 @@
 class PlaidWebhooksController < ApplicationController
   include PlaidScoped
 
+  KID_FORMAT = /\A[A-Za-z0-9-]+\z/
+  KID_MAX_LENGTH = 64
+
   allow_unauthenticated_access
   skip_before_action :require_household
   skip_forgery_protection
@@ -22,9 +25,23 @@ class PlaidWebhooksController < ApplicationController
   private
 
   def verifier
-    PlaidFeed::WebhookVerifier.new(key_fetcher: lambda { |kid|
-      Rails.cache.fetch("plaid/webhook_key/#{kid}", expires_in: 24.hours) { PlaidGateway.current.webhook_verification_key(kid) }
-    })
+    PlaidFeed::WebhookVerifier.new(key_fetcher: method(:webhook_key))
+  end
+
+  # The kid comes from the unauthenticated request, so it is shape-checked before it reaches Plaid, and a kid
+  # Plaid doesn't know is remembered briefly so forged ones can't each cost a call.
+  def webhook_key(kid)
+    return unless kid.to_s.length <= KID_MAX_LENGTH && kid.to_s.match?(KID_FORMAT)
+
+    missing = "plaid/webhook_key_missing/#{kid}"
+    return if Rails.cache.exist?(missing)
+
+    Rails.cache.fetch("plaid/webhook_key/#{kid}", expires_in: 1.hour, skip_nil: true) { PlaidGateway.current.webhook_verification_key(kid) }
+  rescue PlaidGateway::TransientError
+    raise
+  rescue PlaidGateway::Error
+    Rails.cache.write(missing, true, expires_in: 5.minutes)
+    nil
   end
 
   def handle(payload)
