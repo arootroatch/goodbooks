@@ -64,6 +64,18 @@ RSpec.describe "Businesses" do
       expect(flash[:notice]).to eq("Personal book updated.")
     end
 
+    it "shows no sales tax section or overdue banner on the personal book even with a stray profile" do
+      owner = create(:user, :household_owner)
+      book = PersonalBookProvisioner.call(Household.instance)
+      SalesTaxProfile.insert!({ business_id: book.id, filing_frequency: "quarterly", default_rate_bps: 925, starts_on: Date.new(2020, 1, 1), active: true })
+      expect(book.reload.sales_tax_profile).to be_present
+      sign_in_as owner
+      get business_path(book)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to match(/sales tax/i)
+      expect(response.body).not_to include("isn't filed")
+    end
+
     it "keeps business wording for a business" do
       sign_in_as user_with_role("owner", business)
       get edit_business_path(business)

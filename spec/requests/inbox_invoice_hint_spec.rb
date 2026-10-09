@@ -89,4 +89,21 @@ RSpec.describe "Inbox invoice hint" do
     expect(response).to redirect_to(business_inbox_path(business))
     expect(flash[:notice]).to eq("Payment recorded.")
   end
+
+  it "refuses a taxed invoice paid into an exempt category from the inbox and leaves the deposit uncategorized" do
+    create(:sales_tax_profile, business: business)
+    sales.update!(sales_tax_treatment: "taxable")
+    exempt = create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    invoice.update!(amount_cents: 109_250, sales_tax_cents: 9_250)
+    deposit.update!(amount_cents: 109_250)
+    sign_in_as user_with_role("editor", business)
+
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: deposit.id, category_id: exempt.id, from_inbox: "1" }, headers: turbo
+
+    expect(response.body).to include(%(action="replace" target="transaction_#{deposit.id}"))
+    expect(response.body).to include(InvoicePayments::TAXED_INVOICE_MESSAGE)
+    expect(InvoicePayment.count).to eq(0)
+    expect(deposit.reload.category).to be_nil
+    expect(invoice.reload).not_to be_paid
+  end
 end
