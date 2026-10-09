@@ -20,4 +20,22 @@ class PlaidItem < ApplicationRecord
   end
 
   def manageable_by?(user) = user.household_owner? || created_by_id == user.id
+
+  # Stops the feed: tells Plaid (best effort), turns the accounts back into CSV or manual ones, keeps every transaction.
+  def disconnect!(gateway)
+    warning = begin
+      gateway.item_remove(access_token)
+      nil
+    rescue PlaidGateway::Error => e
+      e.message
+    end
+    ApplicationRecord.transaction do
+      accounts.each do |account|
+        account.update!(source: account.csv_mapping.present? ? "csv" : "manual", plaid_item: nil, plaid_account_id: nil,
+                        plaid_mask: nil, plaid_name: nil, plaid_sync_from: nil)
+      end
+      destroy!
+    end
+    warning
+  end
 end

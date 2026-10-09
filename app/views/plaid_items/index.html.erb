@@ -1,0 +1,19 @@
+<h1>Bank connections</h1>
+<% if @items.any? %>
+  <table>
+    <thead><tr><th>Bank</th><th>Status</th><th>Last synced</th><th>Accounts</th></tr></thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr id="<%= dom_id(item) %>">
+          <td><%= link_to item.institution_name, plaid_item_path(item) %></td>
+          <td><%= plaid_status_label(item) %></td>
+          <td><%= item.last_synced_at ? "#{time_ago_in_words(item.last_synced_at)} ago" : "Never" %></td>
+          <td><%= item.accounts.map { "#{book_label(_1.business)} › #{_1.name}" }.join(", ").presence || "None assigned" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No banks connected yet.</p>
+<% end %>
+<%= link_to "Connect a bank", new_plaid_item_path if Current.user.owned_books.exists? %>
