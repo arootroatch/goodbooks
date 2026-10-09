@@ -37,4 +37,11 @@ RSpec.describe BusinessProvisioner do
     expect(Account.count).to eq(0)
     expect(Category.count).to eq(0)
   end
+
+  it "adds Merchant fees as the processor-fee category" do
+    business = BusinessProvisioner.call(build(:business), owner: create(:user))
+    fees = business.categories.find_by!(processor_fees: true)
+    expect([ fees.name, fees.kind, fees.schedule_c_line ]).to eq([ "Merchant fees", "expense", "10" ])
+    expect(business.categories.find_by!(name: "Sales").sales_tax_treatment).to eq("taxable")
+  end
 end
