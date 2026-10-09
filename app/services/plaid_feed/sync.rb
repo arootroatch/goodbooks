@@ -18,7 +18,7 @@ module PlaidFeed
     def call
       added, modified, removed, cursor = fetch
       ApplicationRecord.transaction do
-        accounts = @item.accounts.includes(:business).where.not(plaid_account_id: nil).index_by(&:plaid_account_id)
+        accounts = @item.accounts.active.includes(:business).where.not(plaid_account_id: nil).index_by(&:plaid_account_id)
         inserted = apply_added(added, accounts)
         modified.each { apply_modified(_1, accounts) }
         removed.each { apply_removed(_1, accounts) }

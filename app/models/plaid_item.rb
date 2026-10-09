@@ -19,13 +19,16 @@ class PlaidItem < ApplicationRecord
     where.not(status: "login_required").find_each { PlaidSyncJob.perform_later(_1) }
   end
 
-  # Items that need the user to log in again, for the dashboard banner.
+  # Items that are broken or due for renewal, for the dashboard banner.
   def self.needing_reconnect_for(user)
     return none unless PlaidGateway.enabled?
 
     visible = Account.where(business: user.accessible_businesses).select(:plaid_item_id)
-    login_required.where(id: visible).or(login_required.manageable_by(user))
+    needing_renewal = login_required.or(where.not(consent_expires_at: nil))
+    needing_renewal.where(id: visible).or(needing_renewal.manageable_by(user))
   end
+
+  def reconnectable? = login_required? || error? || consent_expires_at.present?
 
   def manageable_by?(user) = user.household_owner? || created_by_id == user.id
 

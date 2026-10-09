@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_050004) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -222,6 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050004) do
     t.string "last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "consent_expires_at"
     t.index ["created_by_id"], name: "index_plaid_items_on_created_by_id"
     t.index ["household_id"], name: "index_plaid_items_on_household_id"
     t.index ["item_id"], name: "index_plaid_items_on_item_id", unique: true

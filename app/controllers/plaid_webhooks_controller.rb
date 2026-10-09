@@ -55,9 +55,9 @@ class PlaidWebhooksController < ApplicationController
     in [ "ITEM", "ERROR" ] if payload.dig("error", "error_code") == "ITEM_LOGIN_REQUIRED"
       item.update!(status: "login_required", last_error: "ITEM_LOGIN_REQUIRED: #{payload.dig("error", "error_message")}")
     in [ "ITEM", "PENDING_EXPIRATION" | "PENDING_DISCONNECT" ]
-      item.update!(status: "login_required")
+      item.update!(consent_expires_at: payload["consent_expiration_time"].presence&.then { Time.zone.parse(_1) } || 7.days.from_now)
     in [ "ITEM", "LOGIN_REPAIRED" ]
-      item.update!(status: "ok", last_error: nil)
+      item.update!(status: "ok", last_error: nil, consent_expires_at: nil)
       PlaidSyncJob.perform_later(item)
     else
       nil
