@@ -49,6 +49,20 @@ RSpec.describe PlaidFeed::WebhookVerifier do
     invalid(JWT.encode({ request_body_sha256: Digest::SHA256.hexdigest(body) }, key, "ES256", { kid: "k1" }))
   end
 
+  it "rejects a token dated more than five minutes in the future" do
+    invalid(token(iat: (now + 6.minutes).to_i), /future/)
+    expect(verifier.verify!(body: body, token: token(iat: (now + 4.minutes).to_i))).to be(true)
+  end
+
+  it "rejects a token with no iat claim" do
+    invalid(JWT.encode({ request_body_sha256: Digest::SHA256.hexdigest(body) }, key, "ES256", { kid: "k1" }), "missing iat")
+  end
+
+  it "turns a malformed JWK into Invalid" do
+    jwk["x"] = "AAAA"
+    invalid(token)
+  end
+
   it "rejects a body that was changed after signing" do
     invalid(token(signed_body: body.sub("item-1", "item-2")), /body hash/)
   end

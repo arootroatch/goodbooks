@@ -19,13 +19,17 @@ module PlaidFeed
       raise Invalid, "missing key id" if header["kid"].blank?
 
       payload, = JWT.decode(token, verify_key(header["kid"]), true, algorithms: [ "ES256" ])
-      raise Invalid, "token is too old" if Integer(payload["iat"]) < (@now - MAX_AGE).to_i
+      raise Invalid, "missing iat" if payload["iat"].blank?
+
+      issued_at = Integer(payload["iat"])
+      raise Invalid, "token is too old" if issued_at < (@now - MAX_AGE).to_i
+      raise Invalid, "token is dated in the future" if issued_at > (@now + MAX_AGE).to_i
 
       digest = Digest::SHA256.hexdigest(body.to_s)
       raise Invalid, "body hash mismatch" unless ActiveSupport::SecurityUtils.secure_compare(digest, payload["request_body_sha256"].to_s)
 
       true
-    rescue JWT::DecodeError, PlaidGateway::Error, ArgumentError, TypeError => e
+    rescue JWT::DecodeError, PlaidGateway::Error, OpenSSL::OpenSSLError, ArgumentError, TypeError => e
       raise Invalid, e.message
     end
 
