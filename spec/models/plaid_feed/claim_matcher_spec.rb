@@ -38,4 +38,28 @@ RSpec.describe PlaidFeed::ClaimMatcher do
     expect(match([], [ item(7, "2026-10-05", -500) ])).to eq({})
     expect(match([ item("p1", "2026-10-05", -500) ], [])).to eq({})
   end
+
+  describe ".pair_records" do
+    let(:account) { create(:account) }
+    let(:row_class) { Data.define(:plaid_transaction_id, :posted_on, :amount_cents) }
+
+    def row(id, date, cents) = row_class.new(plaid_transaction_id: id, posted_on: Date.parse(date), amount_cents: cents)
+
+    it "maps each incoming key to the claimed record, within the date window and the given relation" do
+      near = create(:transaction, account: account, posted_on: Date.new(2026, 10, 6), amount_cents: -500)
+      create(:transaction, account: account, posted_on: Date.new(2026, 10, 20), amount_cents: -500)
+      result = described_class.pair_records([ row("p1", "2026-10-05", -500) ], account.transactions, key: :plaid_transaction_id)
+      expect(result).to eq("p1" => near)
+    end
+
+    it "only considers the relation it is given" do
+      create(:transaction, account: account, posted_on: Date.new(2026, 10, 5), amount_cents: -500, external_id: "h")
+      relation = account.transactions.where(external_id: nil)
+      expect(described_class.pair_records([ row("p1", "2026-10-05", -500) ], relation, key: :plaid_transaction_id)).to eq({})
+    end
+
+    it "returns an empty hash for no rows" do
+      expect(described_class.pair_records([], account.transactions, key: :plaid_transaction_id)).to eq({})
+    end
+  end
 end
