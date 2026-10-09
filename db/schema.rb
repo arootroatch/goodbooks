@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -147,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000002) do
     t.integer "amount_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
     t.index ["deposit_id"], name: "index_invoice_payments_on_deposit_id"
     t.index ["invoice_id", "deposit_id"], name: "index_invoice_payments_on_invoice_id_and_deposit_id", unique: true
     t.index ["invoice_id"], name: "index_invoice_payments_on_invoice_id"
@@ -164,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000002) do
     t.date "paid_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
     t.index ["business_id", "number"], name: "index_invoices_on_business_id_and_number", unique: true
     t.index ["business_id", "status"], name: "index_invoices_on_business_id_and_status"
     t.index ["business_id"], name: "index_invoices_on_business_id"
@@ -275,6 +277,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000002) do
     t.integer "rule_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sales_tax_cents", default: 0, null: false
+    t.integer "processor_fee_cents", default: 0, null: false
+    t.date "sales_tax_period_starts_on"
     t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"

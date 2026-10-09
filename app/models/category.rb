@@ -24,6 +24,8 @@ class Category < ApplicationRecord
   validate :processor_fees_only_on_business_expense
   validate :deductible_percent_parses
   validate :kind_stays_income_while_linked, on: :update
+  validate :treatment_stays_taxable_while_taxed, on: :update
+  validate :kind_stays_while_fees, on: :update
 
   def deductible_percent
     return @deductible_percent_input if defined?(@deductible_percent_input)
@@ -55,6 +57,19 @@ class Category < ApplicationRecord
   def sale? = income? && %w[taxable exempt].include?(sales_tax_treatment)
 
   private
+
+  def treatment_stays_taxable_while_taxed
+    return unless sales_tax_treatment_was == "taxable" && will_save_change_to_sales_tax_treatment?
+    return unless Transaction.where(category_id: id).where(Transaction::TAXED_SQL).exists?
+
+    errors.add(:sales_tax_treatment, "can't change while deposits in this category carry sales tax")
+  end
+
+  def kind_stays_while_fees
+    return unless will_save_change_to_kind? && Transaction.where(category_id: id).where("transactions.processor_fee_cents > 0").exists?
+
+    errors.add(:kind, "can't change while deposits in this category carry processor fees")
+  end
 
   def schedule_c_line_matches_kind
     if business&.personal?
