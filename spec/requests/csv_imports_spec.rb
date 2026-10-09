@@ -167,4 +167,18 @@ RSpec.describe "CSV imports" do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  it "says how many rows were already synced from the bank" do
+    sign_in_as user_with_role("editor", business)
+    plaid_account = create(:account, :plaid, business: business, csv_mapping: CsvImport::Mapping.new(
+      date_column: "Date", payee_column: "Description", amount_column: "Amount", date_format: "MM/DD/YYYY"
+    ).to_h)
+    create(:transaction, account: plaid_account, posted_on: Date.new(2026, 10, 1), amount_cents: -8215, payee: "Kroger", plaid_transaction_id: "p-1")
+    upload = Rack::Test::UploadedFile.new(Rails.root.join("spec/fixtures/files/plaid_overlap.csv"), "text/csv")
+    csv_import = plaid_account.csv_imports.create!(file: upload)
+    get business_account_csv_import_path(business, plaid_account, csv_import)
+    expect(response.body).to include("1 already synced from the bank", "Already synced from bank")
+    post commit_business_account_csv_import_path(business, plaid_account, csv_import)
+    expect(flash[:notice]).to include("1 already synced from the bank")
+  end
 end
