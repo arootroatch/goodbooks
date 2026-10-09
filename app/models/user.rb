@@ -20,6 +20,11 @@ class User < ApplicationRecord
     memberships.find_by(business: business)
   end
 
+  # Books (business or personal) this user can connect bank accounts to.
+  def owned_books
+    Business.active.where(id: memberships.owner.select(:business_id))
+  end
+
   def can_view_household?
     return true if household_owner?
 

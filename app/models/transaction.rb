@@ -2,6 +2,10 @@ class Transaction < ApplicationRecord
   include MoneyAttribute
 
   CATEGORIZED_BY = %w[rule user].freeze
+  REVIEW_REASONS = {
+    "removed_by_bank" => "Removed by the bank",
+    "changed_by_bank" => "The bank changed this transaction; your version was kept"
+  }.freeze
   UNALLOCATED_SQL = "transactions.amount_cents - COALESCE((SELECT SUM(invoice_payments.amount_cents) " \
                     "FROM invoice_payments WHERE invoice_payments.deposit_id = transactions.id), 0)".freeze
 
@@ -15,6 +19,7 @@ class Transaction < ApplicationRecord
 
   scope :inbox, -> { where(category_id: nil, transfer: false, excluded: false) }
   scope :countable, -> { where(transfer: false, excluded: false) }
+  scope :needs_review, -> { where.not(review_reason: nil) }
   scope :for_businesses, ->(ids) { joins(:account).where(accounts: { business_id: ids }) }
   scope :linkable_deposits, -> {
     countable.where("transactions.amount_cents > 0")
@@ -26,6 +31,7 @@ class Transaction < ApplicationRecord
   validates :posted_on, :payee, presence: true
   validates :amount_cents, presence: true, numericality: { only_integer: true }, if: -> { errors[:amount].empty? }
   validates :categorized_by, inclusion: { in: CATEGORIZED_BY }, allow_nil: true
+  validates :review_reason, inclusion: { in: REVIEW_REASONS.keys }, allow_nil: true
   validate :category_in_business
   validate :linked_deposit_stays_payable, on: :update
   after_update :resync_linked_invoices, if: :saved_change_to_posted_on?
@@ -38,6 +44,10 @@ class Transaction < ApplicationRecord
   def inbox? = category_id.nil? && !transfer? && !excluded?
 
   def categorized_by_user? = categorized_by == "user"
+
+  def imported? = external_id.present? || plaid_transaction_id.present?
+
+  def review_message = REVIEW_REASONS[review_reason]
 
   def rule_attributes = { payee: payee, memo: memo, amount_cents: amount_cents }
 
