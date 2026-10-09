@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -76,8 +76,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.datetime "updated_at", null: false
     t.boolean "tithable", default: true, null: false
     t.boolean "tithe", default: false, null: false
+    t.string "sales_tax_treatment"
+    t.boolean "processor_fees", default: false, null: false
     t.index ["business_id", "name"], name: "index_categories_on_business_id_and_name", unique: true
     t.index ["business_id"], name: "index_categories_on_business_id"
+    t.index ["business_id"], name: "index_categories_one_processor_fees_per_business", unique: true, where: "processor_fees"
   end
 
   create_table "clients", force: :cascade do |t|
