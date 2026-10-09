@@ -9,16 +9,17 @@ class InvoicePayments
     business.categories.gross_receipts.order(:name).to_a
   end
 
-  def self.link(invoice:, deposit:, amount_cents: nil, category: nil)
+  def self.link(invoice:, deposit:, amount_cents: nil, category: nil, processor_fee_cents: nil)
     ApplicationRecord.transaction do
       invoice.lock!
       deposit.lock!
       error = link_error(invoice, deposit)
       next failure(error) if error
 
+      deposit.processor_fee_cents = processor_fee_cents if processor_fee_cents.to_i.positive? && deposit.processor_fee_cents.zero?
       allocation = Invoices::Allocation.call(
         invoice_amount_cents: invoice.amount_cents, invoice_paid_cents: invoice.paid_cents,
-        deposit_amount_cents: deposit.amount_cents, deposit_allocated_cents: deposit.allocated_cents,
+        deposit_gross_cents: deposit.gross_cents, deposit_allocated_cents: deposit.allocated_cents,
         requested_cents: amount_cents
       )
       next failure(allocation.error) unless allocation.ok?
@@ -26,7 +27,9 @@ class InvoicePayments
       income = income_category_for(deposit, category)
       next failure("Choose an income category for this deposit.") unless income
 
-      deposit.update!(category: income, categorized_by: "user") unless deposit.category_id == income.id
+      deposit.assign_attributes(category: income, categorized_by: "user") unless deposit.category_id == income.id
+      next failure(deposit.errors.full_messages.to_sentence) if deposit.changed? && !deposit.save
+
       payment = invoice.payments.create!(deposit: deposit, amount_cents: allocation.amount_cents)
       invoice.sync_payment_status!
       Result.new(payment: payment, error: nil)

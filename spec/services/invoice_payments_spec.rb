@@ -102,6 +102,25 @@ RSpec.describe InvoicePayments do
       expect(invoice.paid_on).to be_nil
       expect(deposit.reload.category).to eq(sales)
     end
+
+    context "with a processor fee" do
+      let(:payout) { create(:transaction, account: account, amount_cents: 116_490, payee: "STRIPE", posted_on: Date.new(2026, 2, 3)) }
+
+      it "records the fee and pays the invoice in full from the payout's gross" do
+        result = described_class.link(invoice: invoice, deposit: payout, processor_fee_cents: 3_510)
+        expect(result).to be_ok
+        expect(result.payment.amount_cents).to eq(120_000)
+        expect(payout.reload.processor_fee_cents).to eq(3_510)
+        expect(invoice.reload).to be_paid
+      end
+
+      it "keeps a fee the deposit already has" do
+        payout.update!(processor_fee_cents: 3_510)
+        described_class.link(invoice: invoice, deposit: payout, processor_fee_cents: 99)
+        expect(payout.reload.processor_fee_cents).to eq(3_510)
+        expect(invoice.reload).to be_paid
+      end
+    end
   end
 
   it "lists gross-receipts categories" do

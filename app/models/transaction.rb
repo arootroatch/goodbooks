@@ -2,7 +2,7 @@ class Transaction < ApplicationRecord
   include MoneyAttribute
 
   CATEGORIZED_BY = %w[rule user].freeze
-  UNALLOCATED_SQL = "transactions.amount_cents - COALESCE((SELECT SUM(invoice_payments.amount_cents) " \
+  UNALLOCATED_SQL = "transactions.amount_cents + transactions.processor_fee_cents - COALESCE((SELECT SUM(invoice_payments.amount_cents) " \
                     "FROM invoice_payments WHERE invoice_payments.deposit_id = transactions.id), 0)".freeze
   INVOICE_TAX_SQL = "COALESCE((SELECT SUM(invoice_payments.sales_tax_cents) FROM invoice_payments " \
                     "WHERE invoice_payments.deposit_id = transactions.id), 0)".freeze
@@ -50,7 +50,7 @@ class Transaction < ApplicationRecord
   def rule_attributes = { payee: payee, memo: memo, amount_cents: amount_cents }
 
   def allocated_cents = invoice_payments.loaded? ? invoice_payments.sum(&:amount_cents) : invoice_payments.sum(:amount_cents)
-  def unallocated_cents = amount_cents - allocated_cents
+  def unallocated_cents = gross_cents - allocated_cents
 
   def gross_cents = amount_cents.to_i + processor_fee_cents.to_i
 
@@ -111,10 +111,11 @@ class Transaction < ApplicationRecord
 
   def linked_deposit_stays_payable
     changed = will_save_change_to_category_id? || will_save_change_to_transfer? ||
-              will_save_change_to_excluded? || will_save_change_to_amount_cents?
+              will_save_change_to_excluded? || will_save_change_to_amount_cents? ||
+              will_save_change_to_processor_fee_cents?
     return unless changed && invoice_payments.exists?
 
-    payable = !transfer? && !excluded? && category&.income? && amount_cents.to_i >= allocated_cents
+    payable = !transfer? && !excluded? && category&.income? && gross_cents >= allocated_cents
     errors.add(:base, linked_invoice_message) unless payable
   end
 
