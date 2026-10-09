@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     end
     resources :transactions, except: :show do
       resource :classification, only: :update
+      resource :review, only: :update, controller: "transaction_reviews"
     end
     resources :rules, except: :show do
       patch :move, on: :member

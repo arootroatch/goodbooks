@@ -1,6 +1,7 @@
 <h1><%= current_personal_book ? "Inbox: all books" : "Inbox: all businesses" %></h1>
 <% @groups.each do |business, transactions, total| %>
   <h2><%= link_to business.name, business_inbox_path(business) %> (<%= total %>)</h2>
+  <%= render "inboxes/review_rows", business: business, rows: @reviews.fetch(business.id, []), editable: @memberships.fetch(business.id).can_edit? %>
   <%= render "shared/inbox_truncation", shown: transactions.size, total: total %>
   <table>
     <tbody>
