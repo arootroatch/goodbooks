@@ -79,4 +79,11 @@ RSpec.describe SalesTaxProfile do
     expect(profile.reload.update(starts_on: Date.new(2026, 4, 1))).to be(false)
     expect(profile.reload.update(default_rate_bps: 975)).to be(true)
   end
+
+  it "locks the calendar once a remittance points at a period" do
+    profile = create(:sales_tax_profile, business: business)
+    create(:transaction, account: create(:account, business: business), category: business.categories.sales_tax_remittance.sole,
+                         amount_cents: -100, posted_on: Date.new(2026, 4, 15), sales_tax_period_starts_on: Date.new(2026, 1, 1))
+    expect(profile.reload.update(filing_frequency: "monthly")).to be(false)
+  end
 end

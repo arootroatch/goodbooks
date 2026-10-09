@@ -57,7 +57,9 @@ class SalesTaxProfile < ApplicationRecord
     errors.add(:base, "Filings or remittances exist for the current periods.") if calendar_in_use?
   end
 
-  def calendar_in_use? = business.sales_tax_filings.exists?
+  def calendar_in_use?
+    business.sales_tax_filings.exists? || Transaction.for_businesses(business_id).where.not(sales_tax_period_starts_on: nil).exists?
+  end
 
   def ensure_remittance_category
     return if business.categories.sales_tax_remittance.exists?

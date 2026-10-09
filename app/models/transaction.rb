@@ -35,11 +35,13 @@ class Transaction < ApplicationRecord
   validate :linked_deposit_stays_payable, on: :update
   validate :processor_fee_allowed
   validate :sales_tax_allowed
+  validate :remittance_period_in_calendar
   after_update :resync_linked_invoices, if: :saved_change_to_posted_on?
 
   before_validation :apply_direction
   before_validation :clear_category_for_transfer
   before_validation :default_sales_amounts
+  before_validation :assign_remittance_period
 
   delegate :business, to: :account
 
@@ -67,6 +69,21 @@ class Transaction < ApplicationRecord
   end
 
   private
+
+  def assign_remittance_period
+    if category&.sales_tax_remittance?
+      self.sales_tax_period_starts_on ||= SalesTax::RemittancePeriod.default_for(account.business, posted_on) if account
+    else
+      self.sales_tax_period_starts_on = nil
+    end
+  end
+
+  def remittance_period_in_calendar
+    return if sales_tax_period_starts_on.nil?
+
+    profile = account&.business&.sales_tax_profile
+    errors.add(:sales_tax_period_starts_on, "isn't a filing period for this business") unless profile&.period_start?(sales_tax_period_starts_on)
+  end
 
   def apply_direction
     return if direction.blank? || amount_cents.nil?
