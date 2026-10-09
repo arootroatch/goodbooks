@@ -1,0 +1,39 @@
+<h1><%= @item.institution_name %></h1>
+<p>
+  Status: <%= plaid_status_label(@item) %>
+  <%= " · Last synced #{time_ago_in_words(@item.last_synced_at)} ago" if @item.last_synced_at %>
+</p>
+<% if @item.reconnectable? %>
+  <p><%= link_to "Reconnect", new_plaid_item_reconnection_path(@item) %></p>
+<% end %>
+<% if @item.last_error.present? %>
+  <p class="errors"><%= @item.last_error %></p>
+<% end %>
+<% if @gateway_error %>
+  <p class="errors">Couldn't reach Plaid: <%= @gateway_error %></p>
+<% end %>
+<h2>Accounts</h2>
+<% reported = @plaid_accounts&.map { _1[:account_id] } %>
+<table>
+  <thead><tr><th>Bank account</th><th>Feeds</th></tr></thead>
+  <tbody>
+    <% @item.accounts.includes(:business).order(:name).each do |account| %>
+      <tr id="<%= dom_id(account) %>">
+        <td><%= account.plaid_name %> ····<%= account.plaid_mask %></td>
+        <td>
+          <%= link_to "#{book_label(account.business)} › #{account.name}", business_transactions_path(account.business, account_id: account.id) %>
+          <%= " · No longer reported by the bank" if reported && !reported.include?(account.plaid_account_id) %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% unassigned = @plaid_accounts.to_a.count { !@item.accounts.map(&:plaid_account_id).include?(_1[:account_id]) } %>
+<p>
+  <%= link_to "Assign accounts", plaid_item_assignment_path(@item) %>
+  <%= " · #{pluralize(unassigned, "bank account")} not assigned" if unassigned.positive? %>
+</p>
+<%= button_to "Sync now", sync_plaid_item_path(@item) %>
+<%= button_to "Remove connection", plaid_item_path(@item), method: :delete,
+      data: { turbo_confirm: "Stop syncing #{@item.institution_name}? Transactions already imported stay." } %>
+<p><%= link_to "All bank connections", plaid_items_path %></p>

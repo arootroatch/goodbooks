@@ -1,3 +1,4 @@
+<%= render "plaid_items/reconnect_banners", items: @reconnect_items %>
 <h1>Businesses</h1>
 <ul class="business-list">
   <% @businesses.each do |business| %>
@@ -17,4 +18,12 @@
   <h2>Personal</h2>
   <p>Track the joint checking account and the tithe. The accountant never sees it.</p>
   <%= button_to "Set up personal book", personal_book_path %>
+<% end %>
+<% if @review_counts.any? %>
+  <h2>Needs review</h2>
+  <ul>
+    <% @review_books.each do |book| %>
+      <li><%= link_to "#{book_label(book)}: #{pluralize(@review_counts[book.id], "transaction")}", business_inbox_path(book) %></li>
+    <% end %>
+  </ul>
 <% end %>

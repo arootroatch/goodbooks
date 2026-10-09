@@ -1,0 +1,52 @@
+<h1>Assign <%= @item.institution_name %> accounts</h1>
+<% if @gateway_error %>
+  <p class="errors">Couldn't load accounts from Plaid: <%= @gateway_error %></p>
+  <%= link_to "Try again", plaid_item_assignment_path(@item) %>
+<% else %>
+  <p>Choose where each bank account's transactions go. Skipped accounts can be assigned later.</p>
+  <%= form_with url: plaid_item_assignment_path(@item), method: :patch do |f| %>
+    <table>
+      <thead><tr><th>Bank account</th><th>Do</th><th>New account in</th><th>Name</th><th>Existing account</th><th>Sync from</th></tr></thead>
+      <tbody>
+        <% @plaid_accounts.each do |plaid| %>
+          <% assigned = @assigned[plaid[:account_id]] %>
+          <tr id="plaid_account_<%= plaid[:account_id].parameterize %>">
+            <td><%= plaid[:name] %> ····<%= plaid[:mask] %> (<%= plaid[:subtype].presence || plaid[:type] %>)</td>
+            <% if assigned %>
+              <td colspan="5">Assigned to <%= book_label(assigned.business) %> › <%= assigned.name %></td>
+            <% else %>
+              <td>
+                <%= hidden_field_tag "assignments[][plaid_account]", plaid[:account_id], id: nil %>
+                <%= select_tag "assignments[][choice]",
+                      options_for_select([ [ "Skip", "skip" ], [ "New account", "new" ], [ "Existing account", "attach" ] ], row_value(plaid, :choice)),
+                      id: nil, aria: { label: "What to do with #{plaid[:name]}" } %>
+                <% if (error = @errors[plaid[:account_id]]) %>
+                  <p class="errors"><%= error %></p>
+                <% end %>
+              </td>
+              <td>
+                <%= select_tag "assignments[][book]", options_for_select(@books.map { [ book_label(_1), _1.id.to_s ] }, row_value(plaid, :book)),
+                      id: nil, aria: { label: "Book for #{plaid[:name]}" } %>
+              </td>
+              <td>
+                <%= text_field_tag "assignments[][name]", row_value(plaid, :name) || plaid[:name], id: nil,
+                      aria: { label: "Name for #{plaid[:name]}" } %>
+              </td>
+              <td>
+                <%= select_tag "assignments[][target]",
+                      grouped_options_for_select(@attachable.group_by { book_label(_1.business) }.transform_values { |accounts| accounts.map { [ _1.name, _1.id.to_s ] } },
+                                                 row_value(plaid, :target)),
+                      include_blank: "—", id: nil, aria: { label: "Existing account for #{plaid[:name]}" } %>
+              </td>
+              <td>
+                <%= date_field_tag "assignments[][sync_from]", row_value(plaid, :sync_from), id: nil, aria: { label: "Sync from for #{plaid[:name]}" } %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p>For an existing account, a blank "Sync from" starts after its latest transaction; enter an early date to import everything Plaid has. For a new account, blank imports everything.</p>
+    <%= f.submit "Save assignments" %>
+  <% end %>
+<% end %>

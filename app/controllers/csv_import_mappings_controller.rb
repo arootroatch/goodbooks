@@ -34,7 +34,7 @@ class CsvImportMappingsController < ApplicationController
   end
 
   def set_import
-    @account = @business.accounts.active.csv.find(params[:account_id])
+    @account = @business.accounts.active.csv_importable.find(params[:account_id])
     @import = @account.csv_imports.find(params[:csv_import_id])
   end
 

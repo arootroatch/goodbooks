@@ -37,6 +37,29 @@ bundle exec rspec       # test suite
 
 To invite others to the household, go to **Invites** and create an invite link. Share it like a password — whoever holds the link can join, and the email field is only a prefill suggestion. Invite links expire after 7 days, can be used once, and can be revoked from the **Invites** page at any time.
 
+### Bank feeds (Plaid)
+
+Set `PLAID_CLIENT_ID`, `PLAID_SECRET`, and `PLAID_ENV` (`sandbox` or `production`) to connect banks through Plaid.
+Without all three, production hides every Plaid screen; development uses a fake "Demo Bank" so the screens can be tried
+without keys (`bin/rails demo:reset` connects it to Pat Consulting and Joint Checking).
+
+- **Banks** (top nav, for anyone who owns a book) → **Connect a bank** opens Plaid Link. Afterwards each bank account
+  becomes a new account in a book you own, feeds an existing manual or CSV account (pick "Existing account"; a blank
+  "Sync from" starts after its latest transaction), or is skipped.
+- Transactions sync daily at 4am, when Plaid's webhook says there are updates, and on **Sync now**. Pending
+  transactions are skipped until they post.
+- Plaid and CSV dedupe against each other: a row with the same amount within 3 days is claimed rather than duplicated,
+  so CSV upload stays available on Plaid accounts as a fallback.
+- If the bank removes or changes a transaction you had categorized or linked to an invoice, it shows under
+  **Needs review** in the inbox: **Keep** or **Exclude**.
+- Webhooks are received at `https://APP_HOST/plaid/webhooks` and verified with Plaid's signature; they need the app
+  reachable from the internet (the tunnel). Without them the daily sync still runs.
+- If the bank asks you to sign in again, the dashboard shows **Reconnect**.
+
+To try Plaid's sandbox: create a free account at dashboard.plaid.com, copy the sandbox keys from Developers → Keys,
+start the app with `PLAID_CLIENT_ID=… PLAID_SECRET=… PLAID_ENV=sandbox bin/dev`, connect "First Platypus Bank", and
+sign in with `user_good` / `pass_good`.
+
 ## Updating
 
 ```bash

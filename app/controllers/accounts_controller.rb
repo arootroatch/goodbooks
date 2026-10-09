@@ -7,7 +7,7 @@ class AccountsController < ApplicationController
   before_action :set_account, only: %i[edit update]
 
   def index
-    @accounts = @business.accounts.order(:archived_at, :name)
+    @accounts = @business.accounts.includes(:plaid_item).order(:archived_at, :name)
     @accounts = @accounts.active unless params[:archived] == "1"
     @show_archived = params[:archived] == "1"
   end

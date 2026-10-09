@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     end
     resources :transactions, except: :show do
       resource :classification, only: :update
+      resource :review, only: :update, controller: "transaction_reviews"
     end
     resources :rules, except: :show do
       patch :move, on: :member
@@ -59,6 +60,12 @@ Rails.application.routes.draw do
   post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
   resource :personal_book, only: :create
+  resources :plaid_items, only: %i[index new create show destroy] do
+    post :sync, on: :member
+    resource :assignment, only: %i[show update], controller: "plaid_assignments"
+    resource :reconnection, only: %i[new create], controller: "plaid_reconnections"
+  end
+  post "plaid/webhooks", to: "plaid_webhooks#create", as: :plaid_webhooks
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

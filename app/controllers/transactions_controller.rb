@@ -33,7 +33,7 @@ class TransactionsController < ApplicationController
   end
 
   def update
-    permitted = @transaction.account.manual? ? MANUAL_EDITABLE : IMPORTED_EDITABLE
+    permitted = @transaction.imported? ? IMPORTED_EDITABLE : MANUAL_EDITABLE
     attrs = params.expect(transaction: permitted)
     @transaction.assign_attributes(attrs)
     @transaction.categorized_by = "user" if @transaction.category_id_changed? || @transaction.transfer_changed?
@@ -45,7 +45,7 @@ class TransactionsController < ApplicationController
   end
 
   def destroy
-    if !@transaction.account.manual?
+    if @transaction.imported?
       redirect_to business_transactions_path(@business), alert: "Imported transactions can be excluded, not deleted.", status: :see_other
     elsif @transaction.destroy
       redirect_to business_transactions_path(@business), notice: "Transaction deleted.", status: :see_other

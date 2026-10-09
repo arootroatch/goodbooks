@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -20,7 +20,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "plaid_item_id"
+    t.string "plaid_account_id"
+    t.string "plaid_mask"
+    t.string "plaid_name"
+    t.date "plaid_sync_from"
     t.index ["business_id"], name: "index_accounts_on_business_id"
+    t.index ["plaid_account_id"], name: "index_accounts_on_plaid_account_id", unique: true, where: "plaid_account_id IS NOT NULL"
+    t.index ["plaid_item_id"], name: "index_accounts_on_plaid_item_id"
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -103,6 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "mapping"
+    t.integer "synced_count", default: 0, null: false
     t.index ["account_id"], name: "index_csv_imports_on_account_id"
   end
 
@@ -202,6 +210,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.index ["user_id"], name: "index_people_on_user_id", unique: true
   end
 
+  create_table "plaid_items", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "created_by_id", null: false
+    t.string "institution_name", null: false
+    t.string "item_id", null: false
+    t.text "access_token", null: false
+    t.text "cursor"
+    t.string "status", default: "ok", null: false
+    t.datetime "last_synced_at"
+    t.string "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "consent_expires_at"
+    t.index ["created_by_id"], name: "index_plaid_items_on_created_by_id"
+    t.index ["household_id"], name: "index_plaid_items_on_household_id"
+    t.index ["item_id"], name: "index_plaid_items_on_item_id", unique: true
+  end
+
   create_table "rules", force: :cascade do |t|
     t.integer "business_id", null: false
     t.integer "position", null: false
@@ -249,10 +275,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
     t.integer "rule_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "plaid_transaction_id"
+    t.string "review_reason"
     t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
+    t.index ["account_id", "plaid_transaction_id"], name: "index_transactions_on_account_id_and_plaid_transaction_id", unique: true, where: "plaid_transaction_id IS NOT NULL"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["posted_on"], name: "index_transactions_on_posted_on"
+    t.index ["review_reason"], name: "index_transactions_on_review_reason", where: "review_reason IS NOT NULL"
     t.index ["rule_id"], name: "index_transactions_on_rule_id"
   end
 
@@ -271,6 +301,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
   end
 
   add_foreign_key "accounts", "businesses"
+  add_foreign_key "accounts", "plaid_items"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "businesses", "households"
@@ -291,6 +322,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
   add_foreign_key "mileage_entries", "businesses"
   add_foreign_key "people", "households"
   add_foreign_key "people", "users"
+  add_foreign_key "plaid_items", "households"
+  add_foreign_key "plaid_items", "users", column: "created_by_id"
   add_foreign_key "rules", "businesses"
   add_foreign_key "rules", "categories"
   add_foreign_key "sessions", "users"

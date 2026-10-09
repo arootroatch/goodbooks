@@ -1,6 +1,6 @@
 <%= form_with model: [@business, transaction] do |f| %>
   <%= render "shared/errors", record: transaction %>
-  <% manual = transaction.new_record? || transaction.account.manual? %>
+  <% manual = transaction.new_record? || !transaction.imported? %>
   <% if transaction.new_record? %>
     <p><%= f.label :account_id %> <%= f.collection_select :account_id, @business.accounts.manual.active.order(:name), :id, :name %></p>
   <% end %>
@@ -29,6 +29,6 @@
   <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
   <%= f.submit %>
 <% end %>
-<% if transaction.persisted? && transaction.account.manual? %>
+<% if transaction.persisted? && !transaction.imported? %>
   <%= button_to "Delete", business_transaction_path(@business, transaction), method: :delete %>
 <% end %>

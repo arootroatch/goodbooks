@@ -36,6 +36,7 @@
           <%= link_to "Aging", household_invoice_aging_path if Current.user.can_view_household? %>
           <%= link_to "Tax parameters", tax_parameters_path if Current.user.household_owner? %>
           <%= link_to "Invites", invites_path if Current.user.household_owner? || Current.user.memberships.owner.exists? %>
+          <%= link_to "Banks", plaid_items_path if show_bank_connections? %>
           <%= link_to "People", people_path if Current.user.household_owner? %>
           <%= button_to "Sign out", session_path, method: :delete %>
         </nav>

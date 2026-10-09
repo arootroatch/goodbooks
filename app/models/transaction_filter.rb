@@ -28,6 +28,7 @@ class TransactionFilter
     relation = relation.where(account_id: @params[:account_id]) if @params[:account_id].present?
     relation = relation.where(category_id: @params[:category_id]) if @params[:category_id].present?
     relation = relation.inbox if @params[:status] == "inbox"
+    relation = relation.needs_review if @params[:status] == "review"
     if @params[:q].present?
       pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@params[:q])}%"
       relation = relation.where("transactions.payee LIKE :p ESCAPE '\\' OR transactions.memo LIKE :p ESCAPE '\\'", p: pattern)

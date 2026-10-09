@@ -8,6 +8,8 @@ class HouseholdInboxesController < ApplicationController
       rows = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(InboxesController::LIMIT).to_a
       [ business, rows, scope.count ]
     end
+    @reviews = Transaction.for_businesses(businesses.map(&:id)).needs_review.includes(:account, :category)
+      .order(posted_on: :desc, id: :desc).group_by { _1.account.business_id }
     @matcher = InvoiceMatcher.for_businesses(businesses.select(&:business?).map(&:id))
   end
 end
