@@ -22,7 +22,8 @@ module PlaidFeed
         inserted = apply_added(added, accounts)
         modified.each { apply_modified(_1, accounts) }
         removed.each { apply_removed(_1, accounts) }
-        inserted.group_by { _1.account.business }.each { |book, rows| RuleApplier.new(book).apply(rows) }
+        fresh = Transaction.where(id: inserted.map(&:id)).includes(account: :business)
+        fresh.group_by { _1.account.business }.each { |book, rows| RuleApplier.new(book).apply(rows) }
         @item.update!(cursor: cursor, last_synced_at: Time.current, status: "ok", last_error: nil)
       end
       Result.new(**Result.members.index_with { @counts[_1] })

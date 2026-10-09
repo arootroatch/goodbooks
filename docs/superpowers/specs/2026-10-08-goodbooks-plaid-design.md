@@ -122,7 +122,7 @@ Given incoming rows and candidate existing rows (both as structs of id/key, post
    - else claim: candidates are the account's rows with `plaid_transaction_id IS NULL` and `posted_on` within ±3 days of any incoming row. A claimed row gets `plaid_transaction_id` set and nothing else changes (its date, amount, payee, category, and links stay as the user knew them);
    - else insert with `plaid_transaction_id`.
    - `RuleApplier.new(book).apply(inserted)` runs per book on the inserted rows only.
-4. **modified**: find by `plaid_transaction_id`. Skip if not found or `excluded`. Otherwise assign date, amount, and payee (and memo, by §6.1); if the row is invalid (for example, a linked invoice deposit whose amount would fall below its allocations), discard the changes and set `review_reason: "changed_by_bank"` instead.
+4. **modified**: find by `plaid_transaction_id`. Skip if not found or `excluded`. Otherwise assign date, amount, and payee, and never overwrite the memo (users edit memos on imported rows); if the row is invalid (for example, a linked invoice deposit whose amount would fall below its allocations), discard the changes and set `review_reason: "changed_by_bank"` instead.
 5. **removed**: find by `plaid_transaction_id`. If the row has invoice payments or `categorized_by: "user"`, set `review_reason: "removed_by_bank"`; otherwise set `excluded: true`.
 6. Returns a result (inserted, claimed, modified, flagged, excluded counts) for the flash and logs.
 
