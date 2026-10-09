@@ -19,11 +19,13 @@ class AddSalesTaxFieldsToCategories < ActiveRecord::Migration[8.1]
     income.where(sales_tax_treatment: nil).update_all(sales_tax_treatment: "not_a_sale")
 
     business_ids.each do |business_id|
-      existing = MigrationCategory.find_by(business_id: business_id, name: "Merchant fees")
+      scope = MigrationCategory.where(business_id: business_id, kind: "expense", archived_at: nil)
+      existing = scope.find_by(name: "Merchant fees")
       if existing
         existing.update_columns(processor_fees: true)
       else
-        MigrationCategory.create!(business_id: business_id, name: "Merchant fees", kind: "expense", schedule_c_line: "10",
+        name = MigrationCategory.exists?(business_id: business_id, name: "Merchant fees") ? "Merchant fees (processor)" : "Merchant fees"
+        MigrationCategory.create!(business_id: business_id, name: name, kind: "expense", schedule_c_line: "10",
                                   deductible_bps: 10_000, processor_fees: true)
       end
     end

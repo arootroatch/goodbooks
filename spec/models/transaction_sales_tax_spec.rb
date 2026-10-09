@@ -117,4 +117,11 @@ RSpec.describe Transaction, "sales tax and processor fees" do
       expect(sales.errors[:kind]).to include("can't change while deposits in this category carry processor fees")
     end
   end
+
+  it "rejects a remittance posted before the first sales tax period" do
+    remittance = business.categories.sales_tax_remittance.sole
+    txn = build(:transaction, account: account, amount_cents: -5_000, posted_on: profile.starts_on - 1, category: remittance)
+    expect(txn).not_to be_valid
+    expect(txn.errors[:sales_tax_period_starts_on]).to include("is before the first sales tax period")
+  end
 end

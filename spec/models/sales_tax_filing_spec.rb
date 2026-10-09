@@ -14,6 +14,14 @@ RSpec.describe SalesTaxFiling do
     expect(duplicate.errors[:period_starts_on]).to include("is already filed")
   end
 
+  it "can't be filed before the period ends" do
+    business = create(:sales_tax_profile).business
+    filing = build(:sales_tax_filing, business: business, period_starts_on: Date.new(2026, 1, 1), filed_on: Date.new(2026, 3, 31))
+    expect(filing).not_to be_valid
+    expect(filing.errors[:filed_on]).to include("can't be filed before the period ends")
+    expect(build(:sales_tax_filing, business: business, filed_on: Date.new(2026, 4, 1))).to be_valid
+  end
+
   it "needs a sales tax profile" do
     filing = build(:sales_tax_filing, business: create(:business))
     expect(filing).not_to be_valid

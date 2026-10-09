@@ -83,7 +83,10 @@ class Transaction < ApplicationRecord
   end
 
   def remittance_period_in_calendar
-    return if sales_tax_period_starts_on.nil?
+    if sales_tax_period_starts_on.nil?
+      errors.add(:sales_tax_period_starts_on, "is before the first sales tax period") if category&.sales_tax_remittance? && account&.business&.sales_tax_profile
+      return
+    end
 
     profile = account&.business&.sales_tax_profile
     errors.add(:sales_tax_period_starts_on, "isn't a filing period for this business") unless profile&.period_start?(sales_tax_period_starts_on)

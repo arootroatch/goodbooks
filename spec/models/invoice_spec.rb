@@ -176,7 +176,20 @@ RSpec.describe Invoice do
       invoice = create(:invoice, business: business, amount_cents: 109_250, sales_tax_cents: 9_250)
       create(:invoice_payment, invoice: invoice, amount_cents: 10_000)
       expect(invoice.reload.update(sales_tax_cents: 0)).to be(false)
-      expect(invoice.errors[:base]).to include("Unlink payments before changing sales tax.")
+      expect(invoice.errors[:base]).to include("Unlink payments before changing the amount or sales tax.")
+    end
+
+    it "can't have its amount lowered once payments are linked to a taxed invoice" do
+      invoice = create(:invoice, business: business, amount_cents: 100_000, sales_tax_cents: 8_000)
+      create(:invoice_payment, invoice: invoice, amount_cents: 50_000)
+      expect(invoice.reload.update(amount_cents: 50_000)).to be(false)
+      expect(invoice.errors[:base]).to include("Unlink payments before changing the amount or sales tax.")
+    end
+
+    it "still lets an untaxed invoice's amount change above what is paid" do
+      invoice = create(:invoice, business: business, amount_cents: 100_000)
+      create(:invoice_payment, invoice: invoice, amount_cents: 50_000)
+      expect(invoice.reload.update(amount_cents: 60_000)).to be(true)
     end
   end
 end

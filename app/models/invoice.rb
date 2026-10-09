@@ -90,9 +90,10 @@ class Invoice < ApplicationRecord
     elsif tax.positive? && will_save_change_to_sales_tax_cents? && !business&.collects_sales_tax?
       errors.add(:sales_tax, "needs an active sales tax profile")
     end
-    return unless persisted? && will_save_change_to_sales_tax_cents? && payments.exists?
+    return unless persisted? && payments.exists?
+    return unless will_save_change_to_sales_tax_cents? || (will_save_change_to_amount_cents? && (tax.positive? || sales_tax_cents_was.to_i.positive?))
 
-    errors.add(:base, "Unlink payments before changing sales tax.")
+    errors.add(:base, "Unlink payments before changing the amount or sales tax.")
   end
 
   def amount_covers_payments

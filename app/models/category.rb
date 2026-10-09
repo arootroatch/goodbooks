@@ -26,6 +26,7 @@ class Category < ApplicationRecord
   validate :kind_stays_income_while_linked, on: :update
   validate :treatment_stays_taxable_while_taxed, on: :update
   validate :kind_stays_while_fees, on: :update
+  validate :remittance_kind_stays_while_used, on: :update
 
   def deductible_percent
     return @deductible_percent_input if defined?(@deductible_percent_input)
@@ -69,6 +70,13 @@ class Category < ApplicationRecord
     return unless will_save_change_to_kind? && Transaction.where(category_id: id).where("transactions.processor_fee_cents > 0").exists?
 
     errors.add(:kind, "can't change while deposits in this category carry processor fees")
+  end
+
+  def remittance_kind_stays_while_used
+    return unless will_save_change_to_kind? && (kind_was == "sales_tax_remittance" || sales_tax_remittance?)
+    return unless Transaction.where(category_id: id).exists?
+
+    errors.add(:kind, "can't change to or from a remittance category while it has transactions")
   end
 
   def schedule_c_line_matches_kind

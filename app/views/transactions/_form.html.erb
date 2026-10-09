@@ -23,18 +23,24 @@
     <%= f.label :category_id %>
     <%= f.grouped_collection_select :category_id, category_groups(categories), :last, :first, :id, :name, include_blank: "Uncategorized" %>
   </p>
-  <% if @business.business? %>
+  <% money_in = transaction.new_record? || transaction.amount_cents.to_i.positive? %>
+  <% if @business.business? && (transaction.processor_fee_cents.to_i.positive? || money_in) %>
     <p><%= f.label :processor_fee, "Processor fee" %> <%= f.text_field :processor_fee, size: 10, inputmode: "decimal" %> <small>card processor's fee on a deposit</small></p>
   <% end %>
-  <% if @business.collects_sales_tax? %>
+  <% taxable_category = transaction.category.nil? || transaction.category.taxable? %>
+  <% if transaction.sales_tax_cents.to_i.positive? || (@business.collects_sales_tax? && money_in && taxable_category) %>
     <p>
       <%= f.label :sales_tax, "Sales tax" %> <%= f.text_field :sales_tax, size: 10, inputmode: "decimal" %>
-      <%= button_tag "Tax-inclusive at default rate (#{@business.sales_tax_profile.default_rate_percent}%)",
-            type: "submit", name: "apply_inclusive_tax", value: "1" %>
+      <% if @business.collects_sales_tax? %>
+        <%= button_tag "Tax-inclusive at default rate (#{@business.sales_tax_profile.default_rate_percent}%)",
+              type: "submit", name: "apply_inclusive_tax", value: "1" %>
+      <% end %>
       <% if transaction.persisted? && transaction.invoice_tax_cents.positive? %>
         <small>plus <%= money(transaction.invoice_tax_cents) %> from linked invoices</small>
       <% end %>
     </p>
+  <% end %>
+  <% if @business.collects_sales_tax? && transaction.category&.sales_tax_remittance? %>
     <p>
       <%= f.label :sales_tax_period_starts_on, "Sales tax period (remittances)" %>
       <%= f.select :sales_tax_period_starts_on, sales_tax_period_options(@business),

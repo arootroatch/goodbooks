@@ -6,11 +6,19 @@ class SalesTaxFiling < ApplicationRecord
   validates :confirmation_number, length: { maximum: 100 }
   validate :filed_on_not_in_future
   validate :period_in_calendar
+  validate :period_has_ended
 
   private
 
   def filed_on_not_in_future
     errors.add(:filed_on, "can't be in the future") if filed_on && filed_on > Date.current
+  end
+
+  def period_has_ended
+    return if period_starts_on.nil? || filed_on.nil? || business&.sales_tax_profile.nil?
+
+    period = business.sales_tax_profile.calendar(today: [ filed_on, Date.current ].max).period_for(period_starts_on)
+    errors.add(:filed_on, "can't be filed before the period ends") if period && filed_on <= period.ends_on
   end
 
   def period_in_calendar
