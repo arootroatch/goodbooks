@@ -91,7 +91,7 @@ module PlaidFeed
     def update_from_bank(txn, row)
       return if txn.excluded?
 
-      txn.assign_attributes(posted_on: row.posted_on, amount_cents: row.amount_cents, payee: row.payee)
+      txn.assign_attributes(posted_on: row.posted_on, amount_cents: row.amount_cents)
       return unless txn.changed?
 
       if txn.save

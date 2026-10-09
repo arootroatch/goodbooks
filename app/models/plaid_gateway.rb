@@ -35,10 +35,18 @@ class PlaidGateway
     def from_env(env = ENV, rails_env: Rails.env)
       client_id, secret, environment = env.values_at("PLAID_CLIENT_ID", "PLAID_SECRET", "PLAID_ENV")
       if [ client_id, secret, environment ].all?(&:present?)
+        return invalid_environment(environment) unless ENVIRONMENTS.include?(environment)
+
         new(client_id: client_id, secret: secret, environment: environment)
       elsif !rails_env.production?
         FakePlaidGateway.new
       end
+    end
+
+    # A mistyped PLAID_ENV turns Plaid off rather than breaking every page.
+    def invalid_environment(environment)
+      Rails.logger.error("Plaid is disabled: PLAID_ENV must be #{ENVIRONMENTS.join(" or ")}, got #{environment.inspect}")
+      nil
     end
 
     def webhook_url
@@ -122,6 +130,8 @@ class PlaidGateway
     yield
   rescue Plaid::ApiError => e
     raise translate(e)
+  rescue Faraday::Error => e
+    raise TransientError, "Plaid connection failed (#{e.class.name})"
   end
 
   def translate(error)

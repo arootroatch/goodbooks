@@ -100,11 +100,23 @@ RSpec.describe PlaidGateway do
     expect { gateway.transactions_sync("a", nil) }.to raise_error(described_class::TransientError)
   end
 
+  it "translates a Faraday failure without leaking its message" do
+    stub_request(:post, "#{base}/transactions/sync").to_raise(Faraday::SSLError.new("secret-token-in-message"))
+    expect { gateway.transactions_sync("a", nil) }
+      .to raise_error(described_class::TransientError) { |e| expect(e.message).to eq("Plaid connection failed (Faraday::SSLError)") }
+  end
+
   describe ".from_env" do
     let(:keys) { { "PLAID_CLIENT_ID" => "c", "PLAID_SECRET" => "s", "PLAID_ENV" => "sandbox" } }
 
     it "builds a real gateway when all three keys are set" do
       expect(described_class.from_env(keys, rails_env: "production".inquiry)).to be_a(described_class)
+    end
+
+    it "is disabled, with one logged error, when PLAID_ENV is invalid" do
+      allow(Rails.logger).to receive(:error)
+      expect(described_class.from_env(keys.merge("PLAID_ENV" => "development"), rails_env: "development".inquiry)).to be_nil
+      expect(Rails.logger).to have_received(:error).with(/PLAID_ENV/).once
     end
 
     it "is disabled in production without keys" do
