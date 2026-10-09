@@ -1,5 +1,5 @@
 <% fake = PlaidGateway.current.fake? %>
-<div data-controller="plaid-link" data-plaid-link-token-value="<%= token %>" data-plaid-link-fake-value="<%= fake %>">
+<div data-controller="plaid-link" data-action="turbo:submit-end->plaid-link#submitEnd pageshow@window->plaid-link#enable" data-plaid-link-token-value="<%= token %>" data-plaid-link-fake-value="<%= fake %>">
   <% if fake %>
     <p>Plaid isn't configured here, so this connects a fake "Demo Bank".</p>
   <% end %>
