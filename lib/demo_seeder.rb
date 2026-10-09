@@ -48,6 +48,7 @@ class DemoSeeder
     seed_invoices(gardens, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "WRG-")
     seed_personal(household)
     seed_sales_tax(sound_roots)
+    seed_plaid(household, alex)
   end
 
   # Sound Roots Productions collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
@@ -236,6 +237,63 @@ class DemoSeeder
     add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "user")
   end
 
+  # A fake "Demo Bank" connection: a new operating account and card for Sound Roots Productions, and the personal Joint Checking
+  # attached with a two-week overlap that Plaid claims instead of duplicating. One synced row ends up flagged for review.
+  def seed_plaid(household, owner)
+    gateway = FakePlaidGateway.new
+    token = gateway.exchange_public_token(FakePlaidGateway::DEMO_PUBLIC_TOKEN)
+    access_token = token[:access_token]
+    item = PlaidItem.create!(household: household, created_by: owner, item_id: token[:item_id], access_token: access_token,
+                             institution_name: gateway.institution_name(access_token))
+    sound_roots = household.businesses.find_by!(name: "Sound Roots Productions")
+    joint = household.personal_book.accounts.find_by!(name: "Joint Checking")
+    overlap_from = joint.transactions.maximum(:posted_on) - 14
+    result = PlaidFeed::Assignment.call(item: item, user: owner, plaid_accounts: gateway.accounts(access_token), rows: [
+      { plaid_account: "demo-operating", choice: "new", book: sound_roots.id, name: "Operating (Demo Bank)" },
+      { plaid_account: "demo-card", choice: "new", book: sound_roots.id, name: "Business Visa (Demo Bank)" },
+      { plaid_account: "demo-joint", choice: "attach", target: joint.id, sync_from: overlap_from.iso8601 }
+    ])
+    raise "Demo Plaid assignment failed: #{result.errors}" unless result.ok?
+
+    gateway.add_page(access_token, added: demo_bank_rows + joint_overlap_rows(joint, overlap_from))
+    PlaidFeed::Sync.call(item, gateway: gateway)
+
+    removed = Transaction.find_by!(plaid_transaction_id: "demo-op-1-usps")
+    removed.update!(category: sound_roots.categories.find_by!(name: "Office expense"), categorized_by: "user")
+    gateway.add_page(access_token, removed: [ { transaction_id: "demo-op-1-usps", account_id: "demo-operating" } ])
+    PlaidFeed::Sync.call(item.reload, gateway: gateway)
+  end
+
+  # Plaid's sign: positive = money out.
+  def demo_bank_rows
+    3.downto(1).flat_map do |months_ago|
+      day = @today - (months_ago * 30)
+      [
+        FakePlaidGateway.plaid_txn("demo-op-#{months_ago}-wire", account_id: "demo-operating", amount: -2400.0, date: day,
+                                   name: "WIRE FROM NORTHWIND TRADERS"),
+        FakePlaidGateway.plaid_txn("demo-op-#{months_ago}-adobe", account_id: "demo-operating", amount: 54.99, date: day + 2,
+                                   name: "ADOBE *CREATIVE CLD 800-833-6687", merchant_name: "Adobe"),
+        FakePlaidGateway.plaid_txn("demo-op-#{months_ago}-usps", account_id: "demo-operating", amount: 18.4, date: day + 5,
+                                   name: "USPS PO 4821", merchant_name: "USPS"),
+        FakePlaidGateway.plaid_txn("demo-card-#{months_ago}-aws", account_id: "demo-card", amount: 34.12, date: day + 7,
+                                   name: "AWS EMEA", merchant_name: "Amazon Web Services"),
+        FakePlaidGateway.plaid_txn("demo-card-#{months_ago}-payment", account_id: "demo-card", amount: -500.0, date: day + 20,
+                                   name: "CARD PAYMENT THANK YOU"),
+        FakePlaidGateway.plaid_txn("demo-card-#{months_ago}-pending", account_id: "demo-card", amount: 12.0, date: day + 21,
+                                   name: "PENDING COFFEE", pending: true)
+      ]
+    end
+  end
+
+  # Plaid's copy of the joint account's last two weeks: same amounts, some a day later, cleaner names.
+  def joint_overlap_rows(joint, overlap_from)
+    joint.transactions.where(posted_on: overlap_from..).order(:posted_on, :id).map.with_index do |txn, index|
+      date = index.odd? && txn.posted_on < @today ? txn.posted_on + 1 : txn.posted_on
+      FakePlaidGateway.plaid_txn("demo-joint-#{index}", account_id: "demo-joint", amount: -txn.amount_cents / 100.0, date: date,
+                                 name: txn.payee.titleize)
+    end
+  end
+
   def ensure_tax_parameters
     years_with_activity = years_covered_by_transactions_and_mileage
     default_mileage_rate = 725
@@ -273,6 +331,7 @@ class DemoSeeder
     @out.puts "Password for every user: #{PASSWORD}"
     @out.puts "TOTP secret for every user (add to your authenticator app): #{OTP_SECRET}"
     USERS.each { |email, name| @out.puts "  #{name}: #{email}" }
+    @out.puts "Demo Bank is a fake Plaid connection; it works without Plaid keys."
     @out.puts "Warning: no TaxParameters for #{@today.year}; run bin/rails db:seed." unless TaxParameters.for_year(@today.year)
   end
 end
