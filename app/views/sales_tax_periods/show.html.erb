@@ -1,0 +1,66 @@
+<%= business_nav @business %>
+<% period = @report.period %>
+<h1>Sales tax · <%= period.label %> <%= sales_tax_status_badge(@report) %></h1>
+<p><%= period.starts_on %> – <%= period.ends_on %> · due <%= sales_tax_due_label(period) %></p>
+<%# dt and dd on separate lines so page text reads "Tax collected $84.67" %>
+<dl class="details">
+  <dt>Gross sales</dt>
+  <dd><%= money(@report.gross_sales_cents) %></dd>
+  <dt>Exempt sales</dt>
+  <dd><%= money(@report.exempt_sales_cents) %></dd>
+  <dt>Taxable sales</dt>
+  <dd><%= money(@report.taxable_sales_cents) %></dd>
+  <dt>Tax collected</dt>
+  <dd><%= money(@report.tax_collected_cents) %></dd>
+  <dt>Remitted</dt>
+  <dd><%= money(@report.remitted_cents) %></dd>
+  <dt>Balance owed</dt>
+  <dd><%= money(@report.balance_cents) %></dd>
+</dl>
+
+<% if @report.filing %>
+  <p>Filed <%= @report.filing.filed_on %><%= " · confirmation #{@report.filing.confirmation_number}" if @report.filing.confirmation_number.present? %></p>
+  <%= button_to "Unfile", business_sales_tax_period_filing_path(@business, period.starts_on), method: :delete if current_membership.can_edit? %>
+<% elsif current_membership.can_edit? %>
+  <%= form_with scope: :sales_tax_filing, url: business_sales_tax_period_filing_path(@business, period.starts_on), class: "inline-form" do |f| %>
+    <%= f.label :filed_on, "Filed on" %> <%= f.date_field :filed_on, value: Date.current %>
+    <%= f.label :confirmation_number, "Confirmation number" %> <%= f.text_field :confirmation_number %>
+    <%= f.submit "Mark filed" %>
+  <% end %>
+<% end %>
+
+<h2>Sales</h2>
+<table>
+  <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th>Type</th><th class="num">Gross</th><th class="num">Fee</th><th class="num">Direct tax</th><th class="num">Invoice tax</th></tr></thead>
+  <tbody>
+    <% @report.deposits.each do |deposit| %>
+      <% txn = deposit.source %>
+      <tr>
+        <td><%= deposit.posted_on %></td>
+        <td><%= txn.account.name %></td>
+        <td><%= txn.payee %></td>
+        <td><%= deposit.treatment == "taxable" ? "Taxable" : "Exempt" %></td>
+        <td class="num"><%= money(deposit.gross_cents) %></td>
+        <td class="num"><%= money(txn.processor_fee_cents) %></td>
+        <td class="num"><%= money(txn.sales_tax_cents) %></td>
+        <td class="num"><%= money(txn.invoice_tax_cents) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>Remittances</h2>
+<% if @report.remittances.any? %>
+  <table>
+    <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Remitted</th></tr></thead>
+    <tbody>
+      <% @report.remittances.each do |remittance| %>
+        <tr><td><%= remittance.posted_on %></td><td><%= remittance.source.account.name %></td><td><%= remittance.source.payee %></td>
+            <td class="num"><%= money(-remittance.amount_cents) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No remittances for this period yet.</p>
+<% end %>
+<p><%= link_to "Download CSV", business_sales_tax_period_path(@business, period.starts_on, format: :csv) %> · <%= link_to "All periods", business_sales_tax_profile_path(@business) %></p>
