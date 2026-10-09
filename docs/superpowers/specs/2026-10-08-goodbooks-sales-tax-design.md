@@ -137,7 +137,7 @@ Guards (same style as the linked-deposit guard, one message per case):
 - `due_on` = the 20th of the month after `ends_on`, rolled forward past Saturdays, Sundays, and TN state holidays until a business day.
 - `period_for(date)` and `include_start?(date)` support remittance assignment and validation.
 
-`SalesTax::Holidays.for(year)` returns that year's TN state holiday dates from a list in code, entered for the current and next year from the TN Department of Human Resources holiday calendar at implementation time and verified against it. A year with no entry raises `SalesTax::Holidays::MissingYear`. The due-date screen catches it and shows "Add Tennessee holidays for YEAR" (a README-documented code change) instead of guessing; specs prove the raise.
+`SalesTax::Holidays.for(year)` computes, for any year, the only TN state holidays that can delay a return due on the 20th: MLK Day (3rd Monday of January, Jan 15–21), Presidents' Day (3rd Monday of February, Feb 15–21), and Good Friday (two days before Easter, Mar 20–Apr 23). Every other TN state holiday is a fixed date other than the 20th or falls nowhere near it, and no holiday can fall on the Monday after a weekend 20th (the 21st or 22nd) except MLK Day and Presidents' Day, which the rule already covers. No holiday list is maintained, so no year can be missing.
 
 ### 5.2 Period report (`SalesTax::PeriodReport`, pure)
 
@@ -206,7 +206,6 @@ Every new controller includes `BusinessScoped` then `BusinessKindOnly`. Viewers 
 ## 8. Error handling
 
 - Every validation failure is a form error or flash with a specific message (§4.1); nothing fails silently or 500s.
-- Missing TN holidays for a year: the affected due dates show the "Add Tennessee holidays" notice (§5.1); the rest of the page works.
 - A remittance whose period start is not in the calendar: validation error on the transaction.
 - Deactivating the profile: screens hidden, data kept, remittance category left as is.
 - Profile `starts_on` in the future or a rate outside 0.01%–20%: validation errors.
@@ -217,7 +216,7 @@ Every new controller includes `BusinessScoped` then `BusinessKindOnly`. Viewers 
 | Unit | Kind | Responsibility |
 |---|---|---|
 | `SalesTax::Calendar` | pure | periods and due dates |
-| `SalesTax::Holidays` | pure | TN holiday list per year |
+| `SalesTax::Holidays` | pure | the TN holidays that can delay a 20th, computed by rule |
 | `SalesTax::InclusiveTax` | pure | gross × r / (1 + r), rounded once |
 | `SalesTax::PeriodReport` | pure | §5.2 figures and status |
 | `SalesTax::RemittancePeriod` | query | default period for a new remittance |
@@ -231,7 +230,7 @@ Every new controller includes `BusinessScoped` then `BusinessKindOnly`. Viewers 
 
 TDD throughout; clean output.
 
-- **Pure specs (no DB)**: `Calendar` (each frequency, `starts_on` mid-period, year boundary, 20th on a weekday / Saturday / Sunday / holiday / holiday-then-weekend, `period_for`); `Holidays` (listed years, missing year raises); `InclusiveTax` (9.25% on $1,000.00 → $84.67, rounding half-up boundary, zero base); `PeriodReport` (every figure, each status, overpayment, empty period); `Invoices::Allocation` (gross inputs).
+- **Pure specs (no DB)**: `Calendar` (each frequency, `starts_on` mid-period, year boundary, 20th on a weekday / Saturday / Sunday / holiday / holiday-then-weekend, `period_for`); `Holidays` (MLK, Presidents' Day, and Good Friday for several years, including a Good Friday on April 20, 2057); `InclusiveTax` (9.25% on $1,000.00 → $84.67, rounding half-up boundary, zero base); `PeriodReport` (every figure, each status, overpayment, empty period); `Invoices::Allocation` (gross inputs).
 - **Model specs**: every §4.1 rule and guard; category treatment defaults and backfill; one `processor_fees` category per business; remittance kind has no Schedule C line; profile and filing only on business-kind books; frequency change blocked once filings exist; remittance period default and validation.
 - **Service specs** (`InvoicePayments`): share computed and stored; final payment's share absorbs rounding; batched payout (invoice share + direct tax) keeps both; unlink removes only the share; fee entered during link makes an exact match; tax invoice rejected for an exempt deposit; taxable default category.
 - **Query specs**: `SalesTax::Entries` (treatment, transfers, excluded, period bounds, invoice-tax subquery), `RemittancePeriod`, and `Reports::CategoryTotals` per §6.

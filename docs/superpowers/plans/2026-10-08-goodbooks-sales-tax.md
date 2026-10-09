@@ -24,7 +24,7 @@
 - Rates are integer basis points (`925` = 9.25%). `default_rate_bps` is in `1..2000`.
 - Tax-inclusive tax = `Money.round_rational(Rational(base × rate_bps, 10_000 + rate_bps))`, rounded once. The base is the deposit's **unallocated** gross.
 - An invoice payment's tax share = `Money.round_rational(Rational(payment × invoice tax, invoice amount))`, rounded once per payment. The payment that completes the invoice takes `invoice tax − earlier shares`.
-- Due date = the 20th of the month after the period ends, rolled forward past Saturdays, Sundays, and the TN state holidays in `SalesTax::Holidays`. A missing holiday year shows "Add Tennessee holidays for YEAR" and never guesses.
+- Due date = the 20th of the month after the period ends, rolled forward past Saturdays, Sundays, and the three TN state holidays that can fall on a 20th (MLK Day, Presidents' Day, Good Friday), which `SalesTax::Holidays` computes by rule for any year. No holiday list is maintained.
 - Periods and statuses are never stored. Only `SalesTaxFiling` rows (period start, filed_on, confirmation number) are.
 - Never name an association, method, or local `transaction`. DB transactions use `ApplicationRecord.transaction` (or `with_lock`).
 - Non-member → 404 (lookups go through `Current.user.accessible_businesses`). Viewer writing → 403 (`require_editor!`). Owner-only → 403 (`require_owner!`). Every sales tax screen on the personal book → 404 (`BusinessKindOnly`). A sales tax period URL that isn't a period start in the business's calendar → 404.
@@ -37,7 +37,6 @@
   - "Unlink payments before changing sales tax."
   - "Filings or remittances exist for the current periods."
   - "Sales tax isn't set up for this business."
-  - "Add Tennessee holidays for YEAR"
 - Test output must stay clean: a passing `bundle exec rspec` prints only the reporter.
 - TDD: each task writes its failing spec first and runs it to see it fail.
 - Formatting: single spaces in literals, no column alignment. `bin/rubocop` must pass after every task.
@@ -339,20 +338,20 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 2: Pure filing calendar and TN holidays
+### Task 2: Pure filing calendar and TN holiday rules
 
 **Files:**
 - Create: `app/models/sales_tax/holidays.rb`, `app/models/sales_tax/calendar.rb`, `spec/models/sales_tax/holidays_spec.rb`, `spec/models/sales_tax/calendar_spec.rb`
 
 **Interfaces:**
 - Produces:
-  - `SalesTax::Holidays.for(year)` → frozen array of `Date`; raises `SalesTax::Holidays::MissingYear` (with `#year`) for an unlisted year.
+  - `SalesTax::Holidays.for(year)` → array of `Date`: MLK Day (3rd Monday of January), Presidents' Day (3rd Monday of February), and Good Friday (Easter − 2). Computed by rule for any year; never raises. Other TN state holidays are fixed or floating dates that can never be the 20th or the business day after a weekend-rolled 20th, so they are deliberately omitted.
   - `SalesTax::Calendar.new(starts_on:, frequency:, today:, holidays: SalesTax::Holidays)`, where `frequency` is `"monthly" | "quarterly" | "annual"`.
   - `#periods` → `Array<SalesTax::Calendar::Period>`, oldest first, from the period containing `starts_on` through the one containing `today`.
   - `#period_for(date)` → `Period` or nil (before the first period).
   - `#include_start?(date)` → boolean.
-  - `SalesTax::Calendar.due_on(ends_on, holidays: SalesTax::Holidays)` → `Date` (may raise `MissingYear`).
-  - `Period = Data.define(:starts_on, :ends_on, :due_on, :missing_holiday_year)`, with `#label` ("Mar 2026", "Q1 2026", "2026"). `due_on` is nil, and `missing_holiday_year` set, when the holiday list lacks the due date's year.
+  - `SalesTax::Calendar.due_on(ends_on, holidays: SalesTax::Holidays)` → `Date`.
+  - `Period = Data.define(:starts_on, :ends_on, :due_on)`, with `#label` ("Mar 2026", "Q1 2026", "2026"). `due_on` is always set.
 
 - [ ] **Step 1: Write the failing specs**
 
@@ -362,17 +361,25 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 require "rails_helper"
 
 RSpec.describe SalesTax::Holidays do
-  it "lists the Tennessee state holidays for known years" do
-    expect(described_class.for(2026)).to include(Date.new(2026, 1, 19), Date.new(2026, 11, 26), Date.new(2026, 12, 25))
-    expect(described_class.for(2025)).to include(Date.new(2025, 1, 20))
+  {
+    2025 => [ Date.new(2025, 1, 20), Date.new(2025, 2, 17), Date.new(2025, 4, 18) ],
+    2026 => [ Date.new(2026, 1, 19), Date.new(2026, 2, 16), Date.new(2026, 4, 3) ],
+    2027 => [ Date.new(2027, 1, 18), Date.new(2027, 2, 15), Date.new(2027, 3, 26) ],
+    2057 => [ Date.new(2057, 1, 15), Date.new(2057, 2, 19), Date.new(2057, 4, 20) ]
+  }.each do |year, dates|
+    it "computes MLK Day, Presidents' Day, and Good Friday for #{year}" do
+      expect(described_class.for(year)).to eq(dates)
+    end
   end
 
-  it "raises for a year that hasn't been entered" do
-    expect { described_class.for(2031) }.to raise_error(SalesTax::Holidays::MissingYear) { expect(_1.year).to eq(2031) }
+  it "works for any year without a list" do
+    expect(described_class.for(2199).size).to eq(3)
   end
 
-  it "rolls a real due date past MLK Day" do
+  it "rolls real due dates past MLK Day, Presidents' Day, and Good Friday" do
     expect(SalesTax::Calendar.due_on(Date.new(2024, 12, 31))).to eq(Date.new(2025, 1, 21))
+    expect(SalesTax::Calendar.due_on(Date.new(2034, 1, 31))).to eq(Date.new(2034, 2, 21))
+    expect(SalesTax::Calendar.due_on(Date.new(2057, 3, 31))).to eq(Date.new(2057, 4, 23))
   end
 end
 ```
@@ -383,13 +390,9 @@ end
 require "rails_helper"
 
 RSpec.describe SalesTax::Calendar do
-  def holidays(*dates, missing: [])
+  def holidays(*dates)
     Object.new.tap do |list|
-      list.define_singleton_method(:for) do |year|
-        raise SalesTax::Holidays::MissingYear.new(year) if missing.include?(year)
-
-        dates.select { _1.year == year }
-      end
+      list.define_singleton_method(:for) { |year| dates.select { _1.year == year } }
     end
   end
 
@@ -435,12 +438,6 @@ RSpec.describe SalesTax::Calendar do
     expect(described_class.due_on(Date.new(2026, 10, 31), holidays: holidays(Date.new(2026, 11, 20)))).to eq(Date.new(2026, 11, 23))
   end
 
-  it "leaves the due date blank and names the year when holidays are missing" do
-    period = calendar(Date.new(2026, 10, 1), "quarterly", Date.new(2026, 12, 1), holidays(missing: [ 2027 ])).periods.last
-    expect(period.due_on).to be_nil
-    expect(period.missing_holiday_year).to eq(2027)
-  end
-
   it "finds the period for a date and recognizes period starts" do
     cal = calendar(Date.new(2026, 1, 1), "quarterly", Date.new(2026, 10, 8))
     expect(cal.period_for(Date.new(2026, 5, 9)).starts_on).to eq(Date.new(2026, 4, 1))
@@ -458,36 +455,43 @@ end
 Run: `bundle exec rspec spec/models/sales_tax`
 Expected: FAIL (`uninitialized constant SalesTax`).
 
-- [ ] **Step 3: Holidays**
+- [ ] **Step 3: Holiday rules**
 
 `app/models/sales_tax/holidays.rb`:
 
 ```ruby
 module SalesTax
-  # Tennessee state holidays (TN Department of Human Resources), used to roll sales tax due dates.
-  # A year missing here raises, so a due date is never rolled with a guessed calendar.
+  # The Tennessee state holidays that can delay a sales tax due date. Returns are due on the 20th, rolled past
+  # weekends and holidays; only MLK Day (Jan 15–21), Presidents' Day (Feb 15–21), and Good Friday (Mar 20–Apr 23)
+  # can land on a 20th. Every other TN holiday is a fixed date other than the 20th or falls nowhere near it.
   module Holidays
-    class MissingYear < StandardError
-      attr_reader :year
+    module_function
 
-      def initialize(year)
-        @year = year
-        super("Add Tennessee holidays for #{year}")
-      end
+    def for(year)
+      [ nth_monday(year, 1, 3), nth_monday(year, 2, 3), easter(year) - 2 ]
     end
 
-    DATES = {
-      2025 => %w[2025-01-01 2025-01-20 2025-02-17 2025-04-18 2025-05-26 2025-07-04 2025-09-01 2025-11-11 2025-11-27 2025-11-28 2025-12-25],
-      2026 => %w[2026-01-01 2026-01-19 2026-02-16 2026-04-03 2026-05-25 2026-07-03 2026-09-07 2026-11-11 2026-11-26 2026-11-27 2026-12-25],
-      2027 => %w[2027-01-01 2027-01-18 2027-02-15 2027-03-26 2027-05-31 2027-07-05 2027-09-06 2027-11-11 2027-11-25 2027-11-26 2027-12-24]
-    }.transform_values { |dates| dates.map { Date.iso8601(_1) }.freeze }.freeze
+    def nth_monday(year, month, n)
+      first = Date.new(year, month, 1)
+      first + ((1 - first.wday) % 7) + 7 * (n - 1)
+    end
 
-    def self.for(year) = DATES.fetch(year) { raise MissingYear.new(year) }
+    # Anonymous Gregorian algorithm (Meeus/Jones/Butcher).
+    def easter(year)
+      a = year % 19
+      b, c = year.divmod(100)
+      d, e = b.divmod(4)
+      g = (8 * b + 13) / 25
+      h = (19 * a + b - d - g + 15) % 30
+      i, k = c.divmod(4)
+      l = (32 + 2 * e + 2 * i - h - k) % 7
+      m = (a + 11 * h + 22 * l) / 451
+      month, day = (h + l - 7 * m + 114).divmod(31)
+      Date.new(year, month, day + 1)
+    end
   end
 end
 ```
-
-**Verify the list before moving on.** Open the TN Department of Human Resources state holiday calendar for 2025, 2026, and 2027 (search "tn.gov state employee holidays 2026"). Compare it with `DATES`: New Year's, MLK, Presidents' Day, Good Friday, Memorial Day, Independence Day (observed), Labor Day, Veterans Day, Thanksgiving, the day after Thanksgiving (Columbus Day observed), and Christmas (observed). Add or remove dates so the list matches the published calendar (for example, Juneteenth or a proclaimed Christmas Eve). Then note the source URL in a comment above `DATES`.
 
 - [ ] **Step 4: Calendar**
 
@@ -499,7 +503,7 @@ module SalesTax
   class Calendar
     MONTHS = { "monthly" => 1, "quarterly" => 3, "annual" => 12 }.freeze
 
-    Period = Data.define(:starts_on, :ends_on, :due_on, :missing_holiday_year) do
+    Period = Data.define(:starts_on, :ends_on, :due_on) do
       def label
         months = (ends_on.year * 12 + ends_on.month) - (starts_on.year * 12 + starts_on.month) + 1
         case months
@@ -548,9 +552,7 @@ module SalesTax
 
     def build(start)
       ends_on = start.advance(months: @months) - 1
-      Period.new(starts_on: start, ends_on: ends_on, due_on: self.class.due_on(ends_on, holidays: @holidays), missing_holiday_year: nil)
-    rescue Holidays::MissingYear => e
-      Period.new(starts_on: start, ends_on: ends_on, due_on: nil, missing_holiday_year: e.year)
+      Period.new(starts_on: start, ends_on: ends_on, due_on: self.class.due_on(ends_on, holidays: @holidays))
     end
   end
 end
@@ -564,7 +566,7 @@ Run: `bundle exec rspec spec/models/sales_tax` → PASS. `bin/rubocop`.
 
 ```bash
 git add app/models/sales_tax spec/models/sales_tax
-git commit -m "Sales tax: pure filing calendar and TN holidays
+git commit -m "Sales tax: pure filing calendar and TN holiday rules
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
@@ -618,8 +620,7 @@ require "rails_helper"
 
 RSpec.describe SalesTax::PeriodReport do
   let(:period) do
-    SalesTax::Calendar::Period.new(starts_on: Date.new(2026, 4, 1), ends_on: Date.new(2026, 6, 30), due_on: Date.new(2026, 7, 20),
-                                   missing_holiday_year: nil)
+    SalesTax::Calendar::Period.new(starts_on: Date.new(2026, 4, 1), ends_on: Date.new(2026, 6, 30), due_on: Date.new(2026, 7, 20))
   end
   let(:deposits) do
     [
@@ -668,13 +669,6 @@ RSpec.describe SalesTax::PeriodReport do
     r = report(today: Date.new(2026, 7, 21), filing: filing, remitted: over)
     expect(r.balance_cents).to eq(-533)
     expect(r.status).to eq("paid")
-  end
-
-  it "is never overdue without a due date" do
-    undated = period.with(due_on: nil, missing_holiday_year: 2026)
-    r = described_class.new(period: undated, deposits: [], remittances: [], filing: nil, today: Date.new(2027, 1, 1))
-    expect(r.status).to eq("due")
-    expect(r.balance_cents).to eq(0)
   end
 end
 ```
@@ -738,7 +732,7 @@ module SalesTax
 
     def status
       if filed? then balance_cents <= 0 ? "paid" : "filed"
-      elsif period.due_on && @today > period.due_on then "overdue"
+      elsif @today > period.due_on then "overdue"
       elsif @today > period.ends_on then "due"
       else "open"
       end
@@ -2343,7 +2337,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
     - `business_sales_tax_period_filing_path(business, starts_on)` (POST, DELETE; Task 11)
   - Helpers:
     - `sales_tax_status_badge(report)`
-    - `sales_tax_due_label(period)` (date, or "Add Tennessee holidays for YEAR")
+    - `sales_tax_due_label(period)` ("Oct 20, 2026")
     - `sales_tax_period_options(business)` → `[[label, iso_date], …]`, newest first
 
 - [ ] **Step 1: Write the failing specs**
@@ -2472,7 +2466,7 @@ module SalesTaxHelper
   end
 
   def sales_tax_due_label(period)
-    period.due_on ? period.due_on.strftime("%b %-d, %Y") : "Add Tennessee holidays for #{period.missing_holiday_year}"
+    period.due_on.strftime("%b %-d, %Y")
   end
 
   def sales_tax_period_options(business)
@@ -3504,7 +3498,7 @@ Run: `bundle exec rspec spec/system/sales_tax_spec.rb` → PASS. (The period pag
 
 In `README.md`, next to the Personal book paragraph, add a short paragraph:
 
-> **Sales tax (Tennessee).** An owner turns it on from a business's **Sales tax** page (TN account number, filing frequency, default rate, start date). Income categories are marked taxable, exempt, or not a sale. Deposits can carry the card processor's fee (Stripe) and the sales tax from the payout report, and a "tax-inclusive" button backs the tax out at the default rate. Invoices can include sales tax, which is shared out to the deposits that pay them. Each filing period shows gross, exempt, and taxable sales, tax collected, remitted, and balance owed, with its due date (the 20th of the following month, rolled past weekends and TN holidays). Reports count income net of sales tax and gross of fees, with fees under Merchant fees. When a new year begins, add its Tennessee holidays to `app/models/sales_tax/holidays.rb`.
+> **Sales tax (Tennessee).** An owner turns it on from a business's **Sales tax** page (TN account number, filing frequency, default rate, start date). Income categories are marked taxable, exempt, or not a sale. Deposits can carry the card processor's fee (Stripe) and the sales tax from the payout report, and a "tax-inclusive" button backs the tax out at the default rate. Invoices can include sales tax, which is shared out to the deposits that pay them. Each filing period shows gross, exempt, and taxable sales, tax collected, remitted, and balance owed, with its due date (the 20th of the following month, rolled past weekends and the TN holidays that can fall on it, computed for any year). Reports count income net of sales tax and gross of fees, with fees under Merchant fees.
 
 - [ ] **Step 3: Full verification**
 
