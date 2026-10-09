@@ -59,6 +59,9 @@ Rails.application.routes.draw do
   post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
   resource :personal_book, only: :create
+  resources :plaid_items, only: %i[index new create show destroy] do
+    post :sync, on: :member
+  end
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

@@ -9,6 +9,10 @@ module ApplicationHelper
     @current_personal_book = Current.user.accessible_businesses.personal.first
   end
 
+  def show_bank_connections?
+    PlaidGateway.enabled? && (Current.user.household_owner? || Current.user.owned_books.exists?)
+  end
+
   def business_nav(business)
     render "businesses/nav", business: business
   end
