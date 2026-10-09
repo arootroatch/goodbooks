@@ -1,0 +1,5 @@
+<% summary&.overdue_reports&.each do |report| %>
+  <p class="flash flash-alert">Sales tax for <%= business.name %>:
+    <%= link_to report.period.label, business_sales_tax_period_path(business, report.period.starts_on) %>
+    was due <%= sales_tax_due_label(report.period) %> and isn't filed.</p>
+<% end %>

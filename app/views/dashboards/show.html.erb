@@ -7,6 +7,10 @@
   <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
 </header>
 
+<% @dashboard.businesses.each do |row| %>
+  <%= render "sales_tax/overdue_banner", business: row.business, summary: row.sales_tax %>
+<% end %>
+
 <section class="kpis">
   <div class="card kpi">
     <small>Overdue</small>

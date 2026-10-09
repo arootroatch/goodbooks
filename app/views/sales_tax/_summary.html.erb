@@ -1,0 +1,4 @@
+<% if summary %>
+  <span class="sales-tax-summary"><%= link_to "Sales tax", business_sales_tax_profile_path(business) %>
+    · next due <%= summary.next_due_on ? summary.next_due_on.strftime("%b %-d") : "—" %> · owed <%= money(summary.owed_cents) %></span>
+<% end %>

@@ -9,6 +9,7 @@
     <% else %>
       <p class="subtitle">
         Taxpayer: <%= @business.person.name %>
+        <% if @sales_tax %> · <%= render "sales_tax/summary", business: @business, summary: @sales_tax %><% end %>
       </p>
     <% end %>
   </div>
@@ -30,6 +31,7 @@
     </div>
   </div>
 </header>
+<%= render "sales_tax/overdue_banner", business: @business, summary: @sales_tax %>
 
 <section class="kpis">
   <div class="card kpi">
