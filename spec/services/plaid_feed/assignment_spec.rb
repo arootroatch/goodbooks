@@ -34,6 +34,14 @@ RSpec.describe PlaidFeed::Assignment do
     expect(csv.reload).to have_attributes(source: "plaid", plaid_account_id: "fake-checking", plaid_sync_from: Date.new(2026, 9, 30))
   end
 
+  it "rejects the same bank account appearing twice, applying nothing" do
+    result = assign({ plaid_account: "fake-checking", choice: "new", book: business.id.to_s, name: "A" },
+                    { plaid_account: "fake-checking", choice: "new", book: business.id.to_s, name: "B" })
+    expect(result).not_to be_ok
+    expect(result.errors["fake-checking"]).to eq("This bank account appears twice.")
+    expect(Account.where(plaid_account_id: "fake-checking")).to be_empty
+  end
+
   it "uses an entered sync-from date and rejects a bad one" do
     csv = create(:account, :csv, business: business)
     expect(assign({ plaid_account: "fake-checking", choice: "attach", target: csv.id.to_s, sync_from: "2000-01-01" })).to be_ok

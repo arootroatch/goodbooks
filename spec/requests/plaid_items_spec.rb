@@ -64,6 +64,33 @@ RSpec.describe "Plaid items" do
     expect(PlaidItem.count).to eq(0)
   end
 
+  it "marks the Connect button so the page can disable it while Link runs" do
+    sign_in_as owner
+    get new_plaid_item_path
+    expect(response.body).to include('data-plaid-link-target="button"')
+  end
+
+  it "sends a repeated public token to the existing item instead of creating another" do
+    sign_in_as owner
+    post plaid_items_path, params: { public_token: "public-x" }
+    item = PlaidItem.last
+    expect { post plaid_items_path, params: { public_token: "public-x" } }.not_to change(PlaidItem, :count)
+    expect(response).to redirect_to(plaid_item_assignment_path(item))
+  end
+
+  it "reports a save failure after the exchange without a 500 or the access token" do
+    sign_in_as owner
+    allow(PlaidItem).to receive(:create!).and_raise(ActiveRecord::RecordNotUnique, "dup access-secret")
+    expect { post plaid_items_path, params: { public_token: "public-x" } }.not_to change(PlaidItem, :count)
+    expect(response).to redirect_to(plaid_items_path)
+    expect(flash[:alert]).to be_present
+    expect(flash[:alert]).not_to include("access-")
+    allow(PlaidItem).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(PlaidItem.new))
+    post plaid_items_path, params: { public_token: "public-y" }
+    expect(response).to redirect_to(plaid_items_path)
+    expect(flash[:alert]).not_to include("access-")
+  end
+
   describe "an existing item" do
     let!(:item) { create(:plaid_item, created_by: owner, access_token: "access-1") }
     let!(:account) do
@@ -119,6 +146,17 @@ RSpec.describe "Plaid items" do
       expect(manual_account.reload.source).to eq("manual")
       expect(txn.reload.plaid_transaction_id).to eq("t1")
       expect(plaid_gateway.calls).to include(:item_remove)
+    end
+
+    it "leaves the item untouched at Plaid when the local removal fails" do
+      allow_any_instance_of(PlaidItem).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed)
+      sign_in_as owner
+      delete plaid_item_path(item)
+      expect(response).to redirect_to(plaid_item_path(item))
+      expect(flash[:alert]).to be_present
+      expect(plaid_gateway.calls).not_to include(:item_remove)
+      expect(PlaidItem.exists?(item.id)).to be(true)
+      expect(account.reload.source).to eq("plaid")
     end
 
     it "removes the connection locally even when Plaid fails" do

@@ -13,7 +13,8 @@ class PlaidWebhooksController < ApplicationController
   def create
     body = request.raw_post
     verifier.verify!(body: body, token: request.headers["Plaid-Verification"])
-    handle(JSON.parse(body))
+    payload = JSON.parse(body)
+    handle(payload) if payload.is_a?(Hash)
     head :ok
   rescue PlaidFeed::WebhookVerifier::Invalid => e
     Rails.logger.info("Plaid webhook rejected: #{e.message}")

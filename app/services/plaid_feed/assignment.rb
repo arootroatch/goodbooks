@@ -27,11 +27,13 @@ module PlaidFeed
       by_id = plaid_accounts.index_by { _1[:account_id] }
       assigned = @item.accounts.pluck(:plaid_account_id).to_set
       @errors = {}
+      seen = Set.new
       ApplicationRecord.transaction do
         rows.each do |row|
           key = row[:plaid_account].to_s
           plaid = by_id[key]
           next @errors[key] = "That account isn't part of this connection" unless plaid
+          next @errors[key] = "This bank account appears twice." unless seen.add?(key)
           next if assigned.include?(key)
 
           apply(plaid, row)
