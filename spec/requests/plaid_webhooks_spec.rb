@@ -38,6 +38,18 @@ RSpec.describe "Plaid webhooks" do
     expect { PlaidItem.sync_all_later }.to have_enqueued_job(PlaidSyncJob).with(item)
   end
 
+  it "falls back to a week out when the expiration time is malformed" do
+    [ "2026-13-45T00:00:00Z", 12345, [ 1 ], { "a" => 1 } ].each do |bad|
+      item.update!(consent_expires_at: nil)
+      freeze_time do
+        deliver({ webhook_type: "ITEM", webhook_code: "PENDING_EXPIRATION", item_id: "item-1", consent_expiration_time: bad })
+        expect(response).to have_http_status(:ok), bad.inspect
+        expect(item.reload).to be_ok
+        expect(item.consent_expires_at).to eq(7.days.from_now), bad.inspect
+      end
+    end
+  end
+
   it "marks the item ok and syncs when the login is repaired" do
     item.update!(status: "login_required", last_error: "x", consent_expires_at: 2.days.from_now)
     expect { deliver({ webhook_type: "ITEM", webhook_code: "LOGIN_REPAIRED", item_id: "item-1" }) }.to have_enqueued_job(PlaidSyncJob)

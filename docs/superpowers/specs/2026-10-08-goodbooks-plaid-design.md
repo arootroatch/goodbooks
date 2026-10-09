@@ -126,6 +126,8 @@ Given incoming rows and candidate existing rows (both as structs of id/key, post
 5. **removed**: find by `plaid_transaction_id`. If the row has invoice payments or `categorized_by: "user"`, set `review_reason: "removed_by_bank"`; otherwise set `excluded: true`.
 6. Returns a result (inserted, claimed, modified, flagged, excluded counts) for the flash and logs.
 
+Archived accounts are skipped exactly like unassigned ones (for added, modified and removed alike), so bank additions, changes and removals that happen while an account is archived are not applied later, because the cursor moves on.
+
 Row writes use `update!`/`create!` so model validations and guards apply; the only expected validation failure (step 4) is handled explicitly, and anything else aborts the sync.
 
 ### 6.4 Job
