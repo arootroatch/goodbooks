@@ -1,0 +1,33 @@
+<%= business_nav @business %>
+<h1>Sales tax</h1>
+<% if current_membership.owner? %>
+  <%= form_with model: @profile, url: business_sales_tax_profile_path(@business), method: :patch do |f| %>
+    <%= render "shared/errors", record: @profile %>
+    <p><%= f.label :tn_account_number, "TN account number" %> <%= f.text_field :tn_account_number %></p>
+    <p><%= f.label :filing_frequency, "Filing frequency" %> <%= f.select :filing_frequency, SalesTaxProfile::FREQUENCIES.map { [ _1.humanize, _1 ] } %></p>
+    <p><%= f.label :default_rate_percent, "Default rate (%)" %> <%= f.text_field :default_rate_percent, size: 6 %> <small>state 7% plus local</small></p>
+    <p><%= f.label :starts_on, "Collecting since" %> <%= f.date_field :starts_on %></p>
+    <p><%= f.check_box :active %> <%= f.label :active %></p>
+    <%= f.submit "Save" %>
+  <% end %>
+<% end %>
+<%# @collects is read before the owner's blank form builds an unsaved profile, which would otherwise look active %>
+<% if @collects %>
+  <table>
+    <thead><tr><th>Period</th><th>Due</th><th class="num">Collected</th><th class="num">Remitted</th><th class="num">Balance</th><th>Status</th></tr></thead>
+    <tbody>
+      <% @reports.each do |report| %>
+        <tr>
+          <td><%= link_to report.period.label, business_sales_tax_period_path(@business, report.period.starts_on) %></td>
+          <td><%= sales_tax_due_label(report.period) %></td>
+          <td class="num"><%= money(report.tax_collected_cents) %></td>
+          <td class="num"><%= money(report.remitted_cents) %></td>
+          <td class="num"><%= money(report.balance_cents) %></td>
+          <td><%= sales_tax_status_badge(report) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% elsif !current_membership.owner? %>
+  <p>Sales tax isn't set up for this business.</p>
+<% end %>

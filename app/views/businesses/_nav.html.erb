@@ -18,6 +18,9 @@
       <li><%= link_to "P&L", business_profit_and_loss_path(business) %></li>
       <li><%= link_to "Schedule C", business_schedule_c_path(business) %></li>
       <li><%= link_to "Aging", business_invoice_aging_path(business) %></li>
+      <% if current_membership&.owner? || business.collects_sales_tax? %>
+        <li><%= link_to "Sales tax", business_sales_tax_profile_path(business) %></li>
+      <% end %>
     <% end %>
     <% if current_membership&.owner? %>
       <li><%= link_to "Members", business_memberships_path(business) %></li>

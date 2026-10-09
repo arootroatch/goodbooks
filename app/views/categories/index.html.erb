@@ -4,7 +4,7 @@
   <thead>
     <tr>
       <th>Name</th><th>Kind</th>
-      <% if @business.personal? %><th>Tithe</th><% else %><th>Schedule C</th><th class="num">Deductible</th><% end %>
+      <% if @business.personal? %><th>Tithe</th><% else %><th>Schedule C</th><th class="num">Deductible</th><% if @business.collects_sales_tax? %><th>Sales tax</th><% end %><% end %>
       <th></th>
     </tr>
   </thead>
@@ -16,8 +16,11 @@
         <% if @business.personal? %>
           <td><%= category_tithe_label(category) %></td>
         <% else %>
-          <td><%= ScheduleC.label(category.schedule_c_line) %></td>
+          <td><%= category.schedule_c_line ? ScheduleC.label(category.schedule_c_line) : "—" %></td>
           <td class="num"><%= category.deductible_percent %>%</td>
+          <% if @business.collects_sales_tax? %>
+            <td><%= Category::SALES_TAX_TREATMENT_LABELS[category.sales_tax_treatment] %></td>
+          <% end %>
         <% end %>
         <td><%= link_to "Edit", edit_business_category_path(@business, category) if current_membership.can_edit? %></td>
       </tr>

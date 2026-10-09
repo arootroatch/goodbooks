@@ -1,7 +1,9 @@
 <%= form_with model: [@business, category] do |f| %>
   <%= render "shared/errors", record: category %>
   <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
-  <p><%= f.label :kind %> <%= f.select :kind, [["Income", "income"], ["Expense", "expense"]] %></p>
+  <% kinds = [ [ "Income", "income" ], [ "Expense", "expense" ] ] %>
+  <% kinds << [ "Sales tax remittance", "sales_tax_remittance" ] if @business.collects_sales_tax? || category.sales_tax_remittance? %>
+  <p><%= f.label :kind %> <%= f.select :kind, kinds %></p>
   <% if @business.personal? %>
     <p><%= f.check_box :tithable %> <%= f.label :tithable, "Tithable (income: deposits here count toward the tithe)" %></p>
     <p><%= f.check_box :tithe %> <%= f.label :tithe, "Tithe payment (expense: payments here pay the tithe)" %></p>
@@ -13,6 +15,13 @@
             category.schedule_c_line) %>
     </p>
     <p><%= f.label :deductible_percent, "Deductible %" %> <%= f.text_field :deductible_percent, size: 6 %></p>
+    <% if @business.collects_sales_tax? %>
+      <p>
+        <%= f.label :sales_tax_treatment, "Sales tax treatment" %>
+        <%= f.select :sales_tax_treatment, Category::SALES_TAX_TREATMENT_LABELS.invert, include_blank: "Default" %>
+        <small>income categories only</small>
+      </p>
+    <% end %>
   <% end %>
   <% if category.persisted? %>
     <p><%= f.label :archived %> <%= f.check_box :archived, { checked: category.archived? }, "1", "0" %></p>
