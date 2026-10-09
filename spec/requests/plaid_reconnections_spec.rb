@@ -43,6 +43,19 @@ RSpec.describe "Reconnecting a bank" do
     expect(response.body).not_to include(new_plaid_item_reconnection_path(item))
   end
 
+  it "keeps the needs-to-be-renewed wording for a broken item that also has a renewal date" do
+    item.update!(status: "login_required", consent_expires_at: 3.days.from_now)
+    sign_in_as owner
+    get root_path
+    expect(response.body).to include("Your connection to Demo Bank needs to be renewed.")
+    expect(response.body).not_to include("expires soon")
+
+    item.update!(status: "error", last_error: "boom")
+    get root_path
+    expect(response.body).to include("needs to be renewed")
+    expect(response.body).not_to include("expires soon")
+  end
+
   it "404s for users who can't manage the item" do
     sign_in_as user_with_role("owner", create(:business))
     get new_plaid_item_reconnection_path(item)

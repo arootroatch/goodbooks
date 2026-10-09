@@ -1,9 +1,9 @@
 <% items.each do |item| %>
   <p class="flash flash-alert" id="<%= dom_id(item, :reconnect) %>">
-    <% if item.login_required? %>
-      Your connection to <%= item.institution_name %> needs to be renewed.
-    <% else %>
+    <% if item.ok? %>
       Your connection to <%= item.institution_name %> expires soon. Renew it to keep syncing.
+    <% else %>
+      Your connection to <%= item.institution_name %> needs to be renewed.
     <% end %>
     <%= link_to "Reconnect", new_plaid_item_reconnection_path(item) if item.manageable_by?(Current.user) %>
   </p>

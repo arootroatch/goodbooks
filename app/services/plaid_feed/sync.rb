@@ -18,6 +18,7 @@ module PlaidFeed
     def call
       added, modified, removed, cursor = fetch
       ApplicationRecord.transaction do
+        # Archived accounts are skipped like unassigned ones: bank changes made meanwhile are not applied later.
         accounts = @item.accounts.active.includes(:business).where.not(plaid_account_id: nil).index_by(&:plaid_account_id)
         inserted = apply_added(added, accounts)
         modified.each { apply_modified(_1, accounts) }
