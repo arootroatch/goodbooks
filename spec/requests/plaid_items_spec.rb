@@ -43,7 +43,7 @@ RSpec.describe "Plaid items" do
     item = PlaidItem.last
     expect(item).to have_attributes(household: household, created_by: owner, institution_name: "Demo Bank", status: "ok")
     expect(item.access_token).to start_with("access-fake-")
-    expect(response).to redirect_to(plaid_item_path(item))
+    expect(response).to redirect_to(plaid_item_assignment_path(item))
   end
 
   it "reports a missing token or a Plaid failure without creating anything" do

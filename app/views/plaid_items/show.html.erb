@@ -25,6 +25,11 @@
     <% end %>
   </tbody>
 </table>
+<% unassigned = @plaid_accounts.to_a.count { !@item.accounts.map(&:plaid_account_id).include?(_1[:account_id]) } %>
+<p>
+  <%= link_to "Assign accounts", plaid_item_assignment_path(@item) %>
+  <%= " · #{pluralize(unassigned, "bank account")} not assigned" if unassigned.positive? %>
+</p>
 <%= button_to "Sync now", sync_plaid_item_path(@item) %>
 <%= button_to "Remove connection", plaid_item_path(@item), method: :delete,
       data: { turbo_confirm: "Stop syncing #{@item.institution_name}? Transactions already imported stay." } %>

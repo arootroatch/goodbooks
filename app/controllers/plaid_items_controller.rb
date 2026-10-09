@@ -22,7 +22,7 @@ class PlaidItemsController < ApplicationController
     exchanged = gateway.exchange_public_token(public_token)
     item = PlaidItem.create!(household: Household.instance, created_by: Current.user, item_id: exchanged[:item_id],
                              access_token: exchanged[:access_token], institution_name: institution_name(exchanged[:access_token]))
-    redirect_to plaid_item_path(item), notice: "Connected #{item.institution_name}."
+    redirect_to plaid_item_assignment_path(item), notice: "Connected #{item.institution_name}."
   rescue PlaidGateway::Error => e
     redirect_to new_plaid_item_path, alert: "Plaid: #{e.message}"
   end

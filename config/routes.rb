@@ -61,6 +61,7 @@ Rails.application.routes.draw do
   resource :personal_book, only: :create
   resources :plaid_items, only: %i[index new create show destroy] do
     post :sync, on: :member
+    resource :assignment, only: %i[show update], controller: "plaid_assignments"
   end
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
