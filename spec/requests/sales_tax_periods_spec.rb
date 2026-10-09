@@ -90,4 +90,24 @@ RSpec.describe "Sales tax periods" do
     delete business_sales_tax_period_filing_path(book, q1)
     expect(response).to have_http_status(:not_found)
   end
+
+  it "lets an editor move a remittance to another period from the period page" do
+    q2 = Date.new(2026, 4, 1)
+    remittance = Transaction.find_by!(payee: "=TN DOR")
+    sign_in_as user_with_role("viewer", business)
+    get business_sales_tax_period_path(business, q1)
+    expect(response.body).not_to include("transaction[sales_tax_period_starts_on]")
+
+    sign_in_as user_with_role("editor", business)
+    get business_sales_tax_period_path(business, q1)
+    expect(response.body).to include("transaction[sales_tax_period_starts_on]")
+    patch business_transaction_path(business, remittance),
+      params: { return_to_period: q1.iso8601, transaction: { sales_tax_period_starts_on: q2.iso8601 } }
+    expect(response).to redirect_to(business_sales_tax_period_path(business, q1))
+    expect(remittance.reload.sales_tax_period_starts_on).to eq(q2)
+    get business_sales_tax_period_path(business, q2)
+    expect(response.body).to include("$84.67")
+    get business_sales_tax_period_path(business, q1)
+    expect(response.body).not_to include("=TN DOR")
+  end
 end

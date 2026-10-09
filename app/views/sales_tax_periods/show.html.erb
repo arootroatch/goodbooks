@@ -52,11 +52,22 @@
 <h2>Remittances</h2>
 <% if @report.remittances.any? %>
   <table>
-    <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Remitted</th></tr></thead>
+    <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Remitted</th><th>Period</th></tr></thead>
     <tbody>
       <% @report.remittances.each do |remittance| %>
         <tr><td><%= remittance.posted_on %></td><td><%= remittance.source.account.name %></td><td><%= remittance.source.payee %></td>
-            <td class="num"><%= money(-remittance.amount_cents) %></td></tr>
+            <td class="num"><%= money(-remittance.amount_cents) %></td>
+            <td>
+              <% if current_membership.can_edit? %>
+                <%= form_with scope: :transaction, url: business_transaction_path(@business, remittance.source), method: :patch, class: "inline-form" do |f| %>
+                  <%= hidden_field_tag :return_to_period, period.starts_on.iso8601 %>
+                  <%= f.select :sales_tax_period_starts_on, sales_tax_period_options(@business), selected: period.starts_on.iso8601 %>
+                  <%= f.submit "Move" %>
+                <% end %>
+              <% else %>
+                <%= period.label %>
+              <% end %>
+            </td></tr>
       <% end %>
     </tbody>
   </table>

@@ -27,6 +27,10 @@ class Transaction < ApplicationRecord
       .where("#{UNALLOCATED_SQL} > 0")
   }
   scope :with_unallocated, ->(cents) { where("#{UNALLOCATED_SQL} = ?", cents) }
+  scope :needing_sales_tax, -> {
+    countable.joins(:category).where(categories: { kind: "income", sales_tax_treatment: "taxable" })
+      .where(sales_tax_cents: 0).where.not(id: InvoicePayment.select(:deposit_id))
+  }
 
   validates :posted_on, :payee, presence: true
   validates :amount_cents, presence: true, numericality: { only_integer: true }, if: -> { errors[:amount].empty? }
