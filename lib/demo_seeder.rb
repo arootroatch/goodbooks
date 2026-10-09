@@ -47,6 +47,64 @@ class DemoSeeder
     seed_invoices(consulting, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
     seed_invoices(studio, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "JDS-")
     seed_personal(household)
+    seed_sales_tax(consulting)
+  end
+
+  # Pat Consulting collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
+  # taxed invoices (one by check, one inside a batched payout, one open), and every completed quarter but the latest filed and remitted.
+  def seed_sales_tax(business)
+    start = @today.beginning_of_quarter << 15
+    business.create_sales_tax_profile!(tn_account_number: "1002003004", filing_frequency: "quarterly", default_rate_bps: 925,
+                                       starts_on: start, active: true)
+    bank = business.accounts.find_by!(name: "Business Checking")
+    sales = business.categories.find_by!(name: "Sales")
+    consulting = business.categories.create!(name: "Consulting", kind: "income", schedule_c_line: "1", sales_tax_treatment: "exempt")
+    bank.transactions.where(category: sales).find_each { _1.update!(category: consulting) }
+    stripe = business.rules.create!(field: "payee", operator: "contains", value: "STRIPE", outcome: "categorize", category: sales)
+
+    sequence = 0
+    payout = lambda do |date, direct, invoiced: [], tax: true|
+      sequence += 1
+      fee = (direct + invoiced).sum { Money.round_rational(Rational(_1 * 29, 1_000)) + 30 }
+      gross = (direct + invoiced).sum
+      bank.transactions.create!(posted_on: date, payee: "STRIPE PAYOUT", amount_cents: gross - fee, processor_fee_cents: fee,
+                                sales_tax_cents: tax ? SalesTax::InclusiveTax.call(gross_cents: direct.sum, rate_bps: 925) : 0,
+                                category: sales, categorized_by: "rule", rule: stripe, external_id: "demo-#{business.id}-stripe-#{sequence}")
+    end
+
+    friday = start + ((5 - start.wday) % 7)
+    friday.step(@today, 7).each do |date|
+      payout.(date, Array.new(3 + @random.rand(4)) { 2_500 + @random.rand(12_000) }, tax: date < @today - 14)
+    end
+
+    riverside = business.clients.create!(name: "Riverside Market")
+    maple = business.clients.create!(name: "Maple Street Bakery")
+    add_invoice = lambda do |client, cents, tax, issued|
+      business.invoices.create!(client: client, number: Invoices::NumberSuggester.next(business.invoices.pluck(:number)), issue_date: issued,
+                                due_date: issued + 30, amount_cents: cents, sales_tax_cents: tax, status: "sent", description: "Retail order")
+    end
+    link = lambda do |invoice, deposit, **options|
+      result = InvoicePayments.link(invoice: invoice, deposit: deposit, **options)
+      raise result.error unless result.ok?
+    end
+
+    check = bank.transactions.create!(posted_on: @today - 45, payee: "RIVERSIDE MARKET CHECK", amount_cents: 109_250,
+                                      external_id: "demo-#{business.id}-riverside")
+    link.(add_invoice.(riverside, 109_250, 9_250, @today - 70), check, category: sales)
+    batched = add_invoice.(maple, 54_625, 4_625, @today - 30)
+    link.(batched, payout.(@today - 10, [ 12_000, 18_000 ], invoiced: [ 54_625 ]), amount_cents: 54_625)
+    add_invoice.(riverside, 32_775, 2_775, @today - 12)
+
+    remittance = business.categories.sales_tax_remittance.sole
+    completed = SalesTax.reports_for(business, today: @today).select { _1.period.ends_on < @today }
+    completed[0...-1].each do |report|
+      paid_on = report.period.due_on - 3
+      bank.transactions.create!(posted_on: paid_on, payee: "TN DEPT OF REVENUE", amount_cents: -report.tax_collected_cents,
+                                category: remittance, categorized_by: "user", sales_tax_period_starts_on: report.period.starts_on,
+                                external_id: "demo-#{business.id}-remit-#{report.period.starts_on}")
+      business.sales_tax_filings.create!(period_starts_on: report.period.starts_on, filed_on: paid_on,
+                                         confirmation_number: "TN#{report.period.starts_on.strftime("%Y%m")}")
+    end
   end
 
   def seed_business(business, client:, income_cents:, software:)
