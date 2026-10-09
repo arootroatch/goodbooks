@@ -62,6 +62,7 @@ Rails.application.routes.draw do
   resources :plaid_items, only: %i[index new create show destroy] do
     post :sync, on: :member
     resource :assignment, only: %i[show update], controller: "plaid_assignments"
+    resource :reconnection, only: %i[new create], controller: "plaid_reconnections"
   end
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
