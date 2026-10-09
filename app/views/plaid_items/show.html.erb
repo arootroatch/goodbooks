@@ -3,6 +3,9 @@
   Status: <%= plaid_status_label(@item) %>
   <%= " · Last synced #{time_ago_in_words(@item.last_synced_at)} ago" if @item.last_synced_at %>
 </p>
+<% if @item.login_required? || @item.error? %>
+  <p><%= link_to "Reconnect", new_plaid_item_reconnection_path(@item) %></p>
+<% end %>
 <% if @item.last_error.present? %>
   <p class="errors"><%= @item.last_error %></p>
 <% end %>

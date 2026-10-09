@@ -6,6 +6,7 @@
   </div>
   <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
 </header>
+<%= render "plaid_items/reconnect_banners", items: @reconnect_items %>
 
 <% @dashboard.businesses.each do |row| %>
   <%= render "sales_tax/overdue_banner", business: row.business, summary: row.sales_tax %>

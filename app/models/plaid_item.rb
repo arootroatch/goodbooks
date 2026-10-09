@@ -19,6 +19,14 @@ class PlaidItem < ApplicationRecord
     ok.find_each { PlaidSyncJob.perform_later(_1) }
   end
 
+  # Items that need the user to log in again, for the dashboard banner.
+  def self.needing_reconnect_for(user)
+    return none unless PlaidGateway.enabled?
+
+    visible = Account.where(business: user.accessible_businesses).select(:plaid_item_id)
+    login_required.where(id: visible).or(login_required.manageable_by(user))
+  end
+
   def manageable_by?(user) = user.household_owner? || created_by_id == user.id
 
   # Stops the feed: tells Plaid (best effort), turns the accounts back into CSV or manual ones, keeps every transaction.
