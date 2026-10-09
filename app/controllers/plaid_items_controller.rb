@@ -20,11 +20,16 @@ class PlaidItemsController < ApplicationController
     return redirect_to(new_plaid_item_path, alert: "Plaid didn't return a connection. Try again.") if public_token.blank?
 
     exchanged = gateway.exchange_public_token(public_token)
+    existing = PlaidItem.find_by(household: Household.instance, item_id: exchanged[:item_id])
+    return redirect_to(plaid_item_assignment_path(existing)) if existing
+
     item = PlaidItem.create!(household: Household.instance, created_by: Current.user, item_id: exchanged[:item_id],
                              access_token: exchanged[:access_token], institution_name: institution_name(exchanged[:access_token]))
     redirect_to plaid_item_assignment_path(item), notice: "Connected #{item.institution_name}."
   rescue PlaidGateway::Error => e
     redirect_to new_plaid_item_path, alert: "Plaid: #{e.message}"
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+    redirect_to plaid_items_path, alert: "Couldn't save the connection. Check Banks for it, or try connecting again."
   end
 
   def show
@@ -42,6 +47,8 @@ class PlaidItemsController < ApplicationController
     warning = @item.disconnect!(gateway)
     notice = warning ? "Connection removed here. Plaid reported: #{warning}" : "Connection removed."
     redirect_to plaid_items_path, notice: notice, status: :see_other
+  rescue ActiveRecord::ActiveRecordError
+    redirect_to plaid_item_path(@item), alert: "Couldn't remove the connection. Nothing was changed.", status: :see_other
   end
 
   private

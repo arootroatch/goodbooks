@@ -6,6 +6,6 @@
   <%= form_with url: url, data: { plaid_link_target: "form" } do %>
     <%= hidden_field_tag :public_token, "", id: nil, data: { plaid_link_target: "publicToken" } %>
   <% end %>
-  <button type="button" data-action="plaid-link#open"><%= label %></button>
+  <button type="button" data-plaid-link-target="button" data-action="plaid-link#open"><%= label %></button>
   <p data-plaid-link-target="status" role="status"></p>
 </div>

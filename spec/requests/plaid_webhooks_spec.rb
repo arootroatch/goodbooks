@@ -40,6 +40,13 @@ RSpec.describe "Plaid webhooks" do
     expect(response).to have_http_status(:ok)
   end
 
+  it "acknowledges a verified body that is valid JSON but not an object" do
+    [ "[1]", "1", '"x"' ].each do |raw|
+      expect { deliver(nil, raw: raw) }.not_to have_enqueued_job
+      expect(response).to have_http_status(:ok), raw
+    end
+  end
+
   it "rejects unverified requests with 401" do
     other_key = OpenSSL::PKey::EC.generate("prime256v1")
     body = sync_available.to_json

@@ -29,14 +29,10 @@ class PlaidItem < ApplicationRecord
 
   def manageable_by?(user) = user.household_owner? || created_by_id == user.id
 
-  # Stops the feed: tells Plaid (best effort), turns the accounts back into CSV or manual ones, keeps every transaction.
+  # Stops the feed: turns the accounts back into CSV or manual ones, keeps every transaction, then tells Plaid
+  # (best effort, after the local commit so a local failure leaves the item connected at Plaid).
   def disconnect!(gateway)
-    warning = begin
-      gateway.item_remove(access_token)
-      nil
-    rescue PlaidGateway::Error => e
-      e.message
-    end
+    token = access_token
     ApplicationRecord.transaction do
       accounts.each do |account|
         account.update!(source: account.csv_mapping.present? ? "csv" : "manual", plaid_item: nil, plaid_account_id: nil,
@@ -44,6 +40,11 @@ class PlaidItem < ApplicationRecord
       end
       destroy!
     end
-    warning
+    begin
+      gateway.item_remove(token)
+      nil
+    rescue PlaidGateway::Error => e
+      e.message
+    end
   end
 end
