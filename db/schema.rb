@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000002) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -221,6 +221,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
     t.index ["category_id"], name: "index_rules_on_category_id"
   end
 
+  create_table "sales_tax_filings", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.date "period_starts_on", null: false
+    t.date "filed_on", null: false
+    t.string "confirmation_number"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "period_starts_on"], name: "index_sales_tax_filings_on_business_id_and_period_starts_on", unique: true
+    t.index ["business_id"], name: "index_sales_tax_filings_on_business_id"
+  end
+
+  create_table "sales_tax_profiles", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.string "tn_account_number"
+    t.string "filing_frequency", default: "quarterly", null: false
+    t.integer "default_rate_bps", null: false
+    t.date "starts_on", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id"], name: "index_sales_tax_profiles_on_business_id", unique: true
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -296,6 +319,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
   add_foreign_key "people", "users"
   add_foreign_key "rules", "businesses"
   add_foreign_key "rules", "categories"
+  add_foreign_key "sales_tax_filings", "businesses"
+  add_foreign_key "sales_tax_profiles", "businesses"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"

@@ -10,6 +10,8 @@ class Business < ApplicationRecord
   has_many :clients, dependent: :restrict_with_error
   has_many :invoices, dependent: :restrict_with_error
   has_many :transactions, through: :accounts
+  has_one :sales_tax_profile, dependent: :destroy
+  has_many :sales_tax_filings, dependent: :destroy
 
   enum :kind, { business: "business", personal: "personal" }, validate: true, scopes: false
 
@@ -26,6 +28,8 @@ class Business < ApplicationRecord
   validate :personal_not_archived
 
   TITHE_START_FLOOR = Date.new(2000, 1, 1)
+
+  def collects_sales_tax? = business? && sales_tax_profile&.active? == true
 
   private
 
