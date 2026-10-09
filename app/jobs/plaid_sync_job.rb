@@ -16,5 +16,8 @@ class PlaidSyncJob < ApplicationJob
     raise
   rescue PlaidGateway::Error, PlaidFeed::TransactionMapper::InvalidAmount => e
     item.update!(status: "error", last_error: e.message)
+  rescue StandardError => e
+    item.update!(status: "error", last_error: "Unexpected error (#{e.class.name})")
+    raise
   end
 end
