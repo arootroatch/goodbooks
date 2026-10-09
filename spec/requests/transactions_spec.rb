@@ -114,6 +114,31 @@ RSpec.describe "Transactions" do
 
     before { sign_in_as user_with_role("editor", business) }
 
+    it "hides the fee, tax, and period fields on a negative imported row" do
+      debit = create(:transaction, account: account, payee: "OFFICE", amount_cents: -5_000, external_id: "x2")
+      get edit_business_transaction_path(business, debit)
+      expect(response.body).not_to include("Processor fee")
+      expect(response.body).not_to include("Sales tax period")
+      expect(response.body).not_to include(%(for="transaction_sales_tax"))
+    end
+
+    it "shows the fee and tax fields on a deposit, and the period only on a remittance" do
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include("Processor fee").and include(%(for="transaction_sales_tax"))
+      expect(response.body).not_to include("Sales tax period")
+      payout.update!(category: business.categories.sales_tax_remittance.sole, amount_cents: -5_000)
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include("Sales tax period")
+    end
+
+    it "still shows the tax field on a taxed deposit after the profile is deactivated" do
+      payout.update!(category: sales, sales_tax_cents: 500)
+      profile.update!(active: false)
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include(%(for="transaction_sales_tax"))
+      expect(response.body).not_to include("Tax-inclusive")
+    end
+
     it "saves a fee and tax on an imported deposit" do
       patch business_transaction_path(business, payout),
         params: { transaction: { category_id: sales.id, processor_fee: "29.30", sales_tax: "84.67" } }

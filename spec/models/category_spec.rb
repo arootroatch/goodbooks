@@ -196,6 +196,34 @@ RSpec.describe Category do
     end
   end
 
+  describe "changing to or from the remittance kind" do
+    let(:business) { create(:business) }
+    let!(:profile) { create(:sales_tax_profile, business: business) }
+    let(:account) { create(:account, business: business) }
+
+    it "is blocked while the category has transactions" do
+      remittance = business.categories.sales_tax_remittance.sole
+      create(:transaction, account: account, amount_cents: -5_000, category: remittance)
+      remittance.kind = "expense"
+      remittance.schedule_c_line = "18"
+      expect(remittance).not_to be_valid
+      expect(remittance.errors[:kind]).to include("can't change to or from a remittance category while it has transactions")
+
+      expense = create(:category, business: business, name: "Supplies")
+      create(:transaction, account: account, amount_cents: -1_000, category: expense)
+      business.categories.sales_tax_remittance.sole.update!(archived_at: Time.current)
+      expense.kind = "sales_tax_remittance"
+      expect(expense).not_to be_valid
+      expect(expense.errors[:kind]).to include("can't change to or from a remittance category while it has transactions")
+    end
+
+    it "is allowed when the category has no transactions" do
+      expense = create(:category, business: business, name: "Supplies")
+      business.categories.sales_tax_remittance.sole.update!(archived_at: Time.current)
+      expect(expense.update(kind: "sales_tax_remittance")).to be(true)
+    end
+  end
+
   describe "processor fees flag" do
     let(:business) { create(:business) }
 
