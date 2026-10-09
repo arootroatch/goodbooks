@@ -18,13 +18,29 @@
     <p><%= transaction.posted_on %> · <%= transaction.payee %> · <%= money(transaction.amount_cents) %> (imported, read-only)</p>
   <% end %>
   <p><%= f.label :memo %> <%= f.text_field :memo %></p>
+  <% categories = @business.categories.active.or(@business.categories.where(id: transaction.category_id)).order(:name) %>
   <p>
     <%= f.label :category_id %>
-    <%= f.grouped_collection_select :category_id,
-          [["Income", @business.categories.income.active.or(@business.categories.income.where(id: transaction.category_id)).order(:name)],
-           ["Expense", @business.categories.expense.active.or(@business.categories.expense.where(id: transaction.category_id)).order(:name)]],
-          :last, :first, :id, :name, include_blank: "Uncategorized" %>
+    <%= f.grouped_collection_select :category_id, category_groups(categories), :last, :first, :id, :name, include_blank: "Uncategorized" %>
   </p>
+  <% if @business.business? %>
+    <p><%= f.label :processor_fee, "Processor fee" %> <%= f.text_field :processor_fee, size: 10, inputmode: "decimal" %> <small>card processor's fee on a deposit</small></p>
+  <% end %>
+  <% if @business.collects_sales_tax? %>
+    <p>
+      <%= f.label :sales_tax, "Sales tax" %> <%= f.text_field :sales_tax, size: 10, inputmode: "decimal" %>
+      <%= button_tag "Tax-inclusive at default rate (#{@business.sales_tax_profile.default_rate_percent}%)",
+            type: "submit", name: "apply_inclusive_tax", value: "1" %>
+      <% if transaction.persisted? && transaction.invoice_tax_cents.positive? %>
+        <small>plus <%= money(transaction.invoice_tax_cents) %> from linked invoices</small>
+      <% end %>
+    </p>
+    <p>
+      <%= f.label :sales_tax_period_starts_on, "Sales tax period (remittances)" %>
+      <%= f.select :sales_tax_period_starts_on, sales_tax_period_options(@business),
+            { include_blank: "Default", selected: transaction.sales_tax_period_starts_on&.iso8601 } %>
+    </p>
+  <% end %>
   <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
   <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
   <%= f.submit %>

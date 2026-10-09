@@ -138,4 +138,27 @@ RSpec.describe "Inbox" do
       expect(response.body).to include("Showing 1 of 2")
     end
   end
+
+  it "refuses to reclassify a taxed deposit through the inbox endpoint" do
+    business = create(:business)
+    create(:sales_tax_profile, business: business)
+    sales = create(:category, :income, business: business, name: "Sales")
+    exempt = create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    taxed = create(:transaction, account: create(:account, business: business), amount_cents: 10_925, category: sales, sales_tax_cents: 925)
+    sign_in_as user_with_role("editor", business)
+    [ { outcome: "transfer" }, { outcome: "exclude" }, { outcome: "categorize", category_id: exempt.id } ].each do |params|
+      patch business_transaction_classification_path(business, taxed), params: params
+      expect(flash[:alert]).to include("Clear the sales tax first.")
+    end
+    expect([ taxed.reload.transfer, taxed.excluded, taxed.category_id ]).to eq([ false, false, sales.id ])
+  end
+
+  it "offers the remittance category in the inbox picker" do
+    business = create(:business)
+    create(:sales_tax_profile, business: business)
+    create(:transaction, account: create(:account, business: business), payee: "TN DOR", amount_cents: -100)
+    sign_in_as user_with_role("editor", business)
+    get business_inbox_path(business)
+    expect(response.body).to include('label="Sales tax"', "Sales tax remittance")
+  end
 end

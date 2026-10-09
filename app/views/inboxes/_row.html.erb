@@ -8,9 +8,7 @@
     <% if editable %>
       <%= form_with url: business_transaction_classification_path(business, txn), method: :patch, class: "inline-form" do |f| %>
         <%= f.hidden_field :outcome, value: "categorize" %>
-        <%= f.select :category_id, grouped_options_for_select({
-              "Income" => categories.select(&:income?).map { [_1.name, _1.id] },
-              "Expense" => categories.select(&:expense?).map { [_1.name, _1.id] } }), include_blank: "Category…" %>
+        <%= f.select :category_id, grouped_options_for_select(category_groups(categories).map { |label, list| [ label, list.map { [ _1.name, _1.id ] } ] }), include_blank: "Category…" %>
         <label><%= f.check_box :make_rule, {}, "1", nil %> make rule</label>
         <%= f.submit "Save" %>
       <% end %>

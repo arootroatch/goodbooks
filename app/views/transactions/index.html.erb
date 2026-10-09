@@ -5,7 +5,9 @@
   <%= f.date_field :to, value: params[:to] %>
   <%= f.select :account_id, options_from_collection_for_select(@business.accounts.order(:name), :id, :name, params[:account_id]), include_blank: "All accounts" %>
   <%= f.select :category_id, options_from_collection_for_select(@business.categories.order(:name), :id, :name, params[:category_id]), include_blank: "All categories" %>
-  <%= f.select :status, [["All", ""], ["Inbox only", "inbox"]], selected: params[:status] %>
+  <% statuses = [ [ "All", "" ], [ "Inbox only", "inbox" ] ] %>
+  <% statuses << [ "Needs sales tax", "needs_tax" ] if @business.collects_sales_tax? %>
+  <%= f.select :status, statuses, selected: params[:status] %>
   <%= f.search_field :q, value: params[:q], placeholder: "Search payee or memo" %>
   <%= f.submit "Filter" %>
 <% end %>
