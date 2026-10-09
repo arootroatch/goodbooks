@@ -150,7 +150,7 @@ Notes:
 
 - Owners create, rename, and archive accounts. Archived accounts are hidden from lists but remain in reports.
 - **Manual accounts**: editors add, edit, and delete transactions freely.
-- **Imported transactions** (CSV, Plaid): `date`, `amount_cents`, and `payee` are read-only. Category, transfer, memo, and excluded are editable.
+- **Imported transactions** (CSV, Plaid): `date`, `amount_cents`, and `payee` are read-only. This applies per row (the row has an `external_id` or `plaid_transaction_id`), not per account; see the Plaid spec §3. Category, transfer, memo, and excluded are editable.
 - Transaction list per account and per business: filters by date range, category, inbox status, and text search on payee/memo. Paginated.
 
 ### 5.5 CSV import
@@ -255,15 +255,9 @@ SalesTaxPeriod   business, starts_on, ends_on, due_on, status: open|filed|paid, 
 
 ## 8. Sub-project 5: Plaid
 
-- `Plaid::Client` is a thin wrapper over the official `plaid` Ruby gem, exposing `create_link_token`, `exchange_public_token`, `accounts`, `transactions_sync(cursor)`, `item_remove`, and webhook verification. Specs use `FakePlaidClient`, injected through configuration.
-- `PlaidItem`: household, institution name, `access_token` (encrypted), `item_id`, `cursor`, status: `ok | login_required | error`, last_synced_at, last_error.
-- Linking flow (business owner): Plaid Link in the browser via a Stimulus controller → token exchange on the server → the user picks which Plaid accounts to import and assigns each to one of their businesses → `Account` rows with `source: plaid` and `plaid_account_id`.
-- `Plaid::Sync` processes `transactions/sync` pages: `added` → insert (external_id = Plaid `transaction_id`, amount sign inverted, pending transactions skipped until posted); `modified` → update date/amount/payee unless the row is excluded; `removed` → soft-exclude. If the user had categorized a removed transaction, it is flagged for review instead. The rule engine runs on inserted rows.
-- `PlaidSyncJob` runs daily via recurring schedule, on the `SYNC_UPDATES_AVAILABLE` webhook, and from a manual "Sync now" button. Retries use exponential backoff (5 attempts).
-- `ITEM_LOGIN_REQUIRED` (from an error or webhook) → item status `login_required`, with a banner offering re-link via Link update mode.
-- Webhooks: `POST /plaid/webhooks`, verified with Plaid's JWT verification (`Plaid-Verification` header, key fetched via `webhook_verification_key/get` and cached). Unverified requests get 401.
-- Env: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (sandbox|production). Without them, Plaid UI is hidden.
-- `demo:seed` creates a fake Plaid item and account with synced-looking transactions (no network).
+Refined and superseded by `2026-10-08-goodbooks-plaid-design.md`.
+
+Summary: a book owner connects a bank with Plaid Link and assigns each Plaid account to a new account in a book they own (business or personal), attaches it to an existing manual or CSV account, or skips it. `PlaidGateway` (faked in tests and demo) is the only code that talks to Plaid. Plaid's `transaction_id` is stored in `plaid_transaction_id`, beside the CSV `external_id`, and each source claims matching rows from the other (same amount, within 3 days), so CSV upload stays available on Plaid-fed accounts without duplicates. Bank removals and edits that would undo the user's work set `review_reason` and show in the inbox instead. Syncs run daily, on verified webhooks, and on demand, with retries and a re-link flow for `ITEM_LOGIN_REQUIRED`.
 
 ## 9. Sub-project 6: Tax engine (federal, MFJ, sole proprietors)
 
