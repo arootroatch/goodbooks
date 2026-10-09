@@ -78,6 +78,18 @@ RSpec.describe "Plaid items" do
     expect(response).to redirect_to(plaid_item_assignment_path(item))
   end
 
+  it "does not send a user to another manager's item when the same bank connection comes back" do
+    other = user_with_role("owner", create(:business))
+    sign_in_as other
+    post plaid_items_path, params: { public_token: "public-x" }
+    theirs = PlaidItem.last
+    sign_in_as owner
+    expect { post plaid_items_path, params: { public_token: "public-x" } }.not_to change(PlaidItem, :count)
+    expect(response).to redirect_to(plaid_items_path)
+    expect(flash[:alert]).to be_present
+    expect(response.location).not_to include(theirs.id.to_s)
+  end
+
   it "reports a save failure after the exchange without a 500 or the access token" do
     sign_in_as owner
     allow(PlaidItem).to receive(:create!).and_raise(ActiveRecord::RecordNotUnique, "dup access-secret")

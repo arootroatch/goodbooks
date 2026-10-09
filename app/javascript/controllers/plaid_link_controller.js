@@ -7,6 +7,15 @@ export default class extends Controller {
   static targets = ["button", "form", "publicToken", "status"]
   static values = { token: String, fake: Boolean }
 
+  // Re-enable the button when the page is restored from cache or the submission fails without navigating.
+  enable() {
+    this.buttonTarget.disabled = false
+  }
+
+  submitEnd(event) {
+    if (!event.detail.success) this.enable()
+  }
+
   async open() {
     this.buttonTarget.disabled = true
     if (this.fakeValue) return this.submit(`public-fake-${Date.now()}`)

@@ -20,7 +20,7 @@ class PlaidItemsController < ApplicationController
     return redirect_to(new_plaid_item_path, alert: "Plaid didn't return a connection. Try again.") if public_token.blank?
 
     exchanged = gateway.exchange_public_token(public_token)
-    existing = PlaidItem.find_by(household: Household.instance, item_id: exchanged[:item_id])
+    existing = PlaidItem.manageable_by(Current.user).find_by(item_id: exchanged[:item_id])
     return redirect_to(plaid_item_assignment_path(existing)) if existing
 
     item = PlaidItem.create!(household: Household.instance, created_by: Current.user, item_id: exchanged[:item_id],
