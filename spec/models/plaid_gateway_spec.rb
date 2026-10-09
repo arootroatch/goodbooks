@@ -111,6 +111,10 @@ RSpec.describe PlaidGateway do
       expect(described_class.from_env(keys.except("PLAID_SECRET"), rails_env: "production".inquiry)).to be_nil
     end
 
+    it "uses the fake gateway outside production when keys are missing" do
+      expect(described_class.from_env({}, rails_env: "development".inquiry)).to be_a(FakePlaidGateway)
+    end
+
     it "builds the webhook URL from APP_HOST" do
       allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with("APP_HOST").and_return("books.example.com")
