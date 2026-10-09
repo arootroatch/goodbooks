@@ -119,8 +119,8 @@ RSpec.describe PlaidFeed::Sync do
       row("b").update!(category: category, categorized_by: "rule", rule: rule)
       row("c").update!(category: category, categorized_by: "user")
       income = create(:category, :income, business: book)
-      row("d").update!(amount_cents: 120_000, category: income, categorized_by: "user")
-      InvoicePayments.link(invoice: create(:invoice, business: book, amount_cents: 120_000), deposit: row("d"))
+      row("d").update!(amount_cents: 120_000, category: income, categorized_by: "rule", rule: rule)
+      expect(InvoicePayments.link(invoice: create(:invoice, business: book, amount_cents: 120_000), deposit: row("d"))).to be_ok
       page(removed: %w[a b c d x].map { { transaction_id: _1, account_id: "acc-checking" } })
       result = sync
       expect(row("a")).to have_attributes(excluded: true, review_reason: nil)
@@ -146,6 +146,15 @@ RSpec.describe PlaidFeed::Sync do
     expect(claimed.reload.category).to be_nil
     expect(checking.transactions.find_by!(plaid_transaction_id: "t2")).to have_attributes(category: software, categorized_by: "rule")
     expect(joint.transactions.sole).to have_attributes(category: groceries, categorized_by: "rule")
+  end
+
+  it "does not run rules on a row the same sync excluded" do
+    software = create(:category, business: book, name: "Software")
+    create(:rule, business: book, value: "adobe", category: software)
+    page(added: [ plaid("t1", amount: 5.0, date: "2026-10-01", name: "ADOBE") ],
+         removed: [ { transaction_id: "t1", account_id: "acc-checking" } ])
+    sync
+    expect(checking.transactions.sole).to have_attributes(excluded: true, category: nil)
   end
 
   it "follows pagination to the last page" do
