@@ -40,7 +40,7 @@ Rejected: storing Plaid's `transaction_id` in `external_id` (the parent's design
 
 ```
 PlaidItem    household, created_by (user), institution_name, item_id (unique), access_token (encrypted),
-             cursor (nullable), status: ok|login_required|error (default ok), last_synced_at, last_error,
+             cursor (nullable), status: ok|login_required|error (default ok), last_synced_at, last_error, consent_expires_at (nullable, renewal due),
              has_many accounts (nullify on destroy)
 Account      + plaid_item_id (nullable FK), + plaid_account_id (string, unique where not null),
              + plaid_mask (nullable), + plaid_name (nullable; the account name as Plaid reports it),
@@ -171,15 +171,16 @@ The preview's existing counts gain `synced_count` (stored on `CsvImport` as a ne
   Any failure → 401 with an empty body, logged at info without the token.
 - **Handling** (after verification, by `item_id`; unknown items → 200 and ignored):
   - `TRANSACTIONS` / `SYNC_UPDATES_AVAILABLE` → enqueue `PlaidSyncJob`;
-  - `ITEM` / `ERROR` with `ITEM_LOGIN_REQUIRED`, and `ITEM` / `PENDING_EXPIRATION` or `PENDING_DISCONNECT` → `status: login_required`;
-  - `ITEM` / `LOGIN_REPAIRED` → `status: ok`, enqueue a sync;
+  - `ITEM` / `ERROR` with `ITEM_LOGIN_REQUIRED` → `status: login_required`;
+  - `ITEM` / `PENDING_EXPIRATION` or `PENDING_DISCONNECT` → the status is unchanged (the item keeps syncing); `consent_expires_at` is set from the payload's `consent_expiration_time`, else seven days out, so the renewal banner shows;
+  - `ITEM` / `LOGIN_REPAIRED` → `status: ok`, `consent_expires_at` cleared, enqueue a sync;
   - anything else → 200, ignored.
 - New dependencies: `plaid` and `jwt` gems, pinned in the Gemfile, both passing bundler-audit.
 
 ## 10. Re-authentication
 
-- An item with `status: login_required` shows a banner on the dashboard and the item page: "Your connection to INSTITUTION needs to be renewed. [Reconnect]" (managers only; others see the text without the button).
-- Reconnect opens Link in update mode (`create_link_token(access_token:)`). On success, the item's status becomes `ok` and a sync is enqueued; no token exchange is needed.
+- An item with `status: login_required` shows a banner on the dashboard and the item page: "Your connection to INSTITUTION needs to be renewed. [Reconnect]" (managers only; others see the text without the button). An item that still works but has `consent_expires_at` set shows "Your connection to INSTITUTION expires soon. Renew it to keep syncing." with the same Reconnect link.
+- Reconnect opens Link in update mode (`create_link_token(access_token:)`). On success, the item's status becomes `ok`, `consent_expires_at` is cleared and a sync is enqueued; no token exchange is needed. Reconnecting an item that is neither `login_required`, `error` nor due for renewal does nothing and redirects with "This connection doesn't need reconnecting."
 
 ## 11. Configuration and deployment
 

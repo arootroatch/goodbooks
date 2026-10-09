@@ -40,6 +40,19 @@ RSpec.describe PlaidFeed::Sync do
     expect(Transaction.count).to eq(0)
   end
 
+  it "treats an archived account like an unassigned one: no inserts, claims, modifications or removals" do
+    row = create(:transaction, account: checking, plaid_transaction_id: "kept", posted_on: Date.new(2026, 10, 1), amount_cents: -100)
+    csv = create(:transaction, account: checking, posted_on: Date.new(2026, 10, 2), amount_cents: -450, payee: "SQ *COFFEE 123", external_id: "h1")
+    checking.update!(archived_at: Time.current)
+    page(added: [ plaid("t1", amount: 4.5, date: "2026-10-01", merchant_name: "Coffee") ],
+         modified: [ plaid("kept", amount: 9.0, date: "2026-10-03") ], removed: [ { transaction_id: "kept" } ])
+    result = sync
+    expect(result).to have_attributes(inserted: 0, claimed: 0, modified: 0, flagged: 0, excluded: 0)
+    expect(checking.transactions.count).to eq(2)
+    expect(csv.reload.plaid_transaction_id).to be_nil
+    expect(row.reload).to have_attributes(amount_cents: -100, excluded: false, review_reason: nil)
+  end
+
   it "claims a matching CSV row instead of inserting a duplicate, leaving the user's version alone" do
     software = create(:category, business: book, name: "Software")
     csv = create(:transaction, account: checking, posted_on: Date.new(2026, 10, 2), amount_cents: -450, payee: "SQ *COFFEE 123",

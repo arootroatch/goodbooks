@@ -15,6 +15,34 @@ RSpec.describe "Reconnecting a bank" do
     expect(response).to redirect_to(plaid_item_path(item))
   end
 
+  it "clears the renewal-due timestamp on reconnect, and reconnects an item that is only due for renewal" do
+    item.update!(status: "ok", consent_expires_at: 3.days.from_now)
+    sign_in_as owner
+    expect { post plaid_item_reconnection_path(item) }.to have_enqueued_job(PlaidSyncJob).with(item)
+    expect(item.reload).to have_attributes(status: "ok", consent_expires_at: nil)
+  end
+
+  it "does nothing for an item that doesn't need reconnecting" do
+    item.update!(status: "ok", last_error: nil)
+    sign_in_as owner
+    expect { post plaid_item_reconnection_path(item) }.not_to have_enqueued_job
+    expect(response).to redirect_to(plaid_item_path(item))
+    expect(flash[:notice]).to eq("This connection doesn't need reconnecting.")
+  end
+
+  it "shows an expires-soon banner for an item that is still working but due for renewal" do
+    item.update!(status: "ok", consent_expires_at: 3.days.from_now)
+    sign_in_as owner
+    get root_path
+    expect(response.body).to include("Your connection to Demo Bank expires soon. Renew it to keep syncing.", new_plaid_item_reconnection_path(item))
+    expect(response.body).not_to include("needs to be renewed")
+
+    sign_in_as user_with_role("viewer", business)
+    get root_path
+    expect(response.body).to include("expires soon")
+    expect(response.body).not_to include(new_plaid_item_reconnection_path(item))
+  end
+
   it "404s for users who can't manage the item" do
     sign_in_as user_with_role("owner", create(:business))
     get new_plaid_item_reconnection_path(item)

@@ -11,7 +11,9 @@ class PlaidReconnectionsController < ApplicationController
 
   # Link's update mode needs no token exchange: the existing access token works again once the user has logged in.
   def create
-    @item.update!(status: "ok", last_error: nil)
+    return redirect_to plaid_item_path(@item), notice: "This connection doesn't need reconnecting." unless @item.reconnectable?
+
+    @item.update!(status: "ok", last_error: nil, consent_expires_at: nil)
     PlaidSyncJob.perform_later(@item)
     redirect_to plaid_item_path(@item), notice: "Reconnected #{@item.institution_name}. Syncing now."
   end
