@@ -104,4 +104,18 @@ RSpec.describe DemoSeeder do
     hinted = Transaction.inbox.includes(:account).select { matcher.for(_1, _1.account.business_id).any? }
     expect(hinted.size).to eq(2)
   end
+
+  it "connects a fake Demo Bank feeding a business and the personal book without duplicating CSV history" do
+    run
+    pat = User.find_by!(email_address: "pat@example.com")
+    item = PlaidItem.sole
+    expect(item).to have_attributes(institution_name: "Demo Bank", status: "ok", created_by: pat)
+    expect(item.last_synced_at).to be_present
+    expect(item.accounts.map(&:name)).to contain_exactly("Operating (Demo Bank)", "Business Visa (Demo Bank)", "Joint Checking")
+    joint = Account.find_by!(name: "Joint Checking")
+    expect(joint.transactions.where.not(plaid_transaction_id: nil).where.not(external_id: nil).count).to be >= 5
+    expect(joint.transactions.where(external_id: nil)).to be_empty
+    expect(Transaction.where.not(plaid_transaction_id: nil).where(categorized_by: "rule")).to exist
+    expect(Transaction.needs_review.sole).to have_attributes(payee: "USPS", review_reason: "removed_by_bank")
+  end
 end
