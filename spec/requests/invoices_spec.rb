@@ -144,4 +144,17 @@ RSpec.describe "Invoices" do
       expect(Invoice.exists?(invoice.id)).to be(false)
     end
   end
+
+  it "shows and saves sales tax only when the business collects it" do
+    editor = user_with_role("editor", business)
+    sign_in_as editor
+    get new_business_invoice_path(business)
+    expect(response.body).not_to include("invoice[sales_tax]")
+    create(:sales_tax_profile, business: business)
+    get new_business_invoice_path(business)
+    expect(response.body).to include("invoice[sales_tax]")
+    post business_invoices_path(business), params: { invoice: { client_id: client.id, number: "T-1", issue_date: "2026-03-01",
+                                                                due_date: "2026-03-31", amount: "1092.50", sales_tax: "92.50" } }
+    expect(business.invoices.find_by!(number: "T-1").sales_tax_cents).to eq(9_250)
+  end
 end
