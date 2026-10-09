@@ -39,6 +39,14 @@ RSpec.describe Transaction, "linked to an invoice" do
     expect(deposit.allocated_cents).to eq(120_000)
     expect(deposit.unallocated_cents).to eq(0)
   end
+
+  it "counts the processor fee toward the unallocated amount" do
+    deposit.update!(processor_fee_cents: 500)
+    expect(deposit.unallocated_cents).to eq(500)
+    expect(Transaction.linkable_deposits).to include(deposit)
+    expect(deposit.update(processor_fee_cents: 0)).to be(true)
+    expect(deposit.update(amount_cents: 119_000, processor_fee_cents: 999)).to be(false)
+  end
 end
 
 RSpec.describe Transaction, ".linkable_deposits" do

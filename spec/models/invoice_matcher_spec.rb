@@ -27,4 +27,10 @@ RSpec.describe InvoiceMatcher do
     create(:invoice, business: business, amount_cents: 1_000)
     expect(described_class.for_businesses([ business.id ]).for(create(:transaction, account: account, amount_cents: -1_000), business.id)).to eq([])
   end
+
+  it "matches on the deposit's gross, so a fee-reduced payout matches its invoice" do
+    invoice = create(:invoice, business: business, amount_cents: 100_000)
+    payout = create(:transaction, account: account, amount_cents: 97_070, processor_fee_cents: 2_930)
+    expect(described_class.for_businesses([ business.id ]).for(payout, business.id)).to eq([ invoice ])
+  end
 end
