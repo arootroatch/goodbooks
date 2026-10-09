@@ -21,8 +21,7 @@ class InvoicePaymentsController < ApplicationController
     @exact = deposits.with_unallocated(@invoice.outstanding_cents).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
     @others = deposits.where(posted_on: @from..).where.not(id: @exact.map(&:id)).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
     taxed = @invoice.sales_tax_cents.positive?
-    @gross_receipts = InvoicePayments.gross_receipts_categories(@business)
-    @gross_receipts = @gross_receipts.select(&:taxable?) if taxed
+    @gross_receipts = InvoicePayments.category_choices_for(@invoice, InvoicePayments.gross_receipts_categories(@business))
     @income_categories = @business.categories.active.income.order(:name)
     @income_categories = @income_categories.where(sales_tax_treatment: "taxable") if taxed
   end

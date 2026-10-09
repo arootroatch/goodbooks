@@ -11,6 +11,12 @@ class InvoicePayments
     business.categories.gross_receipts.order(:name).to_a
   end
 
+  # Gross-receipts categories a deposit may take when paying this invoice; a taxed invoice needs a taxable one.
+  def self.category_choices_for(invoice, categories)
+    categories = categories.select(&:gross_receipts?)
+    invoice.sales_tax_cents.positive? ? categories.select(&:taxable?) : categories
+  end
+
   def self.link(invoice:, deposit:, amount_cents: nil, category: nil, processor_fee_cents: nil)
     ApplicationRecord.transaction do
       invoice.lock!
