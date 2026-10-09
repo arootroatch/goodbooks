@@ -1,6 +1,8 @@
 # The only writer of InvoicePayment rows. Locks (and so re-reads) the invoice and the deposit,
 # then lets Invoice#sync_payment_status! decide paid vs. sent.
 class InvoicePayments
+  TAXED_INVOICE_MESSAGE = "This invoice includes sales tax — categorize the deposit as a taxable sale.".freeze
+
   Result = Data.define(:payment, :error) do
     def ok? = error.nil?
   end
@@ -24,13 +26,23 @@ class InvoicePayments
       )
       next failure(allocation.error) unless allocation.ok?
 
-      income = income_category_for(deposit, category)
-      next failure("Choose an income category for this deposit.") unless income
+      income = income_category_for(deposit, category, invoice)
+      unless income
+        next failure(invoice.sales_tax_cents.positive? && category ? TAXED_INVOICE_MESSAGE : "Choose an income category for this deposit.")
+      end
+
+      share = Invoices::TaxShare.call(
+        invoice_amount_cents: invoice.amount_cents, invoice_tax_cents: invoice.sales_tax_cents, paid_before_cents: invoice.paid_cents,
+        shares_before_cents: invoice.payments.sum(:sales_tax_cents), payment_cents: allocation.amount_cents
+      )
+      if share.positive? && deposit.total_sales_tax_cents + share >= deposit.gross_cents
+        next failure("Sales tax on this deposit would reach its gross amount — lower its direct sales tax first.")
+      end
 
       deposit.assign_attributes(category: income, categorized_by: "user") unless deposit.category_id == income.id
       next failure(deposit.errors.full_messages.to_sentence) if deposit.changed? && !deposit.save
 
-      payment = invoice.payments.create!(deposit: deposit, amount_cents: allocation.amount_cents)
+      payment = invoice.payments.create!(deposit: deposit, amount_cents: allocation.amount_cents, sales_tax_cents: share)
       invoice.sync_payment_status!
       Result.new(payment: payment, error: nil)
     end
@@ -55,16 +67,21 @@ class InvoicePayments
     elsif deposit.transfer? then "Transfers can't pay an invoice."
     elsif deposit.excluded? then "Excluded transactions can't pay an invoice."
     elsif deposit.category && !deposit.category.income? then "Only deposits in an income category can pay an invoice."
+    elsif invoice.sales_tax_cents.positive? && deposit.category && !deposit.category.taxable? then TAXED_INVOICE_MESSAGE
     elsif invoice.payments.exists?(deposit_id: deposit.id) then "That deposit is already linked to this invoice."
     end
   end
 
-  def self.income_category_for(deposit, requested)
+  def self.income_category_for(deposit, requested, invoice)
     return deposit.category if deposit.category
-    return requested if requested && deposit.business.categories.active.income.exists?(requested.id)
-    return nil if requested
 
-    candidates = gross_receipts_categories(deposit.business)
+    taxed = invoice.sales_tax_cents.positive?
+    if requested
+      allowed = deposit.business.categories.active.income.exists?(requested.id) && (!taxed || requested.taxable?)
+      return allowed ? requested : nil
+    end
+
+    candidates = taxed ? deposit.business.categories.taxable_gross_receipts.order(:name).to_a : gross_receipts_categories(deposit.business)
     candidates.first if candidates.one?
   end
 

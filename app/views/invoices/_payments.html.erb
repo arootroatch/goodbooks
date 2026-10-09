@@ -1,7 +1,7 @@
 <h2>Payments</h2>
 <% if payments.any? %>
   <table>
-    <thead><tr><th>Deposit date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th></th></tr></thead>
+    <thead><tr><th>Deposit date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th class="num">Sales tax</th><th></th></tr></thead>
     <tbody>
       <% payments.each do |payment| %>
         <tr id="<%= dom_id(payment) %>">
@@ -9,6 +9,7 @@
           <td><%= payment.deposit.account.name %></td>
           <td><%= payment.deposit.payee %></td>
           <td class="num"><%= money(payment.amount_cents) %></td>
+          <td class="num"><%= money(payment.sales_tax_cents) %></td>
           <td>
             <%= button_to "Unlink", business_invoice_payment_path(@business, invoice, payment), method: :delete, form_class: "inline-form" if current_membership.can_edit? %>
           </td>

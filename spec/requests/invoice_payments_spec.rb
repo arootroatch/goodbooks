@@ -143,4 +143,17 @@ RSpec.describe "Invoice payments" do
     get new_business_invoice_payment_path(business, invoice)
     expect(response.body).to include('aria-label="Processor fee"', 'name="proposed_amount"')
   end
+
+  it "offers only taxable categories for a taxed invoice so the single-taxable default links" do
+    create(:sales_tax_profile, business: business)
+    create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    taxed = create(:invoice, business: business, number: "INV-TAX", amount_cents: 109_250, sales_tax_cents: 9_250)
+    deposit = create(:transaction, account: account, amount_cents: 109_250, payee: "TAXED CHECK", posted_on: Date.current - 1)
+    sign_in_as user_with_role("editor", business)
+    get new_business_invoice_payment_path(business, taxed)
+    expect(response.body).not_to include('aria-label="Income category"')
+    post business_invoice_payments_path(business, taxed), params: { deposit_id: deposit.id }
+    expect(flash[:notice]).to eq("Payment recorded.")
+    expect(deposit.reload.category).to eq(sales)
+  end
 end
