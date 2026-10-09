@@ -9,6 +9,9 @@ services:
       APP_HOST: "" # Set before deploying. See README.
       SOLID_QUEUE_IN_PUMA: "true"
       TIME_ZONE: "Central Time (US & Canada)" # Rails zone name; "today" rolls over at local midnight.
+      PLAID_CLIENT_ID: "" # Optional Plaid bank feeds: set all three or none. See README.
+      PLAID_SECRET: ""
+      PLAID_ENV: "" # sandbox or production
     volumes:
       - goodbooks_storage:/rails/storage
       - ./config/master.key:/rails/config/master.key:ro
