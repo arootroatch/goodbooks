@@ -1,6 +1,6 @@
-<% gross_receipts = categories.select(&:gross_receipts?) %>
 <div class="invoice-hint">
   <% invoices.each do |invoice| %>
+    <% gross_receipts = InvoicePayments.category_choices_for(invoice, categories) %>
     <div>
       Matches <%= link_to invoice.number, business_invoice_path(business, invoice) %> · <%= invoice.client.name %> · due <%= invoice.due_date.strftime("%b %-d") %>
       <% if gross_receipts.empty? %>
