@@ -14,9 +14,9 @@
   --accent-fg: light-dark(#3730a3, #c7d2fe);
   --on-accent: light-dark(#ffffff, #0e1020);
   --ring: light-dark(rgb(79 70 229 / .25), rgb(129 140 248 / .35));
-  --neg: light-dark(#e11d48, #fb7185);
+  --neg: light-dark(#d91a44, #fb7185);
   --neg-soft: light-dark(#fff1f2, #2a0f1a);
-  --pos: light-dark(#0f9f6e, #34d399);
+  --pos: light-dark(#0b8059, #34d399);
   --pos-soft: light-dark(#ecfdf5, #062a1e);
   --warn: light-dark(#b45309, #fbbf24);
   --warn-soft: light-dark(#fffbeb, #2a1f05);
