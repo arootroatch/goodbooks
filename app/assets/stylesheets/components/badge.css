@@ -1,0 +1,14 @@
+.badge {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.6;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+.badge-pos { background: var(--pos-soft); color: var(--pos); }
+.badge-warn { background: var(--warn-soft); color: var(--warn); }
+.badge-neg { background: var(--neg-soft); color: var(--neg); }
+.badge-muted { background: var(--hover); color: var(--muted); }

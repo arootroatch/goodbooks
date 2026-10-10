@@ -1,0 +1,19 @@
+button, input[type=submit], input[type=button] {
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+button:hover, input[type=submit]:hover, input[type=button]:hover { background: var(--hover); }
+form.button_to { display: inline; }
+
+.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.danger { color: var(--neg); }
+.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.ghost:hover { color: var(--fg); }
