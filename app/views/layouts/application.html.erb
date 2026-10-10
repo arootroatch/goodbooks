@@ -25,7 +25,12 @@
 
   <body>
     <% if authenticated? %>
-      <div class="app-shell">
+      <div class="app-shell" data-controller="sidebar">
+        <header class="topbar no-print">
+          <button type="button" class="ghost" aria-controls="sidebar" aria-expanded="false"
+                  data-sidebar-target="button" data-action="sidebar#toggle">Menu</button>
+          <%= link_to root_path, class: "auth-brand" do %><span class="switcher-dot"></span>goodbooks<% end %>
+        </header>
         <%= render "layouts/sidebar" %>
         <main class="app-main">
           <%= render "layouts/flash" %>
