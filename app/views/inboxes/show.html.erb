@@ -1,4 +1,3 @@
-<%= business_nav @business %>
 <h1>Inbox (<%= @total %>)</h1>
 <%= render "shared/inbox_truncation", shown: @transactions.size, total: @total %>
 <% if current_membership.can_edit? %>

@@ -1,0 +1,8 @@
+<details class="switcher">
+  <summary><span class="switcher-dot"></span><%= @business&.persisted? ? @business.name : "goodbooks" %></summary>
+  <ul>
+    <% Current.user.accessible_businesses.order(:name).each do |business| %>
+      <li><%= link_to business.name, business_path(business) %></li>
+    <% end %>
+  </ul>
+</details>

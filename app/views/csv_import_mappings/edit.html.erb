@@ -1,4 +1,3 @@
-<%= business_nav @business %>
 <h1>Map columns for <%= @account.name %></h1>
 <% if @file_error %><p class="errors"><%= @file_error %></p><% end %>
 <%= form_with url: edit_business_account_csv_import_mapping_path(@business, @account, @import), method: :get, class: "inline-form" do |f| %>

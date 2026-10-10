@@ -5,8 +5,4 @@ module ApplicationHelper
 
     tag.span("(#{Money.new(-cents)})", class: "neg")
   end
-
-  def business_nav(business)
-    render "businesses/nav", business: business
-  end
 end
