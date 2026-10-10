@@ -14,7 +14,7 @@ Balanced: QuickBooks-style workflows with modern Vercel/Next.js polish, leaning 
 ### Success criteria
 
 - Every existing page looks deliberate in light and dark mode without per-view rewrites.
-- The four open PRs rebase onto this work with conflicts limited to `application.css` and the layout nav (a few lines each), and their views pick up the styles unchanged.
+- The four open PRs rebase onto this work with conflicts limited to `application.css` and the layout nav (a few lines each). Their views pick up the styles unchanged apart from deleting their `business_nav` lines.
 - The business page becomes an overview with KPIs and two charts.
 - No build step and no new gems. Propshaft + importmap stays the whole asset pipeline.
 - Test suite stays green and test output stays clean.
@@ -24,7 +24,7 @@ Balanced: QuickBooks-style workflows with modern Vercel/Next.js polish, leaning 
 | Topic | Decision |
 |---|---|
 | Visual direction | "Ink & indigo": blue-tinted neutrals, indigo accent (Stripe/Mercury territory) |
-| Color modes | Light + dark, following `prefers-color-scheme`. No manual toggle. |
+| Color modes | Light + dark. Follows `prefers-color-scheme` by default; a System / Light / Dark toggle overrides it, stored in a cookie. |
 | Navigation | Left sidebar with a business switcher. Drawer on narrow screens. |
 | Typeface | IBM Plex Sans for UI, IBM Plex Mono for amounts. Self-hosted woff2. |
 | CSS approach | Plain modern CSS with custom-property tokens. Plain elements are styled first; a small set of opt-in classes. |
@@ -34,7 +34,14 @@ Balanced: QuickBooks-style workflows with modern Vercel/Next.js polish, leaning 
 
 ## 3. Tokens
 
-All tokens are CSS custom properties on `:root` in `tokens.css`. Dark values override them in `@media (prefers-color-scheme: dark)`. Components only ever reference tokens, never raw colors, so dark mode needs no component-level CSS.
+All tokens are CSS custom properties on `:root` in `tokens.css`. Components only ever reference tokens, never raw colors, so dark mode needs no component-level CSS.
+
+Dark values apply in two cases:
+
+- `:root[data-theme="dark"]`: the user chose Dark.
+- `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … } }`: the user chose System (no `data-theme` attribute) and the OS is dark.
+
+The dark values are written once, in a shared custom-property block used by both selectors, so they cannot drift apart.
 
 ### Color
 
@@ -119,17 +126,33 @@ Opt-in classes, kept deliberately few:
 1. Business switcher, showing the current business, or "goodbooks" when no business is in context.
 2. **Business section** (only when `@business` is set): Overview, Inbox (with uncategorized-count badge), Transactions, Accounts, Categories, Rules, Mileage. Then a **Reports** group: Profit & loss, Schedule C. Members appears only for owners, the same as today.
 3. **Household section:** All businesses, Inbox (household), Household P&L, Tax parameters, Invites, People. Each keeps today's permission check verbatim.
-4. Footer: current user's name and the Sign out button.
+4. Footer: current user's name, the theme toggle (section 6a), and the Sign out button.
 
 The active link gets `aria-current="page"`, styled with `--accent-soft` / `--accent-fg`.
 
-### `business_nav`
+### Removing `business_nav`
 
-24 views call `<%= business_nav @business %>`. The sidebar replaces that in-page nav. In this PR `business_nav` returns `nil`, and `businesses/_nav.html.erb` is deleted. The call sites stay untouched to keep PR rebases clean. Removing them is a later cleanup.
+The sidebar replaces the in-page business nav, so it is removed entirely in this PR, leaving no dead code:
+
+- the `business_nav` helper in `ApplicationHelper`
+- `app/views/businesses/_nav.html.erb`
+- the `.business-nav` CSS rules
+- all 24 `<%= business_nav @business %>` call sites on `main`
+
+The feature PRs add their own call sites; those are deleted during each rebase (section 12).
+
+### 6a. Theme toggle
+
+- **Control:** a three-way segmented control in the sidebar footer: System / Light / Dark, with icons and accessible labels. On signed-out pages the same control sits below the card.
+- **Storage:** a `theme` cookie (`system` | `light` | `dark`), one year, `SameSite=Lax`. Per device, no database column. A missing or unknown value means `system`.
+- **Server render:** the layout sets `data-theme="light"` or `data-theme="dark"` on `<html>` from the cookie, and omits the attribute for `system`. The page therefore renders in the right theme on first paint, with no flash.
+- **Client:** `theme_controller.js` (Stimulus) writes the cookie and updates `data-theme` immediately, without a reload. Each option is a `button_to` form that sends `PATCH /theme`. The controller intercepts the submit; with no JS the form submits normally, sets the cookie, and redirects back.
+- **Endpoint:** `ThemesController#update` (`resource :theme, only: :update`). It accepts only the three known values, needs no authentication (it touches only a display cookie), and redirects to the referer or the root. It is CSRF-protected like every other form.
+- Charts need nothing extra; they already read CSS variables.
 
 ### Narrow screens
 
-Below 800px the sidebar becomes an off-canvas drawer opened by a menu button in a slim top bar. A small Stimulus controller (`sidebar_controller.js`) toggles it. This is the only new JavaScript.
+Below 800px the sidebar becomes an off-canvas drawer opened by a menu button in a slim top bar. A small Stimulus controller (`sidebar_controller.js`) toggles it. This and `theme_controller.js` are the only new JavaScript.
 
 ### Signed-out pages
 
@@ -182,12 +205,15 @@ New:
 - `app/views/layouts/{_sidebar,_business_switcher,_flash}.html.erb`
 - `app/helpers/charts_helper.rb`
 - `app/models/reports/monthly_totals.rb`
-- `app/javascript/controllers/sidebar_controller.js`
+- `app/javascript/controllers/{sidebar,theme}_controller.js`
+- `app/controllers/themes_controller.rb`
 
 Changed:
 - `app/views/layouts/application.html.erb`
 - `app/assets/stylesheets/application.css` (reduced to anything not moved into the new files)
-- `app/helpers/application_helper.rb` (`money`, `business_nav`)
+- `app/helpers/application_helper.rb` (`money` changes; `business_nav` removed)
+- `config/routes.rb` (`resource :theme`)
+- The 24 views that call `business_nav` (that line removed)
 - `app/controllers/businesses_controller.rb`
 - `app/views/businesses/show.html.erb`
 
@@ -198,13 +224,15 @@ Deleted:
 
 TDD throughout, with one failing test at a time.
 
-- **Helper specs:** `money` (negative, positive, zero, nil, HTML safety) and `business_nav` returning nil. `ChartsHelper`: bar count, bar heights proportional to values, labels, `<title>` text, `aria-label`, zero and empty data, faded last month.
+- **Helper specs:** `money` (negative, positive, zero, nil, HTML safety). `ChartsHelper`: bar count, bar heights proportional to values, labels, `<title>` text, `aria-label`, zero and empty data, faded last month.
 - **Model specs:** `Reports::MonthlyTotals` zero-fills months, separates income from expense, excludes uncountable and other businesses' transactions, and respects `through_month`.
 - **Request specs:**
   - Overview: shows KPIs, charts, top expenses, inbox preview and empty states. The period control sets the range and marks the current segment.
   - Sidebar: business section appears only with a business in context. Every role-gated link stays hidden from roles that can't see it today (mirror the existing nav conditions).
   - Signed-out pages render without the sidebar.
-- **System spec (`js: true`):** at a narrow viewport, the menu button opens and closes the drawer.
+  - Theme: the `theme` cookie maps to `data-theme` on `<html>` (light, dark, absent for system or garbage). `PATCH /theme` sets the cookie for valid values, ignores invalid ones, and redirects back, signed in or out.
+  - No page renders the old in-page business nav.
+- **System specs (`js: true`):** at a narrow viewport, the menu button opens and closes the drawer. Choosing Dark in the toggle switches `data-theme` without a reload and survives a page visit.
 - **Existing suite** stays green. Specs that asserted the old `-$` text on screen are updated to the parentheses format.
 - **Visual check:** run the app with demo seed data and screenshot the overview, inbox, transactions, P&L, a form, and sign-in, in light and dark, before declaring done.
 
@@ -212,14 +240,12 @@ TDD throughout, with one failing test at a time.
 
 Stack: `main` ← #6 invoices ← #7 tithing ← (#8 sales-tax, #9 plaid).
 
-1. Rebase #6 onto the new `main`. Resolve `application.css`: move its ~7 lines into the right component file. Resolve the layout nav: move its new links into `_sidebar.html.erb` under Household.
+1. Rebase #6 onto the new `main`. Resolve `application.css`: move its ~7 lines into the right component file. Resolve the layout nav: move its new links into `_sidebar.html.erb` under Household. Delete the `business_nav` calls in the PR's own views (about 9 in #6, a few in each later PR); any missed call raises `NoMethodError` in that PR's request specs.
 2. Rebase #7 onto #6, then #8 and #9 onto #7, the same way.
 3. Each PR's own views need no changes to be styled. Optional per-PR polish (page headers, badges for invoice status) is a separate small commit, not part of the rebase.
 
 ## 13. Out of scope
 
 - Per-page redesigns beyond what element styles and the shell provide.
-- Manual theme toggle.
-- Removing the `business_nav` call sites.
 - Household-level overview charts.
 - Interactive charts (zoom, crosshair).
