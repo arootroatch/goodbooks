@@ -9,11 +9,11 @@ RSpec.describe DemoSeeder do
   it "builds a household with two businesses, three users, and a year of activity" do
     run
     expect(Household.count).to eq(1)
-    expect(Business.business_kind.pluck(:name)).to contain_exactly("Pat Consulting", "Jordan Design Studio")
-    pat, jordan, accountant = %w[pat jordan accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
-    expect(pat).to be_household_owner
-    expect(jordan.membership_for(Business.find_by!(name: "Jordan Design Studio"))).to be_editor
-    expect(jordan.membership_for(Business.find_by!(name: "Pat Consulting"))).to be_viewer
+    expect(Business.business_kind.pluck(:name)).to contain_exactly("Sound Roots Productions", "Whitney Root Gardens")
+    alex, whitney, accountant = %w[alex whitney accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
+    expect(alex).to be_household_owner
+    expect(whitney.membership_for(Business.find_by!(name: "Whitney Root Gardens"))).to be_editor
+    expect(whitney.membership_for(Business.find_by!(name: "Sound Roots Productions"))).to be_viewer
     expect(accountant.can_view_household?).to be(true)
     expect(Transaction.inbox.count).to be > 0
     expect(Transaction.where.not(category_id: nil).count).to be > 50
@@ -26,9 +26,9 @@ RSpec.describe DemoSeeder do
   it "seeds a personal book that is one or two weeks behind on tithe, hidden from the accountant" do
     run
     book = Business.personal.sole
-    pat, jordan, accountant = %w[pat jordan accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
-    expect(pat.membership_for(book)).to be_owner
-    expect(jordan.membership_for(book)).to be_editor
+    alex, whitney, accountant = %w[alex whitney accountant].map { User.find_by!(email_address: "#{_1}@example.com") }
+    expect(alex.membership_for(book)).to be_owner
+    expect(whitney.membership_for(book)).to be_editor
     expect(accountant.membership_for(book)).to be_nil
     expect(book.tithe_start_on).to be_sunday
     ledger = Tithe.ledger_for(book, today: today)
@@ -50,8 +50,8 @@ RSpec.describe DemoSeeder do
 
   it "uses a known TOTP secret and prints the logins" do
     run
-    expect(User.find_by!(email_address: "pat@example.com").otp_secret).to eq(DemoSeeder::OTP_SECRET)
-    expect(out.string).to include("pat@example.com", DemoSeeder::PASSWORD, DemoSeeder::OTP_SECRET)
+    expect(User.find_by!(email_address: "alex@example.com").otp_secret).to eq(DemoSeeder::OTP_SECRET)
+    expect(out.string).to include("alex@example.com", DemoSeeder::PASSWORD, DemoSeeder::OTP_SECRET)
   end
 
   it "refuses to run twice" do

@@ -2,8 +2,8 @@ class DemoSeeder
   PASSWORD = "demo password 123"
   OTP_SECRET = "GOODBOOKSDEMOSECRETKEYABCDEFGHIJ"
   USERS = [
-    [ "pat@example.com", "Pat Example" ],
-    [ "jordan@example.com", "Jordan Example" ],
+    [ "alex@example.com", "Alex" ],
+    [ "whitney@example.com", "Whitney" ],
     [ "accountant@example.com", "Avery Accountant" ]
   ].freeze
 
@@ -29,23 +29,23 @@ class DemoSeeder
 
   def build
     household = Household.create!(name: "Example Household")
-    pat, jordan, accountant = USERS.map.with_index do |(email, name), i|
+    alex, whitney, accountant = USERS.map.with_index do |(email, name), i|
       User.create!(email_address: email, name: name, password: PASSWORD, household_owner: i.zero?,
                    otp_secret: OTP_SECRET, otp_enabled_at: Time.current)
     end
-    pat_person = household.people.create!(name: pat.name, user: pat)
-    jordan_person = household.people.create!(name: jordan.name, user: jordan)
+    alex_person = household.people.create!(name: alex.name, user: alex)
+    whitney_person = household.people.create!(name: whitney.name, user: whitney)
 
-    consulting = BusinessProvisioner.call(household.businesses.new(name: "Pat Consulting", person: pat_person), owner: pat)
-    studio = BusinessProvisioner.call(household.businesses.new(name: "Jordan Design Studio", person: jordan_person), owner: pat)
-    Membership.create!(user: jordan, business: studio, role: "editor")
-    Membership.create!(user: jordan, business: consulting, role: "viewer")
-    [ consulting, studio ].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
+    sound_roots = BusinessProvisioner.call(household.businesses.new(name: "Sound Roots Productions", person: alex_person), owner: alex)
+    gardens = BusinessProvisioner.call(household.businesses.new(name: "Whitney Root Gardens", person: whitney_person), owner: alex)
+    Membership.create!(user: whitney, business: gardens, role: "editor")
+    Membership.create!(user: whitney, business: sound_roots, role: "viewer")
+    [ sound_roots, gardens ].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
 
-    seed_business(consulting, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
-    seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
-    seed_invoices(consulting, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
-    seed_invoices(studio, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "JDS-")
+    seed_business(sound_roots, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
+    seed_business(gardens, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
+    seed_invoices(sound_roots, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
+    seed_invoices(gardens, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "WRG-")
     seed_personal(household)
   end
 
@@ -160,8 +160,8 @@ class DemoSeeder
     sundays.each do |sunday|
       add.(sunday + 1, "KROGER", -(9_000 + @random.rand(6_000)), "Groceries")
       add.(sunday + 3, "LOCAL TAQUERIA", -(2_000 + @random.rand(3_000)), "Dining")
-      add.(sunday + 5, "TRANSFER FROM PAT CONSULTING", 150_000, "Owner draws")
-      add.(sunday + 5, "TRANSFER FROM JORDAN DESIGN STUDIO", 80_000, "Owner draws")
+      add.(sunday + 5, "TRANSFER FROM SOUND ROOTS PRODUCTIONS", 150_000, "Owner draws")
+      add.(sunday + 5, "TRANSFER FROM WHITNEY ROOT GARDENS", 80_000, "Owner draws")
     end
 
     # Weeks whose Friday draws have landed owe tithe; pay them in pairs, leaving the last one or two weeks unpaid.
