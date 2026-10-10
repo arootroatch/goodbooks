@@ -2,8 +2,8 @@ class DemoSeeder
   PASSWORD = "demo password 123"
   OTP_SECRET = "GOODBOOKSDEMOSECRETKEYABCDEFGHIJ"
   USERS = [
-    [ "pat@example.com", "Pat Example" ],
-    [ "jordan@example.com", "Jordan Example" ],
+    [ "alex@example.com", "Alex" ],
+    [ "whitney@example.com", "Whitney" ],
     [ "accountant@example.com", "Avery Accountant" ]
   ].freeze
 
@@ -29,23 +29,24 @@ class DemoSeeder
 
   def build
     household = Household.create!(name: "Example Household")
-    pat, jordan, accountant = USERS.map.with_index do |(email, name), i|
+    alex, whitney, accountant = USERS.map.with_index do |(email, name), i|
       User.create!(email_address: email, name: name, password: PASSWORD, household_owner: i.zero?,
                    otp_secret: OTP_SECRET, otp_enabled_at: Time.current)
     end
-    pat_person = household.people.create!(name: pat.name, user: pat)
-    jordan_person = household.people.create!(name: jordan.name, user: jordan)
+    alex_person = household.people.create!(name: alex.name, user: alex)
+    whitney_person = household.people.create!(name: whitney.name, user: whitney)
 
-    consulting = BusinessProvisioner.call(household.businesses.new(name: "Pat Consulting", person: pat_person), owner: pat)
-    studio = BusinessProvisioner.call(household.businesses.new(name: "Jordan Design Studio", person: jordan_person), owner: pat)
-    Membership.create!(user: jordan, business: studio, role: "editor")
-    Membership.create!(user: jordan, business: consulting, role: "viewer")
-    [ consulting, studio ].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
+    sound_roots = BusinessProvisioner.call(household.businesses.new(name: "Sound Roots Productions", person: alex_person), owner: alex)
+    gardens = BusinessProvisioner.call(household.businesses.new(name: "Whitney Root Gardens", person: whitney_person), owner: alex)
+    Membership.create!(user: whitney, business: gardens, role: "editor")
+    Membership.create!(user: whitney, business: sound_roots, role: "viewer")
+    [ sound_roots, gardens ].each { Membership.create!(user: accountant, business: _1, role: "viewer") }
 
-    seed_business(consulting, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
-    seed_business(studio, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
-    seed_invoices(consulting, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
-    seed_invoices(studio, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "JDS-")
+    seed_business(sound_roots, client: "ACME CORP", income_cents: 850_000, software: [ "ADOBE CREATIVE CLOUD", 5_499 ])
+    seed_business(gardens, client: "BLUE OX DESIGN CO", income_cents: 520_000, software: [ "FIGMA", 1_500 ])
+    seed_invoices(sound_roots, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
+    seed_invoices(gardens, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "WRG-")
+    seed_personal(household)
   end
 
   def seed_business(business, client:, income_cents:, software:)
@@ -128,6 +129,53 @@ class DemoSeeder
     match = add_invoice.(third, 245_000, @today - 20)
     bank.transactions.create!(posted_on: @today, payee: "#{third.name.upcase} ACH", amount_cents: match.amount_cents,
                               external_id: "demo-#{business.id}-match")
+  end
+
+  # Weekly owner draws from each business (tithable), groceries and dining, monthly utilities and refunds
+  # (not tithable), a savings transfer, and Grace Church checks that leave one or two weeks of tithe unpaid.
+  def seed_personal(household)
+    book = PersonalBookProvisioner.call(household)
+    start = @today << 12
+    start += (7 - start.wday) % 7
+    book.update!(tithe_start_on: start)
+    checking = book.accounts.create!(
+      name: "Joint Checking", source: "csv", kind: "checking",
+      csv_mapping: CsvImport::Mapping.new(date_column: "Date", payee_column: "Description", amount_column: "Amount").to_h
+    )
+    categories = book.categories.index_by(&:name)
+    tithe_rule = book.rules.create!(field: "payee", operator: "contains", value: "GRACE CHURCH", outcome: "categorize",
+                                    category: categories.fetch("Tithe"))
+
+    sequence = 0
+    add = lambda do |date, payee, cents, category, **extra|
+      next if date > @today
+
+      sequence += 1
+      attrs = { posted_on: date, payee: payee, amount_cents: cents, external_id: "demo-personal-#{sequence}" }
+      attrs.merge!(category: categories.fetch(category), categorized_by: "user") if category
+      checking.transactions.create!(attrs.merge(extra))
+    end
+
+    sundays = start.step(@today, 7).to_a
+    sundays.each do |sunday|
+      add.(sunday + 1, "KROGER", -(9_000 + @random.rand(6_000)), "Groceries")
+      add.(sunday + 3, "LOCAL TAQUERIA", -(2_000 + @random.rand(3_000)), "Dining")
+      add.(sunday + 5, "TRANSFER FROM SOUND ROOTS PRODUCTIONS", 150_000, "Owner draws")
+      add.(sunday + 5, "TRANSFER FROM WHITNEY ROOT GARDENS", 80_000, "Owner draws")
+    end
+
+    # Weeks whose Friday draws have landed owe tithe; pay them in pairs, leaving the last one or two weeks unpaid.
+    drawn = sundays.select { _1 + 5 <= @today }
+    unpaid = drawn.size.even? ? 2 : 1
+    drawn.first([ drawn.size - unpaid, 0 ].max).each_slice(2).with_index do |(_, second), index|
+      add.(second + 9, "CHECK #{1000 + index} GRACE CHURCH", -46_000, "Tithe", rule: tithe_rule, categorized_by: "rule")
+    end
+    12.downto(0) do |months_ago|
+      month = (@today << months_ago).beginning_of_month
+      add.(month + 14, "NASHVILLE ELECTRIC", -(11_000 + @random.rand(5_000)), "Utilities")
+      add.(month + 20, "AMAZON REFUND", 2_500 + @random.rand(3_000), "Refunds and reimbursements")
+    end
+    add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "user")
   end
 
   def ensure_tax_parameters

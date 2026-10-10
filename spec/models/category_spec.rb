@@ -43,7 +43,7 @@ RSpec.describe Category do
     expect(build(:category, kind: "expense", schedule_c_line: "1")).not_to be_valid
   end
 
-  it "does not allow line 30 (home office comes from sub-project 5)" do
+  it "does not allow line 30 (home office comes from sub-project 6)" do
     expect(build(:category, schedule_c_line: "30")).not_to be_valid
   end
 
@@ -103,5 +103,39 @@ RSpec.describe Category do
   it "has a unique name per business" do
     existing = create(:category)
     expect(build(:category, business: existing.business, name: existing.name)).not_to be_valid
+  end
+
+  describe "personal categories" do
+    let(:book) { create(:business, :personal) }
+
+    it "has no Schedule C line" do
+      expect(build(:category, business: book)).to be_valid
+      expect(build(:category, business: book, schedule_c_line: "18")).not_to be_valid
+    end
+
+    it "can be not tithable (income) or a tithe payment (expense)" do
+      expect(create(:category, :income, business: book, tithable: false)).not_to be_tithable
+      expect(create(:category, business: book, tithe: true)).to be_tithe
+    end
+
+    it "normalizes flags that don't apply to the kind" do
+      expense = create(:category, business: book, tithable: false)
+      expect(expense).to be_tithable
+      income = create(:category, :income, business: book, tithe: true)
+      expect(income).not_to be_tithe
+    end
+  end
+
+  it "rejects tithe flags on business categories" do
+    expect(build(:category, tithe: true)).not_to be_valid
+    expect(build(:category, :income, tithable: false)).not_to be_valid
+  end
+
+  it "applies the personal template to a personal book" do
+    book = create(:business, :personal)
+    CategoryTemplate.apply_to(book)
+    expect(book.categories.find_by!(name: "Tithe")).to be_tithe
+    expect(book.categories.find_by!(name: "Refunds and reimbursements")).not_to be_tithable
+    expect(book.categories.where.not(schedule_c_line: nil)).to be_empty
   end
 end

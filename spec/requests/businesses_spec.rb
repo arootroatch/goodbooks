@@ -63,6 +63,24 @@ RSpec.describe "Businesses" do
       expect(sidebar).to have_css(".switcher summary", text: "Pat Consulting")
     end
 
+    it "words the personal book as Personal, not a business" do
+      owner = create(:user, :household_owner)
+      book = PersonalBookProvisioner.call(Household.instance)
+      sign_in_as owner
+      get edit_business_path(book)
+      expect(response.body).to include("<h1>Rename</h1>")
+      patch business_path(book), params: { business: { name: "Us" } }
+      expect(flash[:notice]).to eq("Personal book updated.")
+    end
+
+    it "keeps business wording for a business" do
+      sign_in_as user_with_role("owner", business)
+      get edit_business_path(business)
+      expect(response.body).to include("<h1>Edit business</h1>")
+      patch business_path(business), params: { business: { name: "Renamed" } }
+      expect(flash[:notice]).to eq("Business updated.")
+    end
+
     it "forbids editors and viewers" do
       %w[editor viewer].each do |role|
         sign_in_as user_with_role(role, business)
@@ -192,6 +210,30 @@ RSpec.describe "Businesses" do
       get business_path(business, period: "decade", on: "soon")
       expect(response).to have_http_status(:ok)
       expect(page.find(".period-step")).to have_text("Jan 1 – Dec 31, 2026")
+    end
+
+    context "for the personal book" do
+      let!(:owner) { create(:user, :household_owner) }
+      let(:book) { PersonalBookProvisioner.call(Household.instance) }
+      let(:checking) { create(:account, business: book, name: "Joint checking") }
+
+      it "shows income, spending, and plain net with no tax-basis wording" do
+        paycheck = book.categories.find_by!(kind: "income")
+        groceries = book.categories.where(kind: "expense").first
+        create(:transaction, account: checking, category: paycheck, posted_on: Date.new(2026, 2, 1), amount_cents: 500_000)
+        create(:transaction, account: checking, category: groceries, posted_on: Date.new(2026, 2, 5), amount_cents: -120_000)
+        sign_in_as owner
+        get business_path(book)
+        expect(response).to have_http_status(:ok)
+        expect(page.all(".kpi small").map(&:text)).to eq([ "Income", "Spending", "Net" ])
+        expect(kpi("Net")).to have_css(".pos", text: "$3,800.00")
+        expect(kpi("Net")).to have_no_css("em")
+        expect(page).to have_css(".card-title", text: "Top spending")
+        expect(page.find(".chart-legend")).to have_text("Spending")
+        expect(page).to have_css(".card-title", text: "Income vs spending")
+        expect(page).to have_css("svg.chart rect.bar-expense title", text: "Feb spending: $1,200.00", visible: :all)
+        expect(response.body).not_to include("tax basis")
+      end
     end
 
     it "lists the top five expense categories, largest first" do

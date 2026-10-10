@@ -2,6 +2,8 @@
 
 Self-hosted bookkeeping for a freelancing household: income and expenses per business, CSV imports, a rules-driven categorization inbox, invoice tracking with payments linked to deposits, mileage, P&L and Schedule C reports, and role-based sharing with your accountant. Design: `docs/superpowers/specs/2026-10-05-goodbooks-design.md` (invoices: `docs/superpowers/specs/2026-10-06-goodbooks-invoices-design.md`).
 
+The household owner can set up a **Personal** book from the dashboard for the joint checking account. It has its own categories, rules, inbox, a spending report, and a weekly tithe page (10% of tithable deposits, Sunday–Saturday, payments applied oldest week first). Only the household owner and linked spouse can see it; the accountant cannot. Design: `docs/superpowers/specs/2026-10-06-goodbooks-tithing-design.md`.
+
 ## Development
 
 ```bash

@@ -5,4 +5,6 @@ class Household < ApplicationRecord
   validates :name, presence: true
 
   def self.instance = first!
+
+  def personal_book = businesses.personal.first
 end

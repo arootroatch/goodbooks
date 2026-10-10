@@ -1,12 +1,17 @@
 <% content_for :title, @business.name %>
+<% expense_label = @business.personal? ? "Spending" : "Expenses" %>
 
 <header class="page-header">
   <div>
     <h1><%= @business.name %></h1>
-    <p class="subtitle">
-      Taxpayer: <%= @business.person.name %>
-      <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
-    </p>
+    <% if @business.personal? %>
+      <p class="subtitle">The household's personal accounts and tithe. Only household members can see this.</p>
+    <% else %>
+      <p class="subtitle">
+        Taxpayer: <%= @business.person.name %>
+        <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
+      </p>
+    <% end %>
   </div>
   <div class="period-picker">
     <nav class="segmented" aria-label="Period">
@@ -33,37 +38,45 @@
     <b><%= money(@report.total_income_cents) %></b>
   </div>
   <div class="card kpi">
-    <small>Expenses</small>
+    <small><%= expense_label %></small>
     <b><%= money(@report.total_expense_cents) %></b>
     <% if (share = share_of_income(@report.total_expense_cents, @report.total_income_cents)) %>
       <em><%= share %></em>
     <% end %>
   </div>
-  <div class="card kpi">
-    <small>Net profit (tax basis)</small>
-    <b class="<%= "pos" if @report.net_profit_cents.positive? %>"><%= money(@report.net_profit_cents) %></b>
-    <% if @report.net_profit_cents != @report.total_income_cents - @report.total_expense_cents %>
-      <em>After deduction limits and mileage</em>
-    <% end %>
-  </div>
+  <% cash_net_cents = @report.total_income_cents - @report.total_expense_cents %>
+  <% if @business.personal? %>
+    <div class="card kpi">
+      <small>Net</small>
+      <b class="<%= "pos" if cash_net_cents.positive? %>"><%= money(cash_net_cents) %></b>
+    </div>
+  <% else %>
+    <div class="card kpi">
+      <small>Net profit (tax basis)</small>
+      <b class="<%= "pos" if @report.net_profit_cents.positive? %>"><%= money(@report.net_profit_cents) %></b>
+      <% if @report.net_profit_cents != cash_net_cents %>
+        <em>After deduction limits and mileage</em>
+      <% end %>
+    </div>
+  <% end %>
 </section>
 
 <div class="overview-grid">
   <section class="card">
     <h2 class="card-title">
-      Income vs expenses
-      <span class="chart-legend"><span><i class="legend-income"></i>Income</span><span><i class="legend-expense"></i>Expenses</span></span>
+      Income vs <%= expense_label.downcase %>
+      <span class="chart-legend"><span><i class="legend-income"></i>Income</span><span><i class="legend-expense"></i><%= expense_label %></span></span>
     </h2>
     <%= bar_chart(
           labels: @chart.map(&:label),
           series: [ { key: "income", name: "Income", values: @chart.map(&:income_cents) },
-                    { key: "expense", name: "Expenses", values: @chart.map(&:expense_cents) } ],
+                    { key: "expense", name: expense_label, values: @chart.map(&:expense_cents) } ],
           faded_index: @period.bucket_in_progress,
           label: "Income and expenses by #{@period.bucket_unit}, #{@period.label}") %>
   </section>
 
   <section class="card">
-    <h2 class="card-title">Top expenses</h2>
+    <h2 class="card-title">Top <%= expense_label.downcase %></h2>
     <% if @top_expenses.any? %>
       <%= hbar_list(@top_expenses.map { { label: _1.name, cents: _1.actual_cents } }) %>
     <% else %>
@@ -97,7 +110,7 @@
 <section class="card">
   <h2 class="card-title">
     Accounts
-    <% if current_membership.owner? %><small><%= link_to "Edit business", edit_business_path(@business) %></small><% end %>
+    <% if current_membership.owner? %><small><%= link_to(@business.personal? ? "Rename" : "Edit business", edit_business_path(@business)) %></small><% end %>
   </h2>
   <ul class="plain-list">
     <% @accounts.each do |account| %>

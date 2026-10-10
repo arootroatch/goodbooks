@@ -1,5 +1,6 @@
 class InvoicesController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
   include ScalarParams
 
   PERMITTED = %i[number issue_date due_date amount description pdf].freeze

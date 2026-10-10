@@ -32,7 +32,7 @@ class BusinessesController < ApplicationController
     @inbox_count = inbox.count
     @inbox_preview = inbox.order(:posted_on, :id).limit(3)
     @accounts = @business.accounts.active.order(:name)
-    @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id]
+    @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id] if @business.business?
   end
 
   def edit
@@ -40,7 +40,7 @@ class BusinessesController < ApplicationController
 
   def update
     if @business.update(params.expect(business: %i[name]))
-      redirect_to business_path(@business), notice: "Business updated."
+      redirect_to business_path(@business), notice: @business.personal? ? "Personal book updated." : "Business updated."
     else
       render :edit, status: :unprocessable_content
     end

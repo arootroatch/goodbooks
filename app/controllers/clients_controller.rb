@@ -1,5 +1,6 @@
 class ClientsController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
 
   PERMITTED = %i[name email notes].freeze
 

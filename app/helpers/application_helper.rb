@@ -7,4 +7,10 @@ module ApplicationHelper
 
     tag.span("(#{Money.new(-cents)})", class: "neg")
   end
+
+  def current_personal_book
+    return @current_personal_book if defined?(@current_personal_book)
+
+    @current_personal_book = Current.user.accessible_businesses.personal.first
+  end
 end

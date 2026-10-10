@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   resource :setup, only: %i[new create]
 
   resources :businesses, only: %i[new create show edit update] do
+    resource :tithe, only: %i[show update], controller: "tithes"
     resources :accounts, only: %i[index new create edit update] do
       resources :csv_imports, only: %i[new create show destroy] do
         post :commit, on: :member
@@ -49,6 +50,7 @@ Rails.application.routes.draw do
     get "reports/mileage_log", to: "mileage_logs#show", as: :mileage_log
     get "reports/transactions", to: "transaction_exports#show", as: :transaction_export
     get "reports/aging", to: "invoice_agings#show", as: :invoice_aging
+    get "reports/spending", to: "spending_reports#show", as: :spending_report
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
@@ -57,6 +59,7 @@ Rails.application.routes.draw do
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
+  resource :personal_book, only: :create
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

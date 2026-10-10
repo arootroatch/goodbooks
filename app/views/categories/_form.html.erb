@@ -2,13 +2,18 @@
   <%= render "shared/errors", record: category %>
   <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
   <p><%= f.label :kind %> <%= f.select :kind, [["Income", "income"], ["Expense", "expense"]] %></p>
-  <p>
-    <%= f.label :schedule_c_line, "Schedule C line" %>
-    <%= f.select :schedule_c_line, grouped_options_for_select(
-          { "Income" => ScheduleC.options_for("income"), "Expense" => ScheduleC.options_for("expense") },
-          category.schedule_c_line) %>
-  </p>
-  <p><%= f.label :deductible_percent, "Deductible %" %> <%= f.text_field :deductible_percent, size: 6 %></p>
+  <% if @business.personal? %>
+    <p><%= f.check_box :tithable %> <%= f.label :tithable, "Tithable (income: deposits here count toward the tithe)" %></p>
+    <p><%= f.check_box :tithe %> <%= f.label :tithe, "Tithe payment (expense: payments here pay the tithe)" %></p>
+  <% else %>
+    <p>
+      <%= f.label :schedule_c_line, "Schedule C line" %>
+      <%= f.select :schedule_c_line, grouped_options_for_select(
+            { "Income" => ScheduleC.options_for("income"), "Expense" => ScheduleC.options_for("expense") },
+            category.schedule_c_line) %>
+    </p>
+    <p><%= f.label :deductible_percent, "Deductible %" %> <%= f.text_field :deductible_percent, size: 6 %></p>
+  <% end %>
   <% if category.persisted? %>
     <p><%= f.label :archived %> <%= f.check_box :archived, { checked: category.archived? }, "1", "0" %></p>
   <% end %>
