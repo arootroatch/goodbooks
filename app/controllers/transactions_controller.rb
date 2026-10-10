@@ -1,5 +1,6 @@
 class TransactionsController < ApplicationController
   include BusinessScoped
+  include ScalarParams
 
   IMPORTED_EDITABLE = %i[memo category_id transfer excluded].freeze
   MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded].freeze
@@ -44,11 +45,12 @@ class TransactionsController < ApplicationController
   end
 
   def destroy
-    if @transaction.account.manual?
-      @transaction.destroy!
+    if !@transaction.account.manual?
+      redirect_to business_transactions_path(@business), alert: "Imported transactions can be excluded, not deleted.", status: :see_other
+    elsif @transaction.destroy
       redirect_to business_transactions_path(@business), notice: "Transaction deleted.", status: :see_other
     else
-      redirect_to business_transactions_path(@business), alert: "Imported transactions can be excluded, not deleted.", status: :see_other
+      redirect_to edit_business_transaction_path(@business, @transaction), alert: @transaction.linked_invoice_message, status: :see_other
     end
   end
 
@@ -59,6 +61,6 @@ class TransactionsController < ApplicationController
   end
 
   def filter_params
-    params.permit(:from, :to, :account_id, :category_id, :status, :q, :page)
+    scalar_params(:from, :to, :account_id, :category_id, :status, :q, :page)
   end
 end

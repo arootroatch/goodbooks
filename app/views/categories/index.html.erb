@@ -1,4 +1,7 @@
-<h1>Categories</h1>
+<header class="page-header">
+  <h1>Categories</h1>
+  <%= primary_action "New category", new_business_category_path(@business) if current_membership.can_edit? %>
+</header>
 <table>
   <thead><tr><th>Name</th><th>Kind</th><th>Schedule C</th><th class="num">Deductible</th><th></th></tr></thead>
   <tbody>
@@ -13,4 +16,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "New category", new_business_category_path(@business) if current_membership.can_edit? %>

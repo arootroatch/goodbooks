@@ -58,4 +58,21 @@ RSpec.describe RuleApplier do
     expect(txn.reload.rule_id).to be_nil
     expect(txn.category).to eq(software)
   end
+
+  it "never touches a deposit linked to an invoice" do
+    payment = create(:invoice_payment)
+    deposit = payment.deposit
+    create(:rule, business: deposit.business, value: "client", outcome: "transfer", category: nil)
+    expect(RuleApplier.new(deposit.business).apply([ deposit ])).to eq(0)
+    expect(deposit.reload).not_to be_transfer
+  end
+
+  it "skips an uncategorized inbox deposit linked to an invoice without raising" do
+    deposit = create(:transaction, account: account, payee: "ADOBE refund", amount_cents: 5_000, category: nil)
+    create(:invoice_payment, invoice: create(:invoice, business: business, amount_cents: 5_000), deposit: deposit, amount_cents: 5_000)
+    expect(RuleApplier.new(business).apply([ deposit ])).to eq(0)
+    deposit.reload
+    expect(deposit.category).to be_nil
+    expect(deposit.categorized_by).to be_nil
+  end
 end

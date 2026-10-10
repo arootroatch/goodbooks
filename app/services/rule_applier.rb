@@ -5,7 +5,7 @@ class RuleApplier
 
   def apply(transactions)
     transactions.count do |txn|
-      next false unless txn.inbox? && !txn.categorized_by_user?
+      next false unless txn.inbox? && !txn.categorized_by_user? && txn.invoice_payments.none?
 
       rule = RuleEngine.match(txn.rule_attributes, @rules)
       next false unless rule

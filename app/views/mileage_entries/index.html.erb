@@ -1,4 +1,7 @@
-<h1>Mileage <%= @year %></h1>
+<header class="page-header">
+  <h1>Mileage <%= @year %></h1>
+  <%= primary_action "Log a trip", new_business_mileage_entry_path(@business) if current_membership.can_edit? %>
+</header>
 <p class="no-print">
   <%= link_to "← #{@year - 1}", business_mileage_entries_path(@business, year: @year - 1) %>
   <%= link_to "#{@year + 1} →", business_mileage_entries_path(@business, year: @year + 1) %>
@@ -30,4 +33,3 @@
     <% end %>
   </tfoot>
 </table>
-<%= link_to "Log a trip", new_business_mileage_entry_path(@business) if current_membership.can_edit? %>

@@ -1,0 +1,22 @@
+<header class="page-header">
+  <h1>Clients</h1>
+  <%= primary_action "New client", new_business_client_path(@business) if current_membership.can_edit? %>
+</header>
+<% if @show_archived %>
+  <%= link_to "Hide archived", business_clients_path(@business) %>
+<% else %>
+  <%= link_to "Show archived", business_clients_path(@business, archived: "1") %>
+<% end %>
+<table>
+  <thead><tr><th>Name</th><th>Email</th><th>Notes</th><th></th></tr></thead>
+  <tbody>
+    <% @clients.each do |client| %>
+      <tr id="<%= dom_id(client) %>">
+        <td><%= client.name %><%= " (archived)" if client.archived? %></td>
+        <td><%= client.email %></td>
+        <td><%= truncate(client.notes, length: 80) %></td>
+        <td><%= link_to "Edit", edit_business_client_path(@business, client) if current_membership.can_edit? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

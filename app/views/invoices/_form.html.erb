@@ -1,0 +1,18 @@
+<%= form_with model: [@business, invoice] do |f| %>
+  <%= render "shared/errors", record: invoice %>
+  <p>
+    <%= f.label :client_id, "Client" %>
+    <%= f.select :client_id, invoice_client_options(@business, invoice), { include_blank: "Choose…" }, required: true %>
+    <%= text_field_tag "invoice[new_client_name]", invoice_form_param(:new_client_name), placeholder: "New client name", aria: { label: "New client name" } %>
+  </p>
+  <p><%= f.label :number %> <%= f.text_field :number, required: true %></p>
+  <p><%= f.label :issue_date %> <%= f.date_field :issue_date, required: true %></p>
+  <p><%= f.label :due_date %> <%= f.date_field :due_date, required: true %></p>
+  <p><%= f.label :amount %> <%= f.text_field :amount, required: true, inputmode: "decimal" %></p>
+  <p><%= f.label :description %> <%= f.text_area :description, rows: 3 %></p>
+  <p><%= f.label :pdf, "PDF (optional)" %> <%= f.file_field :pdf, accept: "application/pdf" %></p>
+  <% if invoice.new_record? %>
+    <p><%= f.label :status %> <%= f.select :status, [ [ "Sent", "sent" ], [ "Draft (not sent yet)", "draft" ] ] %></p>
+  <% end %>
+  <%= f.submit %>
+<% end %>

@@ -1,0 +1,20 @@
+<h1>Invoices: all businesses</h1>
+<%= form_with url: household_invoices_path, method: :get, class: "filters no-print",
+              data: { controller: "auto-submit", action: "change->auto-submit#submit", turbo_frame: "invoices" } do |f| %>
+  <%= f.select :status, invoice_status_filter_options, selected: params[:status] %>
+  <%= f.date_field :from, value: params[:from] %>
+  <%= f.date_field :to, value: params[:to] %>
+  <noscript><%= f.submit "Filter" %></noscript>
+<% end %>
+<%= turbo_frame_tag "invoices", target: "_top", data: { turbo_action: "advance" } do %>
+  <p>
+    Outstanding <%= money(@filter.outstanding_cents) %> · Overdue <%= money(@filter.overdue_cents) %> ·
+    <%= link_to "Aging", household_invoice_aging_path %> ·
+    <%= link_to "Download CSV", household_invoices_path(@filter.params.merge(format: :csv)) %>
+  </p>
+  <%= render "invoices/table", invoices: @invoices, show_business: true %>
+  <p>
+    <%= link_to "Previous", household_invoices_path(@filter.params.merge(page: @filter.page - 1)) if @filter.page > 1 %>
+    <%= link_to "Next", household_invoices_path(@filter.params.merge(page: @filter.page + 1)) if @filter.next_page? %>
+  </p>
+<% end %>

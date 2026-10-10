@@ -8,5 +8,6 @@ class InboxesController < ApplicationController
     @total = scope.count
     @transactions = scope.includes(:account).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
     @categories = @business.categories.active.order(:name)
+    @matcher = InvoiceMatcher.for_businesses([ @business.id ])
   end
 end

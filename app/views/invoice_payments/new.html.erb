@@ -1,0 +1,23 @@
+<h1>Record payment for <%= @invoice.number %></h1>
+<p><%= @invoice.client.name %> · outstanding <%= money(@invoice.outstanding_cents) %></p>
+
+<h2>Exact matches</h2>
+<% if @exact.any? %>
+  <%= render "invoice_payments/deposits", id: "exact-matches", deposits: @exact, business: @business, invoice: @invoice,
+        gross_receipts: @gross_receipts, income_categories: @income_categories %>
+<% else %>
+  <p>No deposit matches <%= money(@invoice.outstanding_cents) %> exactly.</p>
+<% end %>
+
+<h2>Other deposits since <%= @from %></h2>
+<%= form_with url: new_business_invoice_payment_path(@business, @invoice), method: :get, class: "inline-form" do |f| %>
+  <%= f.date_field :from, value: @from %>
+  <%= f.submit "Show from this date" %>
+<% end %>
+<% if @others.any? %>
+  <%= render "invoice_payments/deposits", id: "other-deposits", deposits: @others, business: @business, invoice: @invoice,
+        gross_receipts: @gross_receipts, income_categories: @income_categories %>
+<% else %>
+  <p>No other unallocated deposits since <%= @from %>.</p>
+<% end %>
+<%= link_to "Back to invoice", business_invoice_path(@business, @invoice) %>

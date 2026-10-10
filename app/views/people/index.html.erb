@@ -1,4 +1,7 @@
-<h1>People (taxpayers)</h1>
+<header class="page-header">
+  <h1>People (taxpayers)</h1>
+  <%= primary_action "Add person", new_person_path if @people.size < Person::MAX_PER_HOUSEHOLD %>
+</header>
 <table>
   <thead><tr><th>Name</th><th>Login</th><th></th></tr></thead>
   <tbody>
@@ -7,4 +10,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "Add person", new_person_path if @people.size < Person::MAX_PER_HOUSEHOLD %>

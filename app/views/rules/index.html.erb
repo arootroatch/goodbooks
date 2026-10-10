@@ -1,4 +1,7 @@
-<h1>Rules</h1>
+<header class="page-header">
+  <h1>Rules</h1>
+  <%= primary_action "New rule", new_business_rule_path(@business) if current_membership.can_edit? %>
+</header>
 <p>Rules run top to bottom on new imported transactions. The first match wins.<%= " Drag ≡ to reorder." if current_membership.can_edit? %></p>
 <table>
   <thead><tr><th></th><th>Rule</th><th>Amount</th><th></th></tr></thead>
@@ -18,4 +21,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "New rule", new_business_rule_path(@business) if current_membership.can_edit? %>

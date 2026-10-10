@@ -1,6 +1,39 @@
 require "rails_helper"
 
 RSpec.describe Category do
+  describe "gross receipts" do
+    let(:business) { create(:business) }
+    let!(:sales) { create(:category, :income, business: business, name: "Sales") }
+    let!(:archived) { create(:category, :income, business: business, name: "Old", archived_at: Time.current) }
+    let!(:other_income) { create(:category, business: business, name: "Interest", kind: "income", schedule_c_line: "6") }
+    let!(:expense) { create(:category, business: business, name: "Supplies") }
+
+    it "is true only for active income on line 1" do
+      expect(sales).to be_gross_receipts
+      expect(archived).not_to be_gross_receipts
+      expect(other_income).not_to be_gross_receipts
+      expect(expense).not_to be_gross_receipts
+    end
+
+    it "scopes to the same categories" do
+      expect(business.categories.gross_receipts).to contain_exactly(sales)
+    end
+  end
+
+  it "can't change kind while deposits in it are linked to invoices" do
+    payment = create(:invoice_payment)
+    category = payment.deposit.category
+    category.assign_attributes(kind: "expense", schedule_c_line: "18")
+    expect(category).not_to be_valid
+    expect(category.errors[:kind]).to include("can't change while deposits in this category are linked to invoices")
+  end
+
+  it "allows changing kind when no deposits are linked" do
+    category = create(:category, :income)
+    category.assign_attributes(kind: "expense", schedule_c_line: "18")
+    expect(category).to be_valid
+  end
+
   it "requires an income line for income categories" do
     expect(build(:category, kind: "income", schedule_c_line: "18")).not_to be_valid
     expect(build(:category, kind: "income", schedule_c_line: "1")).to be_valid

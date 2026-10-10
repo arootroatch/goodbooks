@@ -1,0 +1,24 @@
+<header class="page-header">
+  <h1>Invoices</h1>
+  <%= primary_action "New invoice", new_business_invoice_path(@business) if current_membership.can_edit? %>
+</header>
+<%= form_with url: business_invoices_path(@business), method: :get, class: "filters no-print",
+              data: { controller: "auto-submit", action: "change->auto-submit#submit", turbo_frame: "invoices" } do |f| %>
+  <%= f.select :status, invoice_status_filter_options, selected: params[:status] %>
+  <%= f.select :client_id, options_from_collection_for_select(@business.clients.order(:name), :id, :name, params[:client_id]), include_blank: "All clients" %>
+  <%= f.date_field :from, value: params[:from] %>
+  <%= f.date_field :to, value: params[:to] %>
+  <noscript><%= f.submit "Filter" %></noscript>
+<% end %>
+<%= turbo_frame_tag "invoices", target: "_top", data: { turbo_action: "advance" } do %>
+  <p>
+    Outstanding <%= money(@filter.outstanding_cents) %> · Overdue <%= money(@filter.overdue_cents) %> ·
+    <%= link_to "Aging", business_invoice_aging_path(@business) %> ·
+    <%= link_to "Download CSV", business_invoices_path(@business, @filter.params.merge(format: :csv)) %>
+  </p>
+  <%= render "invoices/table", invoices: @invoices, show_business: false %>
+  <p>
+    <%= link_to "Previous", business_invoices_path(@business, @filter.params.merge(page: @filter.page - 1)) if @filter.page > 1 %>
+    <%= link_to "Next", business_invoices_path(@business, @filter.params.merge(page: @filter.page + 1)) if @filter.next_page? %>
+  </p>
+<% end %>
