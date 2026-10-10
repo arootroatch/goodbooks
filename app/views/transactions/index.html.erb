@@ -1,4 +1,7 @@
-<h1>Transactions</h1>
+<header class="page-header">
+  <h1>Transactions</h1>
+  <%= primary_action "Add manual transaction", new_business_transaction_path(@business) if current_membership.can_edit? %>
+</header>
 <%= form_with url: business_transactions_path(@business), method: :get, class: "filters no-print",
               data: { controller: "auto-submit", action: "change->auto-submit#submit", turbo_frame: "transactions" } do |f| %>
   <%= f.date_field :from, value: params[:from] %>
@@ -32,4 +35,3 @@
     <%= link_to "Next", business_transactions_path(@business, @filter.params.merge(page: @filter.page + 1)) if @filter.next_page? %>
   </p>
 <% end %>
-<%= link_to "Add manual transaction", new_business_transaction_path(@business) if current_membership.can_edit? %>

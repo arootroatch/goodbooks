@@ -1,4 +1,7 @@
-<h1>Tax parameters</h1>
+<header class="page-header">
+  <h1>Tax parameters</h1>
+  <%= primary_action "Add a year", new_tax_parameter_path %>
+</header>
 <table>
   <thead><tr><th>Year</th><th class="num">Mileage rate</th><th></th></tr></thead>
   <tbody>
@@ -7,4 +10,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "Add a year", new_tax_parameter_path %>

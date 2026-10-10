@@ -1,9 +1,9 @@
-<h1>Businesses</h1>
+<header class="page-header">
+  <h1>Businesses</h1>
+  <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
+</header>
 <ul class="business-list">
   <% @businesses.each do |business| %>
     <li><%= link_to business.name, business_path(business) %> <%= render "invoices/receivables", totals: @receivables[business.id] %></li>
   <% end %>
 </ul>
-<% if Current.user.household_owner? %>
-  <%= link_to "New business", new_business_path %>
-<% end %>

@@ -1,4 +1,7 @@
-<h1>Clients</h1>
+<header class="page-header">
+  <h1>Clients</h1>
+  <%= primary_action "New client", new_business_client_path(@business) if current_membership.can_edit? %>
+</header>
 <% if @show_archived %>
   <%= link_to "Hide archived", business_clients_path(@business) %>
 <% else %>
@@ -17,4 +20,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "New client", new_business_client_path(@business) if current_membership.can_edit? %>

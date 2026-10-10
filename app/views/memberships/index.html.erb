@@ -1,4 +1,7 @@
-<h1>Members</h1>
+<header class="page-header">
+  <h1>Members</h1>
+  <%= primary_action "Invite someone", new_invite_path %>
+</header>
 <table>
   <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
   <tbody>
@@ -17,4 +20,3 @@
     <% end %>
   </tbody>
 </table>
-<%= link_to "Invite someone", new_invite_path %>

@@ -1,4 +1,7 @@
-<h1>Invoices</h1>
+<header class="page-header">
+  <h1>Invoices</h1>
+  <%= primary_action "New invoice", new_business_invoice_path(@business) if current_membership.can_edit? %>
+</header>
 <%= form_with url: business_invoices_path(@business), method: :get, class: "filters no-print",
               data: { controller: "auto-submit", action: "change->auto-submit#submit", turbo_frame: "invoices" } do |f| %>
   <%= f.select :status, invoice_status_filter_options, selected: params[:status] %>
@@ -19,4 +22,3 @@
     <%= link_to "Next", business_invoices_path(@business, @filter.params.merge(page: @filter.page + 1)) if @filter.next_page? %>
   </p>
 <% end %>
-<%= link_to "New invoice", new_business_invoice_path(@business) if current_membership.can_edit? %>
