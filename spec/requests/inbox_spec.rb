@@ -107,6 +107,14 @@ RSpec.describe "Inbox" do
     expect(response.body).not_to include(%(name="outcome"))
   end
 
+  it "puts the apply-rules action in the page header, clear of the table" do
+    sign_in_as user_with_role("editor", business)
+    get business_inbox_path(business)
+    header = Capybara.string(response.body).find("header.page-header")
+    expect(header).to have_css("h1", text: "Inbox (1)")
+    expect(header).to have_button("Apply rules to inbox")
+  end
+
   describe "household inbox" do
     let!(:other_business) { create(:business, name: "Hidden Biz") }
     let!(:hidden) { create(:transaction, account: create(:account, business: other_business), payee: "SECRET PAYEE") }

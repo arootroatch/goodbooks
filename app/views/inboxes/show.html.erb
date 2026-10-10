@@ -1,8 +1,10 @@
-<h1>Inbox (<%= @total %>)</h1>
+<header class="page-header">
+  <h1>Inbox (<%= @total %>)</h1>
+  <% if current_membership.can_edit? %>
+    <%= button_to "Apply rules to inbox", apply_business_rules_path(@business) %>
+  <% end %>
+</header>
 <%= render "shared/inbox_truncation", shown: @transactions.size, total: @total %>
-<% if current_membership.can_edit? %>
-  <%= button_to "Apply rules to inbox", apply_business_rules_path(@business) %>
-<% end %>
 <table>
   <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th></th></tr></thead>
   <tbody>
