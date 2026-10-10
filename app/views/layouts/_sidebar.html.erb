@@ -1,6 +1,11 @@
 <nav class="sidebar no-print" id="sidebar" aria-label="Main">
   <%= render "layouts/business_switcher" %>
 
+  <% if (settings = settings_links).any? %>
+    <p class="nav-group">Settings</p>
+    <%= safe_join(settings) %>
+  <% end %>
+
   <% if @business&.persisted? %>
     <p class="nav-group"><%= @business.name_in_database %></p>
     <%= nav_link "Overview", business_path(@business) %>
@@ -15,15 +20,12 @@
     <p class="nav-group">Reports</p>
     <%= nav_link "Profit & loss", business_profit_and_loss_path(@business) %>
     <%= nav_link "Schedule C", business_schedule_c_path(@business) %>
+  <% else %>
+    <p class="nav-group">Household</p>
+    <%= nav_link "All businesses", root_path %>
+    <%= nav_link "Household inbox", household_inbox_path %>
+    <%= nav_link "Household P&L", household_profit_and_loss_path if Current.user.can_view_household? %>
   <% end %>
-
-  <p class="nav-group">Household</p>
-  <%= nav_link "All businesses", root_path %>
-  <%= nav_link "Household inbox", household_inbox_path %>
-  <%= nav_link "Household P&L", household_profit_and_loss_path if Current.user.can_view_household? %>
-  <%= nav_link "Tax parameters", tax_parameters_path if Current.user.household_owner? %>
-  <%= nav_link "Invites", invites_path if Current.user.household_owner? || Current.user.memberships.owner.exists? %>
-  <%= nav_link "People", people_path if Current.user.household_owner? %>
 
   <div class="sidebar-footer">
     <span class="sidebar-user"><%= Current.user.name.presence || Current.user.email_address %></span>

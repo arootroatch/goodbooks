@@ -50,13 +50,55 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_no_css(".nav-group", text: "Reports")
   end
 
+  it "offers the household as the first switcher option" do
+    sign_in_as household_owner
+    get business_transactions_path(business)
+    expect(sidebar.first(".switcher li a", visible: :all)).to have_text("Household")
+    expect(sidebar).to have_css(".switcher li a[href='#{root_path}']", text: "Household", visible: :all)
+  end
+
+  it "labels the switcher with one of its own options" do
+    sign_in_as household_owner
+    { root_path => "Household", business_transactions_path(business) => "Studio LLC" }.each do |path, label|
+      get path
+      expect(sidebar.find(".switcher summary").text).to eq(label)
+      expect(sidebar.all(".switcher li a", visible: :all).map(&:text)).to include(label)
+    end
+  end
+
+  it "hides household links inside a business" do
+    sign_in_as household_owner
+    get business_transactions_path(business)
+    expect(sidebar).to have_no_link("All businesses")
+    expect(sidebar).to have_no_link("Household inbox")
+    expect(sidebar).to have_no_link("Household P&L")
+    expect(sidebar).to have_no_css(".nav-group", text: "Household")
+  end
+
+  it "puts the app-wide section above the context links in every menu" do
+    sign_in_as household_owner
+    [ root_path, business_transactions_path(business) ].each do |path|
+      get path
+      groups = sidebar.all(".nav-group").map(&:text)
+      expect(groups.first).to eq("Settings")
+      links = sidebar.all("a").map(&:text)
+      expect(links.index("People")).to be < links.index(path == root_path ? "All businesses" : "Overview")
+    end
+  end
+
+  it "omits the app-wide heading when the user has none of its links" do
+    sign_in_as user_with_role("viewer", business)
+    get business_transactions_path(business)
+    expect(sidebar).to have_no_css(".nav-group", text: "Settings")
+  end
+
   it "renders for a user with no memberships" do
     sign_in_as create(:user)
     get root_path
     expect(response).to have_http_status(:ok)
     expect(sidebar).to have_no_link("Overview")
     expect(sidebar).to have_no_link("Household P&L")
-    expect(sidebar).to have_no_css(".switcher li", visible: :all)
+    expect(sidebar.all(".switcher li", visible: :all).map(&:text)).to eq([ "Household" ])
   end
 
   it "lists accessible businesses in the switcher" do
