@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html <%= tag.attributes(data: { theme: theme_attribute }) %>>
   <head>
     <title><%= content_for(:title) || "Goodbooks" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
