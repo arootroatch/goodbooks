@@ -22,7 +22,6 @@
     <%= nav_link "Schedule C", business_schedule_c_path(business) %>
   <% else %>
     <p class="nav-group">Household</p>
-    <%= nav_link "All businesses", root_path %>
     <%= nav_link "Household inbox", household_inbox_path %>
     <%= nav_link "Household P&L", household_profit_and_loss_path if Current.user.can_view_household? %>
   <% end %>

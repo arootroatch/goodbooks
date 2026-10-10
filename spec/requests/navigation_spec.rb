@@ -35,7 +35,7 @@ RSpec.describe "Navigation" do
   it "shows household owner links" do
     sign_in_as household_owner
     get root_path
-    expect(sidebar).to have_link("All businesses", href: root_path)
+    expect(sidebar).to have_no_link("All businesses")
     expect(sidebar).to have_link("Household inbox", href: household_inbox_path)
     expect(sidebar).to have_link("Household P&L", href: household_profit_and_loss_path)
     expect(sidebar).to have_link("Tax parameters", href: tax_parameters_path)
@@ -69,7 +69,6 @@ RSpec.describe "Navigation" do
   it "hides household links inside a business" do
     sign_in_as household_owner
     get business_transactions_path(business)
-    expect(sidebar).to have_no_link("All businesses")
     expect(sidebar).to have_no_link("Household inbox")
     expect(sidebar).to have_no_link("Household P&L")
     expect(sidebar).to have_no_css(".nav-group", text: "Household")
@@ -82,7 +81,7 @@ RSpec.describe "Navigation" do
       groups = sidebar.all(".nav-group").map(&:text)
       expect(groups.first).to eq("Settings")
       links = sidebar.all("a").map(&:text)
-      expect(links.index("People")).to be < links.index(path == root_path ? "All businesses" : "Overview")
+      expect(links.index("People")).to be < links.index(path == root_path ? "Household inbox" : "Overview")
     end
   end
 
