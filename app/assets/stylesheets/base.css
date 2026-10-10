@@ -39,6 +39,14 @@ tfoot td, tfoot th { font-weight: 600; border-top: 1px solid var(--border-strong
 .muted { color: var(--muted); }
 
 label { display: block; font-weight: 500; font-size: var(--text-sm); margin-bottom: var(--space-1); }
+label:has(> input[type=checkbox], > input[type=radio]) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 400;
+  white-space: nowrap;
+  margin-bottom: 0;
+}
 input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hidden]), select, textarea {
   font: inherit;
   width: 100%;
@@ -57,6 +65,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .field_with_errors input, .field_with_errors select, .field_with_errors textarea { border-color: var(--neg); }
 .field_with_errors label { color: var(--neg); }
 form > div, form > p { margin-bottom: var(--space-3); }
+/* sentence-style rows (controls inline with text, no labels) keep natural width */
+p:not(:has(label)) > :is(select, input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hidden])) { width: auto; }
 
 .errors {
   background: var(--neg-soft);
