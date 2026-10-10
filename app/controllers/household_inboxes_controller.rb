@@ -1,4 +1,6 @@
 class HouseholdInboxesController < ApplicationController
+  household_page
+
   def show
     businesses = Current.user.accessible_businesses.active.order(:name).to_a
     @memberships = Current.user.memberships.where(business: businesses).index_by(&:business_id)

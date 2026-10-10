@@ -92,6 +92,38 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_no_css(".nav-group", text: "Settings")
   end
 
+  describe "on app-wide settings pages" do
+    it "keeps the business you came from" do
+      sign_in_as household_owner
+      get business_transactions_path(business)
+      get invites_path
+      expect(sidebar.find(".switcher summary").text).to eq("Studio LLC")
+      expect(sidebar).to have_link("Overview", href: business_path(business))
+      expect(sidebar).to have_link("Members", href: business_memberships_path(business))
+      expect(sidebar).to have_no_link("Household inbox")
+    end
+
+    it "shows the household after you go back to it" do
+      sign_in_as household_owner
+      get business_transactions_path(business)
+      get household_inbox_path
+      get people_path
+      expect(sidebar.find(".switcher summary").text).to eq("Household")
+      expect(sidebar).to have_no_link("Overview")
+    end
+
+    it "falls back to the household once the business is no longer accessible" do
+      owner = user_with_role("owner", business)
+      kept = create(:business, name: "Kept Co")
+      create(:membership, user: owner, business: kept, role: "owner")
+      sign_in_as owner
+      get business_transactions_path(business)
+      owner.memberships.find_by!(business:).destroy
+      get invites_path
+      expect(sidebar.find(".switcher summary").text).to eq("Household")
+    end
+  end
+
   it "renders for a user with no memberships" do
     sign_in_as create(:user)
     get root_path

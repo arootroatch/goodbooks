@@ -1,6 +1,8 @@
 class HouseholdProfitAndLossesController < ApplicationController
   include DateRangeParams
 
+  household_page
+
   before_action :require_household_access!
 
   def show

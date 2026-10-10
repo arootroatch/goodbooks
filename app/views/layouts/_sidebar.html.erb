@@ -6,20 +6,20 @@
     <%= safe_join(settings) %>
   <% end %>
 
-  <% if @business&.persisted? %>
-    <p class="nav-group"><%= @business.name_in_database %></p>
-    <%= nav_link "Overview", business_path(@business) %>
-    <%= nav_link "Inbox", business_inbox_path(@business), badge: business_inbox_count(@business) %>
-    <%= nav_link "Transactions", business_transactions_path(@business) %>
-    <%= nav_link "Accounts", business_accounts_path(@business) %>
-    <%= nav_link "Categories", business_categories_path(@business) %>
-    <%= nav_link "Rules", business_rules_path(@business) %>
-    <%= nav_link "Mileage", business_mileage_entries_path(@business) %>
-    <%= nav_link "Members", business_memberships_path(@business) if current_membership&.owner? %>
+  <% if (business = sidebar_business) %>
+    <p class="nav-group"><%= business.name_in_database %></p>
+    <%= nav_link "Overview", business_path(business) %>
+    <%= nav_link "Inbox", business_inbox_path(business), badge: business_inbox_count(business) %>
+    <%= nav_link "Transactions", business_transactions_path(business) %>
+    <%= nav_link "Accounts", business_accounts_path(business) %>
+    <%= nav_link "Categories", business_categories_path(business) %>
+    <%= nav_link "Rules", business_rules_path(business) %>
+    <%= nav_link "Mileage", business_mileage_entries_path(business) %>
+    <%= nav_link "Members", business_memberships_path(business) if sidebar_membership&.owner? %>
 
     <p class="nav-group">Reports</p>
-    <%= nav_link "Profit & loss", business_profit_and_loss_path(@business) %>
-    <%= nav_link "Schedule C", business_schedule_c_path(@business) %>
+    <%= nav_link "Profit & loss", business_profit_and_loss_path(business) %>
+    <%= nav_link "Schedule C", business_schedule_c_path(business) %>
   <% else %>
     <p class="nav-group">Household</p>
     <%= nav_link "All businesses", root_path %>

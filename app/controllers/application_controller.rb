@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::Base
   include Authentication
+  include SidebarContext
 
   prepend_before_action :require_household
 
