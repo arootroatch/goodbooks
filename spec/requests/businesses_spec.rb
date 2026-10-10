@@ -212,6 +212,30 @@ RSpec.describe "Businesses" do
       expect(page.find(".period-step")).to have_text("Jan 1 – Dec 31, 2026")
     end
 
+    context "for the personal book" do
+      let!(:owner) { create(:user, :household_owner) }
+      let(:book) { PersonalBookProvisioner.call(Household.instance) }
+      let(:checking) { create(:account, business: book, name: "Joint checking") }
+
+      it "shows income, spending, and plain net with no tax-basis wording" do
+        paycheck = book.categories.find_by!(kind: "income")
+        groceries = book.categories.where(kind: "expense").first
+        create(:transaction, account: checking, category: paycheck, posted_on: Date.new(2026, 2, 1), amount_cents: 500_000)
+        create(:transaction, account: checking, category: groceries, posted_on: Date.new(2026, 2, 5), amount_cents: -120_000)
+        sign_in_as owner
+        get business_path(book)
+        expect(response).to have_http_status(:ok)
+        expect(page.all(".kpi small").map(&:text)).to eq([ "Income", "Spending", "Net" ])
+        expect(kpi("Net")).to have_css(".pos", text: "$3,800.00")
+        expect(kpi("Net")).to have_no_css("em")
+        expect(page).to have_css(".card-title", text: "Top spending")
+        expect(page.find(".chart-legend")).to have_text("Spending")
+        expect(page).to have_css(".card-title", text: "Income vs spending")
+        expect(page).to have_css("svg.chart rect.bar-expense title", text: "Feb spending: $1,200.00", visible: :all)
+        expect(response.body).not_to include("tax basis")
+      end
+    end
+
     it "lists the top five expense categories, largest first" do
       %w[A B C D E F].each_with_index do |name, i|
         category = create(:category, business: business, name: "Cat #{name}")
