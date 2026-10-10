@@ -54,6 +54,15 @@ RSpec.describe "Businesses" do
       expect(business.reload.name).to eq("Renamed")
     end
 
+    it "keeps showing the saved name in the sidebar after a failed rename" do
+      sign_in_as user_with_role("owner", business)
+      patch business_path(business), params: { business: { name: "" } }
+      expect(response).to have_http_status(:unprocessable_content)
+      sidebar = Capybara.string(response.body).find("nav.sidebar")
+      expect(sidebar).to have_css(".nav-group", text: "Pat Consulting")
+      expect(sidebar).to have_css(".switcher summary", text: "Pat Consulting")
+    end
+
     it "forbids editors and viewers" do
       %w[editor viewer].each do |role|
         sign_in_as user_with_role(role, business)
@@ -83,6 +92,25 @@ RSpec.describe "Businesses" do
       expect(kpi("Expenses")).to have_text("$2,500.00")
       expect(kpi("Expenses")).to have_text("25% of income")
       expect(kpi("Net profit")).to have_css(".pos", text: "$7,500.00")
+    end
+
+    it "omits the net profit footnote when expenses are fully deductible" do
+      create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 2, 1), amount_cents: 1_000_000)
+      create(:transaction, account:, category: travel, posted_on: Date.new(2026, 2, 5), amount_cents: -250_000)
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business)
+      expect(kpi("Net profit (tax basis)")).to have_no_css("em")
+    end
+
+    it "explains net profit when deduction limits make it differ from income minus expenses" do
+      meals = create(:category, business:, name: "Client meals", deductible_bps: 5_000)
+      create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 2, 1), amount_cents: 1_000_000)
+      create(:transaction, account:, category: meals, posted_on: Date.new(2026, 2, 5), amount_cents: -200_000)
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business)
+      expect(kpi("Expenses")).to have_text("$2,000.00")
+      expect(kpi("Net profit (tax basis)")).to have_css(".pos", text: "$9,000.00")
+      expect(kpi("Net profit (tax basis)")).to have_css("em", text: "After deduction limits and mileage")
     end
 
     it "shows negative net profit in red parentheses" do

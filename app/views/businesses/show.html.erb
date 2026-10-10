@@ -25,8 +25,11 @@
     <% end %>
   </div>
   <div class="card kpi">
-    <small>Net profit</small>
+    <small>Net profit (tax basis)</small>
     <b class="<%= "pos" if @report.net_profit_cents.positive? %>"><%= money(@report.net_profit_cents) %></b>
+    <% if @report.net_profit_cents != @report.total_income_cents - @report.total_expense_cents %>
+      <em>After deduction limits and mileage</em>
+    <% end %>
   </div>
 </section>
 

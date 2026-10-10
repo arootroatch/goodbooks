@@ -2,7 +2,7 @@
   <%= render "layouts/business_switcher" %>
 
   <% if @business&.persisted? %>
-    <p class="nav-group"><%= @business.name %></p>
+    <p class="nav-group"><%= @business.name_in_database %></p>
     <%= nav_link "Overview", business_path(@business) %>
     <%= nav_link "Inbox", business_inbox_path(@business), badge: business_inbox_count(@business) %>
     <%= nav_link "Transactions", business_transactions_path(@business) %>

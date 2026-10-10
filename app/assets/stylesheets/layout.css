@@ -1,5 +1,5 @@
 .app-shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 100vh; }
-.app-main { padding: var(--space-6) var(--space-7); max-width: 1200px; width: 100%; }
+.app-main { padding: var(--space-6) var(--space-7); max-width: 1200px; width: 100%; overflow-x: auto; }
 
 .sidebar {
   position: sticky;

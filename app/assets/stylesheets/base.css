@@ -57,6 +57,11 @@ input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hid
   background: var(--surface);
   color: var(--fg);
 }
+
+td :is(input, select) { width: auto; }
+
+input[type=checkbox] + label, input[type=radio] + label { display: inline; margin-left: var(--space-1); }
+
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
   outline: 0;
   border-color: var(--accent);
