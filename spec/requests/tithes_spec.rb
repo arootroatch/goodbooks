@@ -25,7 +25,12 @@ RSpec.describe "Tithe" do
     book.update!(tithe_start_on: start_on)
     sign_in_as owner
     get business_tithe_path(book)
-    expect(response.body).to include("Behind $50.00", "TRANSFER FROM PAT", "CHECK 1042 GRACE CHURCH", "partial")
+    expect(response.body).to include("Behind $50.00", "TRANSFER FROM PAT", "CHECK 1042 GRACE CHURCH")
+    page = Capybara.string(response.body)
+    expect(page.find("header.page-header")).to have_link("Download CSV", href: business_tithe_path(book, format: :csv))
+    expect(page.all(".kpi small").map(&:text)).to eq([ "Balance", "Owed this year", "Paid this year" ])
+    expect(page.find(".kpi", text: "Balance")).to have_css("b", text: "Behind $50.00")
+    expect(page).to have_css("td .badge.badge-warn", text: "Partial")
     get business_tithe_path(book, format: :csv)
     expect(response.media_type).to eq("text/csv")
     expect(response.body.lines.first).to start_with("Week starting,Week ending,Income,Owed")

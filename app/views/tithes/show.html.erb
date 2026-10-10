@@ -1,6 +1,9 @@
-<h1>Tithe</h1>
+<header class="page-header">
+  <h1>Tithe</h1>
+  <%= link_to "Download CSV", business_tithe_path(@business, format: :csv) if @ledger %>
+</header>
 <% if current_membership.owner? %>
-  <%= form_with model: @business, url: business_tithe_path(@business), method: :patch, class: "inline-form" do |f| %>
+  <%= form_with model: @business, url: business_tithe_path(@business), method: :patch, class: "filters" do |f| %>
     <%= f.label :tithe_start_on, "Track tithe from" %>
     <%= f.date_field :tithe_start_on %>
     <%= f.submit "Save" %>
@@ -9,9 +12,20 @@
 <% if @ledger.nil? %>
   <p><%= current_membership.owner? ? "Choose the date to start tracking from; earlier activity is ignored." : "The household owner hasn't set a tithe start date yet." %></p>
 <% else %>
-  <p class="tithe-balance"><strong><%= tithe_balance_label(@ledger.balance_cents) %></strong></p>
-  <p>This year: owed <%= money(@ledger.ytd_owed_cents) %> · paid <%= money(@ledger.ytd_paid_cents) %></p>
-  <p><%= link_to "Download CSV", business_tithe_path(@business, format: :csv) %></p>
+  <section class="kpis">
+    <div class="card kpi">
+      <small>Balance</small>
+      <b class="<%= "neg" if @ledger.balance_cents.positive? %>"><%= tithe_balance_label(@ledger.balance_cents) %></b>
+    </div>
+    <div class="card kpi">
+      <small>Owed this year</small>
+      <b><%= money(@ledger.ytd_owed_cents) %></b>
+    </div>
+    <div class="card kpi">
+      <small>Paid this year</small>
+      <b><%= money(@ledger.ytd_paid_cents) %></b>
+    </div>
+  </section>
   <table>
     <thead>
       <tr><th>Week</th><th class="num">Income</th><th class="num">Owed</th><th class="num">Paid this week</th><th class="num">Applied</th><th>Status</th><th class="num">Balance</th></tr>
@@ -33,7 +47,7 @@
           <td class="num"><%= money(week.owed_cents) %></td>
           <td class="num"><%= money(week.paid_cents) %></td>
           <td class="num"><%= money(week.paid_toward_cents) %></td>
-          <td><%= week.status %></td>
+          <td><%= tithe_status_badge(week.status) %></td>
           <td class="num"><%= tithe_balance_label(week.balance_cents) %></td>
         </tr>
       <% end %>
