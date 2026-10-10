@@ -38,6 +38,19 @@ module ChartsHelper
     dollars >= 1000 ? "$#{trim_number(dollars / 1000)}k" : "$#{trim_number(dollars)}"
   end
 
+  def hbar_list(rows)
+    max = rows.map { _1[:cents] }.max.to_i
+    items = rows.map do |row|
+      percent = max.positive? ? (100.0 * row[:cents] / max).round(1) : 0
+      tag.li do
+        safe_join([ tag.span(row[:label], class: "hbar-label"),
+                    tag.span(tag.span(class: "hbar-fill", style: "width: #{percent}%"), class: "hbar-track"),
+                    tag.span(Money.new(row[:cents]).to_s, class: "hbar-value num") ])
+      end
+    end
+    tag.ul(safe_join(items), class: "hbar-list")
+  end
+
   private
 
   def chart_gridlines(max)

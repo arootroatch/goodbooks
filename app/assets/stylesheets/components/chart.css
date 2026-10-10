@@ -10,3 +10,9 @@
 .chart-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
 .chart-legend .legend-income { background: var(--chart-income); }
 .chart-legend .legend-expense { background: var(--chart-expense); }
+
+.hbar-list { list-style: none; margin: 0; padding: 0; }
+.hbar-list li { display: grid; grid-template-columns: minmax(0, 7rem) 1fr 5.5rem; align-items: center; gap: var(--space-2); margin: 7px 0; font-size: var(--text-sm); }
+.hbar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar-track { height: 8px; background: var(--chart-grid); border-radius: 2px; overflow: hidden; }
+.hbar-fill { display: block; height: 100%; background: var(--accent); border-radius: 2px; }

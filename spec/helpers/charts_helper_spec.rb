@@ -57,6 +57,31 @@ RSpec.describe ChartsHelper do
     end
   end
 
+  describe "#hbar_list" do
+    let(:rows) { [ { label: "Travel", cents: 884_100 }, { label: "Software", cents: 442_050 } ] }
+    let(:list) { Capybara.string(helper.hbar_list(rows)) }
+
+    it "scales each bar to the largest row" do
+      widths = list.all(".hbar-fill", visible: :all).map { _1[:style] }
+      expect(widths).to eq([ "width: 100.0%", "width: 50.0%" ])
+    end
+
+    it "shows labels and amounts" do
+      expect(list).to have_css("li", count: 2)
+      expect(list).to have_css(".hbar-label", text: "Travel")
+      expect(list).to have_css(".hbar-value", text: "$8,841.00")
+    end
+
+    it "escapes labels" do
+      html = helper.hbar_list([ { label: "<b>Meals</b>", cents: 100 } ])
+      expect(html).to include("&lt;b&gt;Meals&lt;/b&gt;")
+    end
+
+    it "renders an empty list for no rows" do
+      expect(Capybara.string(helper.hbar_list([]))).to have_no_css("li")
+    end
+  end
+
   describe "#compact_dollars" do
     it "abbreviates thousands" do
       expect(helper.compact_dollars(0)).to eq("$0")
