@@ -36,12 +36,14 @@ Balanced: QuickBooks-style workflows with modern Vercel/Next.js polish, leaning 
 
 All tokens are CSS custom properties on `:root` in `tokens.css`. Components only ever reference tokens, never raw colors, so dark mode needs no component-level CSS.
 
-Dark values apply in two cases:
+Each color token is written once with both values using `light-dark(<light>, <dark>)`, so light and dark can never drift apart. Which value applies is driven by `color-scheme`:
 
-- `:root[data-theme="dark"]`: the user chose Dark.
-- `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … } }`: the user chose System (no `data-theme` attribute) and the OS is dark.
+- `:root { color-scheme: light dark; }`: System. Follows the OS.
+- `:root[data-theme="light"] { color-scheme: light; }`: the user chose Light.
+- `:root[data-theme="dark"] { color-scheme: dark; }`: the user chose Dark.
+- Print forces `color-scheme: light`.
 
-The dark values are written once, in a shared custom-property block used by both selectors, so they cannot drift apart.
+`light-dark()` is supported by every browser that `allow_browser versions: :modern` admits.
 
 ### Color
 
@@ -190,9 +192,9 @@ Sign-in, 2FA, 2FA setup, first-run setup, and invite acceptance render without t
 
 ## 9. Charts (`app/helpers/charts_helper.rb`)
 
-- `bar_chart(labels:, series:, faded_last: false)`: grouped vertical bars. `series` is an ordered list of `{ name:, css_var:, values: }`. Draws 4 horizontal gridlines with compact dollar labels ($20k), and month initials on the x-axis.
+- `bar_chart(labels:, series:, label:, faded_last: false)`: grouped vertical bars. `series` is an ordered list of `{ key:, name:, values: }` (values in cents); `key` selects the CSS class `bar-<key>`, which maps to a `--chart-*` token. The y-axis rounds the maximum up to a nice number (1, 2, 5 or 10 × a power of ten) and draws gridlines at 0, ¼, ½, ¾ and the max, with compact dollar labels ($20k). Month abbreviations sit on the x-axis.
 - `hbar_list(rows)`: rows of `{ label:, cents: }`, scaled to the max, with the amount in Mono.
-- Output is an inline `<svg viewBox=…>` that scales to its container width. Fills use `var(--chart-*)` so the theme applies automatically.
+- Output is an inline `<svg viewBox=…>` that scales to its container width. Fills come from CSS classes using `var(--chart-*)`, so the theme applies automatically.
 - Accessibility: `role="img"` and an `aria-label` summary on the SVG, plus a `<title>` on every bar (for example "Mar income: $13,200.00").
 - Edge cases: all-zero or empty data renders axes with no bars and no division by zero. Negative monthly net is not charted. Income and expense are both drawn as positive magnitudes.
 
