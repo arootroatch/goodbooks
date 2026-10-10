@@ -13,17 +13,17 @@ bundle exec rspec       # test suite
 
 ## Deploying on a home server
 
-1. Copy `.env.example` to `.env`; set `RAILS_MASTER_KEY` (contents of `config/master.key`).
+1. Put `config/master.key` on the server (copy it from your dev machine; it is gitignored). Compose mounts it read-only into the container.
 
 2. First-run setup, locally, BEFORE exposing anything:
-   - Set `APP_HOST=localhost` in `.env`.
+   - In `docker-compose.yml`, set `APP_HOST: localhost`. The app refuses to start while it is blank.
    - Run `docker compose up -d --build`.
    - On the server itself, open `http://localhost:3000` in Chrome or Firefox (they treat localhost as secure, which the app's secure cookies need).
    - Create the household and enroll in 2FA.
    - **Warning:** the first visitor to an un-set-up install can claim it — that's why this happens before the tunnel exists.
    - *If the server is headless*, use an SSH port-forward from your laptop: `ssh -L 3000:localhost:3000 you@server`, then open `http://localhost:3000` on the laptop.
 
-3. Set `APP_HOST` to your public hostname (it must exactly match the hostname people type — don't override the Host header in the tunnel), then `docker compose up -d`.
+3. In `docker-compose.yml`, set `APP_HOST` to your public hostname (it must exactly match the hostname people type — don't override the Host header in the tunnel), then `docker compose up -d`.
 
 4. Expose port 3000 through the tunnel. TLS terminates at the tunnel.
    - **Cloudflare Tunnel:** `cloudflared tunnel create goodbooks`, route `APP_HOST` to `http://localhost:3000`, run `cloudflared tunnel run goodbooks` (or install it as a service).
@@ -38,7 +38,7 @@ To invite others to the household, go to **Invites** and create an invite link. 
 ## Updating
 
 ```bash
-git pull && docker compose up -d --build
+git pull --autostash && docker compose up -d --build
 ```
 
 ## Logs
@@ -58,7 +58,7 @@ docker run --rm -v goodbooks_storage:/data -v "$PWD":/out alpine \
   sh -c 'cp /data/backups/*.sqlite3 /out/'
 ```
 
-The SQLite backups are useless without `config/master.key`: it decrypts the stored 2FA secrets, so a restored database without it cannot sign anyone in. Store `config/master.key` and `.env` offsite, separately from the database copies. Restoring needs both.
+The SQLite backups are useless without `config/master.key`: it decrypts the stored 2FA secrets, so a restored database without it cannot sign anyone in. Store `config/master.key` offsite, separately from the database copies. Restoring needs both.
 
 ## Each tax year
 

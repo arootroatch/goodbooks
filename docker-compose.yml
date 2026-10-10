@@ -6,11 +6,11 @@ services:
     ports:
       - "127.0.0.1:3000:80"
     environment:
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?set RAILS_MASTER_KEY in .env}
-      APP_HOST: ${APP_HOST:?set APP_HOST in .env}
+      APP_HOST: "" # Set before deploying. See README.
       SOLID_QUEUE_IN_PUMA: "true"
     volumes:
       - goodbooks_storage:/rails/storage
+      - ./config/master.key:/rails/config/master.key:ro
 
 volumes:
   goodbooks_storage:
