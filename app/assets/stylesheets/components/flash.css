@@ -1,0 +1,9 @@
+.flash {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+.flash-notice { background: var(--pos-soft); color: var(--pos); border-color: color-mix(in srgb, var(--pos) 30%, transparent); }
+.flash-alert { background: var(--neg-soft); color: var(--neg); border-color: color-mix(in srgb, var(--neg) 30%, transparent); }

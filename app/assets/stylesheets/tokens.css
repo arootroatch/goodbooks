@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light dark;
+
+  --bg: light-dark(#f6f7fb, #07080f);
+  --surface: light-dark(#ffffff, #0e1020);
+  --hover: light-dark(#f3f4f9, #141730);
+  --fg: light-dark(#0f1222, #e7e9f5);
+  --muted: light-dark(#646a85, #9a9fbd);
+  --border: light-dark(#e2e5ef, #1f2340);
+  --border-strong: light-dark(#cfd3e3, #2c3156);
+  --accent: light-dark(#4f46e5, #818cf8);
+  --accent-hover: light-dark(#4338ca, #a5b4fc);
+  --accent-soft: light-dark(#eef2ff, #1e1b4b);
+  --accent-fg: light-dark(#3730a3, #c7d2fe);
+  --on-accent: light-dark(#ffffff, #0e1020);
+  --ring: light-dark(rgb(79 70 229 / .25), rgb(129 140 248 / .35));
+  --neg: light-dark(#d91a44, #fb7185);
+  --neg-soft: light-dark(#fff1f2, #2a0f1a);
+  --pos: light-dark(#0b8059, #34d399);
+  --pos-soft: light-dark(#ecfdf5, #062a1e);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fffbeb, #2a1f05);
+  --chart-income: var(--accent);
+  --chart-expense: light-dark(#c7cbe0, #2e3358);
+  --chart-grid: light-dark(#eceef5, #181b33);
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-base: 13.5px;
+  --text-lg: 16px;
+  --text-xl: 19px;
+  --text-2xl: 22px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 10px;
+  --shadow-pop: 0 8px 24px rgb(15 18 34 / .14);
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+@media print {
+  :root, :root[data-theme] { color-scheme: light; }
+}

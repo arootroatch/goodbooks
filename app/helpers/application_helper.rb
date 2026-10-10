@@ -1,9 +1,8 @@
 module ApplicationHelper
   def money(cents)
-    cents.nil? ? "—" : Money.new(cents).to_s
-  end
+    return "—" if cents.nil?
+    return Money.new(cents).to_s unless cents.negative?
 
-  def business_nav(business)
-    render "businesses/nav", business: business
+    tag.span("(#{Money.new(-cents)})", class: "neg")
   end
 end

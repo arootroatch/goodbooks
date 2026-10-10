@@ -1,0 +1,22 @@
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+  font-size: var(--text-sm);
+}
+.segmented > a, .segmented button {
+  display: block;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+  text-decoration: none;
+}
+.segmented > * + * { border-left: 1px solid var(--border); }
+.segmented > a:hover, .segmented button:hover { color: var(--fg); background: var(--hover); }
+.segmented > a[aria-current="page"], .segmented button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-fg); font-weight: 500; }
+.segmented form.button_to { display: block; }

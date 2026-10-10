@@ -1,12 +1,104 @@
-<%= business_nav @business %>
-<h1><%= @business.name %></h1>
-<p>Taxpayer: <%= @business.person.name %></p>
-<h2>Accounts</h2>
-<ul>
-  <% @accounts.each do |account| %>
-    <li><%= account.name %> (<%= account.source %>)</li>
+<% content_for :title, @business.name %>
+
+<header class="page-header">
+  <div>
+    <h1><%= @business.name %></h1>
+    <p class="subtitle">Taxpayer: <%= @business.person.name %></p>
+  </div>
+  <div class="period-picker">
+    <nav class="segmented" aria-label="Period">
+      <% Period::KINDS.each do |kind| %>
+        <%= link_to kind.capitalize, business_path(@business, @period.switch_to(kind).to_params),
+                    aria: { current: ("page" if kind == @period.kind) } %>
+      <% end %>
+    </nav>
+    <div class="period-step">
+      <%= link_to "‹", business_path(@business, @period.previous.to_params), class: "step", aria: { label: "Previous #{@period.kind}" } %>
+      <div><strong><%= @period.label %></strong><small><%= @period.dates %></small></div>
+      <% if @period.next? %>
+        <%= link_to "›", business_path(@business, @period.next.to_params), class: "step", aria: { label: "Next #{@period.kind}" } %>
+      <% else %>
+        <span class="step" aria-hidden="true">›</span>
+      <% end %>
+    </div>
+  </div>
+</header>
+
+<section class="kpis">
+  <div class="card kpi">
+    <small>Income</small>
+    <b><%= money(@report.total_income_cents) %></b>
+  </div>
+  <div class="card kpi">
+    <small>Expenses</small>
+    <b><%= money(@report.total_expense_cents) %></b>
+    <% if (share = share_of_income(@report.total_expense_cents, @report.total_income_cents)) %>
+      <em><%= share %></em>
+    <% end %>
+  </div>
+  <div class="card kpi">
+    <small>Net profit (tax basis)</small>
+    <b class="<%= "pos" if @report.net_profit_cents.positive? %>"><%= money(@report.net_profit_cents) %></b>
+    <% if @report.net_profit_cents != @report.total_income_cents - @report.total_expense_cents %>
+      <em>After deduction limits and mileage</em>
+    <% end %>
+  </div>
+</section>
+
+<div class="overview-grid">
+  <section class="card">
+    <h2 class="card-title">
+      Income vs expenses
+      <span class="chart-legend"><span><i class="legend-income"></i>Income</span><span><i class="legend-expense"></i>Expenses</span></span>
+    </h2>
+    <%= bar_chart(
+          labels: @chart.map(&:label),
+          series: [ { key: "income", name: "Income", values: @chart.map(&:income_cents) },
+                    { key: "expense", name: "Expenses", values: @chart.map(&:expense_cents) } ],
+          faded_index: @period.bucket_in_progress,
+          label: "Income and expenses by #{@period.bucket_unit}, #{@period.label}") %>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Top expenses</h2>
+    <% if @top_expenses.any? %>
+      <%= hbar_list(@top_expenses.map { { label: _1.name, cents: _1.actual_cents } }) %>
+    <% else %>
+      <div class="empty"><strong>No expenses</strong>Nothing categorized as an expense in this period.</div>
+    <% end %>
+  </section>
+</div>
+
+<section class="card inbox-preview">
+  <h2 class="card-title">
+    Inbox
+    <small><%= pluralize(@inbox_count, "transaction") %> to categorize · <%= link_to "Open inbox →", business_inbox_path(@business) %></small>
+  </h2>
+  <% if @inbox_preview.any? %>
+    <table>
+      <tbody>
+        <% @inbox_preview.each do |transaction| %>
+          <tr>
+            <td class="muted"><%= transaction.posted_on.strftime("%b %-d") %></td>
+            <td><%= transaction.payee %></td>
+            <td class="num"><%= money(transaction.amount_cents) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="empty"><strong>Inbox zero</strong>Every transaction is categorized.</div>
   <% end %>
-</ul>
-<% if current_membership.owner? %>
-  <%= link_to "Edit business", edit_business_path(@business) %>
-<% end %>
+</section>
+
+<section class="card">
+  <h2 class="card-title">
+    Accounts
+    <% if current_membership.owner? %><small><%= link_to "Edit business", edit_business_path(@business) %></small><% end %>
+  </h2>
+  <ul class="plain-list">
+    <% @accounts.each do |account| %>
+      <li><%= account.name %> <span class="muted">(<%= account.source %>)</span></li>
+    <% end %>
+  </ul>
+</section>

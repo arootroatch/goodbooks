@@ -20,6 +20,17 @@ class BusinessesController < ApplicationController
   end
 
   def show
+    ids = [ @business.id ]
+    @period = Period.from_params(params)
+    @report = Reports::ProfitAndLoss.new(
+      category_totals: Reports::CategoryTotals.load(business_ids: ids, range: @period.range),
+      mileage_deduction_cents: Reports::MileageTotals.load(business_ids: ids, range: @period.range).deduction_cents
+    )
+    @top_expenses = @report.expense_lines.select { _1.actual_cents.positive? }.sort_by { -_1.actual_cents }.first(5)
+    @chart = Reports::BucketTotals.load(business_ids: ids, buckets: @period.buckets)
+    inbox = Transaction.for_businesses(@business.id).inbox
+    @inbox_count = inbox.count
+    @inbox_preview = inbox.order(:posted_on, :id).limit(3)
     @accounts = @business.accounts.active.order(:name)
   end
 

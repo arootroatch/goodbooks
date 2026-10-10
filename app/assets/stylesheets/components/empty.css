@@ -1,0 +1,8 @@
+.empty {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--muted);
+}
+.empty strong { display: block; color: var(--fg); margin-bottom: 2px; }
