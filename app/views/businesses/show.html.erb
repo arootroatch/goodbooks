@@ -5,11 +5,23 @@
     <h1><%= @business.name %></h1>
     <p class="subtitle">Taxpayer: <%= @business.person.name %></p>
   </div>
-  <nav class="segmented" aria-label="Period">
-    <% period_options(date_range).each do |label, range_params, current| %>
-      <%= link_to label, business_path(@business, range_params), aria: { current: ("page" if current) } %>
-    <% end %>
-  </nav>
+  <div class="period-picker">
+    <nav class="segmented" aria-label="Period">
+      <% Period::KINDS.each do |kind| %>
+        <%= link_to kind.capitalize, business_path(@business, @period.switch_to(kind).to_params),
+                    aria: { current: ("page" if kind == @period.kind) } %>
+      <% end %>
+    </nav>
+    <div class="period-step">
+      <%= link_to "‹", business_path(@business, @period.previous.to_params), class: "step", aria: { label: "Previous #{@period.kind}" } %>
+      <div><strong><%= @period.label %></strong><small><%= @period.dates %></small></div>
+      <% if @period.next? %>
+        <%= link_to "›", business_path(@business, @period.next.to_params), class: "step", aria: { label: "Next #{@period.kind}" } %>
+      <% else %>
+        <span class="step" aria-hidden="true">›</span>
+      <% end %>
+    </div>
+  </div>
 </header>
 
 <section class="kpis">
@@ -40,11 +52,11 @@
       <span class="chart-legend"><span><i class="legend-income"></i>Income</span><span><i class="legend-expense"></i>Expenses</span></span>
     </h2>
     <%= bar_chart(
-          labels: @months.map { Date::ABBR_MONTHNAMES[_1.month] },
-          series: [ { key: "income", name: "Income", values: @months.map(&:income_cents) },
-                    { key: "expense", name: "Expenses", values: @months.map(&:expense_cents) } ],
-          faded_last: month_in_progress?(date_range.last),
-          label: "Monthly income and expenses, #{date_range.last.year}") %>
+          labels: @chart.map(&:label),
+          series: [ { key: "income", name: "Income", values: @chart.map(&:income_cents) },
+                    { key: "expense", name: "Expenses", values: @chart.map(&:expense_cents) } ],
+          faded_index: @period.bucket_in_progress,
+          label: "Income and expenses by #{@period.bucket_unit}, #{@period.label}") %>
   </section>
 
   <section class="card">

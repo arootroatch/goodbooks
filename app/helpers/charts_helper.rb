@@ -7,7 +7,7 @@ module ChartsHelper
   BOTTOM = 192
   GRID_STEPS = 4
 
-  def bar_chart(labels:, series:, label:, faded_last: false)
+  def bar_chart(labels:, series:, label:, faded_index: nil)
     max = chart_max(series.flat_map { _1[:values] })
     parts = chart_gridlines(max)
     group_width = labels.empty? ? 0 : (RIGHT - LEFT).to_f / labels.size
@@ -15,7 +15,7 @@ module ChartsHelper
 
     labels.each_with_index do |name, i|
       group_x = LEFT + group_width * i
-      faded = faded_last && i == labels.size - 1
+      faded = i == faded_index
       series.each_with_index do |s, j|
         value = s[:values][i].to_i
         next unless value.positive?

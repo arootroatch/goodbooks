@@ -83,7 +83,7 @@ RSpec.describe "Businesses" do
 
     def kpi(label) = page.find(".kpi", text: label)
 
-    it "shows year-to-date income, expenses, and net profit" do
+    it "shows the year's income, expenses, and net profit by default" do
       create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 2, 1), amount_cents: 1_000_000)
       create(:transaction, account:, category: travel, posted_on: Date.new(2026, 2, 5), amount_cents: -250_000)
       sign_in_as user_with_role("viewer", business)
@@ -122,34 +122,76 @@ RSpec.describe "Businesses" do
       expect(kpi("Expenses")).to have_no_text("of income")
     end
 
-    it "charts January through the current month, fading the month in progress" do
+    def period_nav = page.find("nav.segmented[aria-label='Period']")
+    def chart = page.find("svg.chart", visible: :all)
+    def axis_labels = chart.all("text.chart-axis", visible: :all).map { _1.text(:all) }.grep_v(/\A\$/)
+
+    it "defaults to the current year, charted by month with the month in progress faded" do
       create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 1, 10), amount_cents: 500_000)
       create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 3, 10), amount_cents: 300_000)
       sign_in_as user_with_role("viewer", business)
       get business_path(business)
-      chart = page.find("svg.chart", visible: :all)
-      expect(chart.all("text.chart-axis", visible: :all).map(&:text)).to include("Jan", "Feb", "Mar")
+      expect(page.find(".period-step")).to have_text("2026")
+      expect(page.find(".period-step")).to have_text("Jan 1 – Dec 31, 2026")
+      expect(axis_labels).to eq(Date::ABBR_MONTHNAMES.compact)
+      expect(chart["aria-label"]).to eq("Income and expenses by month, 2026")
       expect(chart).to have_css("rect.bar-income", count: 2, visible: :all)
       expect(chart).to have_css("rect.bar-income.faded title", text: "Mar income: $3,000.00", visible: :all)
+      expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Year")
     end
 
-    it "uses a custom range from the URL" do
-      create(:transaction, account:, category: consulting, posted_on: Date.new(2025, 6, 10), amount_cents: 100_000)
+    it "charts a month by week and limits the totals to that month" do
+      create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 2, 27), amount_cents: 900_000)
+      create(:transaction, account:, category: consulting, posted_on: Date.new(2026, 3, 10), amount_cents: 300_000)
       sign_in_as user_with_role("viewer", business)
-      get business_path(business, from: "2025-01-01", to: "2025-06-30")
+      get business_path(business, period: "month", on: "2026-03-01")
+      expect(page.find(".period-step")).to have_text("March 2026")
+      expect(kpi("Income")).to have_text("$3,000.00")
+      expect(axis_labels).to eq([ "Mar 1", "Mar 2", "Mar 9", "Mar 16", "Mar 23", "Mar 30" ])
+      expect(chart["aria-label"]).to eq("Income and expenses by week, March 2026")
+      expect(chart).to have_css("rect.bar-income title", text: "Mar 9 income: $3,000.00", visible: :all)
+      expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Month")
+    end
+
+    it "steps back to an earlier quarter and forward again" do
+      create(:transaction, account:, category: consulting, posted_on: Date.new(2025, 11, 3), amount_cents: 100_000)
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business, period: "quarter", on: "2025-10-01")
+      step = page.find(".period-step")
+      expect(step).to have_text("Q4 2025")
+      expect(step).to have_text("Oct 1 – Dec 31, 2025")
       expect(kpi("Income")).to have_text("$1,000.00")
-      chart = page.find("svg.chart", visible: :all)
-      expect(chart["aria-label"]).to eq("Monthly income and expenses, 2025")
+      expect(axis_labels).to eq(%w[Oct Nov Dec])
       expect(chart).to have_no_css("rect.faded", visible: :all)
-      expect(page.find("nav.segmented[aria-label='Period']")).to have_no_css("[aria-current]")
+      expect(step).to have_link("‹", href: business_path(business, period: "quarter", on: "2025-07-01"))
+      expect(step).to have_link("›", href: business_path(business, period: "quarter", on: "2026-01-01"))
     end
 
-    it "links the period control and marks the selected period" do
+    it "offers no next step from the period containing today" do
       sign_in_as user_with_role("viewer", business)
-      get business_path(business, from: "2026-03-01", to: "2026-03-15")
-      period = page.find("nav.segmented[aria-label='Period']")
-      expect(period).to have_link("Quarter", href: business_path(business, from: "2026-01-01", to: "2026-03-15"))
-      expect(period).to have_css('a[aria-current="page"]', text: "Month")
+      get business_path(business, period: "quarter", on: "2026-02-01")
+      expect(page.find(".period-step")).to have_no_link("›")
+      expect(page.find(".period-step")).to have_link("‹")
+    end
+
+    it "switches kind around today when the period contains it" do
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business, period: "quarter", on: "2026-01-01")
+      expect(period_nav).to have_link("Month", href: business_path(business, period: "month", on: "2026-03-01"))
+      expect(period_nav).to have_link("Year", href: business_path(business, period: "year", on: "2026-01-01"))
+    end
+
+    it "switches kind around the period's start for a past period" do
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business, period: "year", on: "2025-01-01")
+      expect(period_nav).to have_link("Quarter", href: business_path(business, period: "quarter", on: "2025-01-01"))
+    end
+
+    it "falls back to the current year for nonsense params" do
+      sign_in_as user_with_role("viewer", business)
+      get business_path(business, period: "decade", on: "soon")
+      expect(response).to have_http_status(:ok)
+      expect(page.find(".period-step")).to have_text("Jan 1 – Dec 31, 2026")
     end
 
     it "lists the top five expense categories, largest first" do

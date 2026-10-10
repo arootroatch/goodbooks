@@ -49,10 +49,11 @@ RSpec.describe ChartsHelper do
       expect(empty).to have_css("line.chart-grid", count: 5, visible: :all)
     end
 
-    it "fades only the last group when asked" do
-      faded = chart(faded_last: true)
-      expect(faded).to have_css("rect.faded", count: 1, visible: :all)
-      expect(faded).to have_css("rect.faded title", text: "Feb income", visible: :all)
+    it "fades only the group at the given index" do
+      faded = chart(faded_index: 0)
+      expect(faded).to have_css("rect.faded", count: 2, visible: :all)
+      expect(faded).to have_css("rect.faded title", text: "Jan income", visible: :all)
+      expect(faded).to have_no_css("rect.faded title", text: "Feb", visible: :all)
       expect(chart).to have_no_css("rect.faded", visible: :all)
     end
   end

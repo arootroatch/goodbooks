@@ -173,26 +173,27 @@ Sign-in, 2FA, 2FA setup, first-run setup, and invite acceptance render without t
 
 ### Period
 
-- It includes `DateRangeParams`. The default range is year to date, as today.
-- A segmented control in the page header links to Month (start of current month → today), Quarter (start of current quarter → today), and YTD. It sets `from`/`to`. A custom range from the URL is honored, and then no segment is marked current.
+- A `Period` (calendar month, quarter, or year) comes from `?period=month|quarter|year&on=<date>`. The default is the current year; unknown kinds fall back to year and bad dates to today.
+- A segmented control (Month / Quarter / Year) switches kind, staying around today if the current period contains it and otherwise around the period's start. Exactly one segment is current.
+- Below it, ‹ › step to the previous and next period of the same kind, around a label naming exactly what is shown ("Q4 2026", "Oct 1 – Dec 31, 2026"). There is no › once the next period would start after today.
 
 ### Content, top to bottom
 
 1. **Page header:** business name, "Taxpayer: <name>", period control.
-2. **KPI tiles** (for the selected range): Income, Expenses, Net profit. Net is green when positive and red in parentheses when negative. Expenses has the subtitle "N% of income" (omitted when income is zero).
-3. **Income vs expenses chart:** grouped monthly bars from January through the month of the range's end date, in that year. This is independent of the period control, so the trend stays meaningful when Month is selected. The current, incomplete month is drawn at reduced opacity. Includes a legend.
-4. **Top expenses:** the top 5 expense categories in the selected range as horizontal bars, scaled to the largest. Shows an empty state when there are no expenses.
+2. **KPI tiles** (for the selected period): Income, Expenses, Net profit. Net is green when positive and red in parentheses when negative. Expenses has the subtitle "N% of income" (omitted when income is zero).
+3. **Income vs expenses chart:** covers exactly the selected period: Monday-start weeks (clipped to the month) for Month, months for Quarter and Year. The bucket containing today is drawn at reduced opacity. Includes a legend.
+4. **Top expenses:** the top 5 expense categories in the selected period as horizontal bars, scaled to the largest. Shows an empty state when there are no expenses.
 5. **Inbox preview:** the 3 oldest uncategorized transactions (date, payee, amount) with "Open inbox →" and the total count. Empty state "Inbox zero" when none.
 6. **Accounts:** the current list of active accounts moves to a compact card at the bottom, with the owner's "Edit business" link.
 
 ### Data
 
-- KPIs and top expenses come from `Reports::CategoryTotals.load(business_ids: [@business.id], range: date_range)`. Sums use the same rules the P&L uses (`Reports::ProfitAndLoss`), so the overview and the P&L report always agree.
-- New `Reports::MonthlyTotals.load(business_ids:, year:, through_month:)` returns one row per month, with zero-filled income and expense cents, from one grouped query over `Transaction.countable`.
+- KPIs and top expenses come from `Reports::CategoryTotals.load(business_ids: [@business.id], range: @period.range)`. Sums use the same rules the P&L uses (`Reports::ProfitAndLoss`), so the overview and the P&L report always agree.
+- New `Reports::BucketTotals.load(business_ids:, buckets:)` returns one zero-filled row per `Period::Bucket` (label, income cents, expense cents) from one grouped query over `Transaction.countable`.
 
 ## 9. Charts (`app/helpers/charts_helper.rb`)
 
-- `bar_chart(labels:, series:, label:, faded_last: false)`: grouped vertical bars. `series` is an ordered list of `{ key:, name:, values: }` (values in cents); `key` selects the CSS class `bar-<key>`, which maps to a `--chart-*` token. The y-axis rounds the maximum up to a nice number (1, 2, 5 or 10 × a power of ten) and draws gridlines at 0, ¼, ½, ¾ and the max, with compact dollar labels ($20k). Month abbreviations sit on the x-axis.
+- `bar_chart(labels:, series:, label:, faded_index: nil)`: grouped vertical bars. `series` is an ordered list of `{ key:, name:, values: }` (values in cents); `key` selects the CSS class `bar-<key>`, which maps to a `--chart-*` token. The y-axis rounds the maximum up to a nice number (1, 2, 5 or 10 × a power of ten) and draws gridlines at 0, ¼, ½, ¾ and the max, with compact dollar labels ($20k). Bucket labels sit on the x-axis.
 - `hbar_list(rows)`: rows of `{ label:, cents: }`, scaled to the max, with the amount in Mono.
 - Output is an inline `<svg viewBox=…>` that scales to its container width. Fills come from CSS classes using `var(--chart-*)`, so the theme applies automatically.
 - Accessibility: `role="img"` and an `aria-label` summary on the SVG, plus a `<title>` on every bar (for example "Mar income: $13,200.00").
@@ -227,7 +228,7 @@ Deleted:
 TDD throughout, with one failing test at a time.
 
 - **Helper specs:** `money` (negative, positive, zero, nil, HTML safety). `ChartsHelper`: bar count, bar heights proportional to values, labels, `<title>` text, `aria-label`, zero and empty data, faded last month.
-- **Model specs:** `Reports::MonthlyTotals` zero-fills months, separates income from expense, excludes uncountable and other businesses' transactions, and respects `through_month`.
+- **Model specs:** `Period` ranges, labels, stepping, switching and buckets; `Reports::BucketTotals` zero-fills buckets, separates income from expense, and excludes uncountable, out-of-range and other businesses' transactions.
 - **Request specs:**
   - Overview: shows KPIs, charts, top expenses, inbox preview and empty states. The period control sets the range and marks the current segment.
   - Sidebar: business section appears only with a business in context. Every role-gated link stays hidden from roles that can't see it today (mirror the existing nav conditions).
