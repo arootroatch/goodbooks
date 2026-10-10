@@ -27,6 +27,7 @@
 
   <div class="sidebar-footer">
     <span class="sidebar-user"><%= Current.user.name.presence || Current.user.email_address %></span>
+    <%= render "layouts/theme_toggle" %>
     <%= button_to "Sign out", session_path, method: :delete, class: "ghost" %>
   </div>
 </nav>

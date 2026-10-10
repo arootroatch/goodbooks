@@ -26,6 +26,22 @@ RSpec.describe "Theme" do
     end
   end
 
+  it "renders the toggle with the current choice pressed" do
+    cookies[:theme] = "dark"
+    get new_session_path
+    toggle = Capybara.string(response.body).find(".theme-toggle")
+    expect(toggle).to have_css('button[aria-pressed="true"]', text: "Dark")
+    expect(toggle).to have_css('button[aria-pressed="false"]', text: "System")
+    expect(toggle).to have_css('button[aria-pressed="false"]', text: "Light")
+  end
+
+  it "shows the toggle to signed-in users" do
+    business = create(:business)
+    sign_in_as user_with_role("viewer", business)
+    get root_path
+    expect(Capybara.string(response.body).find("nav.sidebar")).to have_css(".theme-toggle")
+  end
+
   describe "PATCH /theme" do
     it "stores a valid choice and redirects back" do
       patch theme_path, params: { theme: "dark" }, headers: { "HTTP_REFERER" => "http://www.example.com/session/new" }

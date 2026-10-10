@@ -1,0 +1,8 @@
+<div class="segmented theme-toggle" role="group" aria-label="Theme" data-controller="theme">
+  <% Theme::CHOICES.each do |choice| %>
+    <%= button_to choice.capitalize, theme_path, method: :patch, params: { theme: choice },
+          form: { data: { action: "submit->theme#choose" } },
+          aria: { pressed: current_theme == choice },
+          data: { theme_target: "option", theme_choice: choice } %>
+  <% end %>
+</div>
