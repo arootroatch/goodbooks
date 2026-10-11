@@ -20,8 +20,10 @@ class InvoicePaymentsController < ApplicationController
       .where.not(id: @invoice.payments.select(:deposit_id))
     @exact = deposits.with_unallocated(@invoice.outstanding_cents).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
     @others = deposits.where(posted_on: @from..).where.not(id: @exact.map(&:id)).order(posted_on: :desc, id: :desc).limit(LIMIT).to_a
-    @gross_receipts = InvoicePayments.gross_receipts_categories(@business)
+    taxed = @invoice.sales_tax_cents.positive?
+    @gross_receipts = InvoicePayments.category_choices_for(@invoice, InvoicePayments.gross_receipts_categories(@business))
     @income_categories = @business.categories.active.income.order(:name)
+    @income_categories = @income_categories.where(sales_tax_treatment: "taxable") if taxed
   end
 
   def create
@@ -50,12 +52,25 @@ class InvoicePaymentsController < ApplicationController
   end
 
   def link(deposit)
-    cents, error = requested_cents
+    fee, fee_error = processor_fee_cents
+    return InvoicePayments::Result.new(payment: nil, error: fee_error) if fee_error
+
+    cents, error = requested_cents(fee)
     return InvoicePayments::Result.new(payment: nil, error: error) if error
 
     category_id = scalar_params(:category_id)[:category_id]
     category = category_id && @business.categories.active.income.find(category_id)
-    InvoicePayments.link(invoice: @invoice, deposit: deposit, amount_cents: cents, category: category)
+    InvoicePayments.link(invoice: @invoice, deposit: deposit, amount_cents: cents, category: category, processor_fee_cents: fee)
+  end
+
+  def processor_fee_cents
+    text = scalar_params(:processor_fee)[:processor_fee]
+    return [ nil, nil ] if text.nil?
+
+    cents = Money.parse(text).cents
+    cents.negative? ? [ nil, "Processor fee can't be negative." ] : [ cents, nil ]
+  rescue Money::ParseError => e
+    [ nil, "Processor fee #{e.message}." ]
   end
 
   def respond_for_inbox(result, deposit)
@@ -77,11 +92,14 @@ class InvoicePaymentsController < ApplicationController
     end
   end
 
-  def requested_cents
+  # The amount field is prefilled before any fee is typed; left untouched, it follows the fee (spec §4.3).
+  def requested_cents(fee)
     return [ nil, nil ] unless params.key?(:amount)
 
     text = scalar_params(:amount)[:amount]
     return [ nil, "Amount can't be blank." ] if text.nil?
+
+    return [ nil, nil ] if fee.to_i.positive? && text == scalar_params(:proposed_amount)[:proposed_amount]
 
     [ Money.parse(text).cents, nil ]
   rescue Money::ParseError => e

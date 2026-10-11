@@ -7,6 +7,10 @@
   <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
 </header>
 
+<% @dashboard.businesses.each do |row| %>
+  <%= render "sales_tax/overdue_banner", business: row.business, summary: row.sales_tax %>
+<% end %>
+
 <section class="kpis">
   <div class="card kpi">
     <small>Overdue</small>
@@ -32,6 +36,9 @@
 </section>
 
 <%= render "invoices/open_cards", summary: open, show_business: true, list_path: ->(status) { household_invoices_path(status:) } %>
+<% if (sales_tax_rows = @dashboard.businesses.select(&:sales_tax)).any? %>
+  <%= render "sales_tax/household_card", rows: sales_tax_rows %>
+<% end %>
 
 <h2 class="section-title">Businesses</h2>
 <div class="business-cards">

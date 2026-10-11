@@ -16,6 +16,14 @@ module ApplicationHelper
     end
   end
 
+  def due_phrase(due_on, today = Date.current)
+    days = (due_on - today).to_i
+    if days.negative? then "#{pluralize(-days, 'day')} late"
+    elsif days.zero? then "due today"
+    else "due in #{pluralize(days, 'day')}"
+    end
+  end
+
   def money(cents)
     return "—" if cents.nil?
     return Money.new(cents).to_s unless cents.negative?

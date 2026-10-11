@@ -4,6 +4,8 @@ Self-hosted bookkeeping for a freelancing household: income and expenses per bus
 
 The household owner can set up a **Personal** book from the dashboard for the joint checking account. It has its own categories, rules, inbox, a spending report, and a weekly tithe page (10% of tithable deposits, Sunday–Saturday, payments applied oldest week first). Only the household owner and linked spouse can see it; the accountant cannot. Design: `docs/superpowers/specs/2026-10-06-goodbooks-tithing-design.md`.
 
+**Sales tax (Tennessee).** An owner turns it on from a business's **Sales tax** page (TN account number, filing frequency, default rate, start date). Income categories are marked taxable, exempt, or not a sale. Deposits can carry the card processor's fee (Stripe) and the sales tax from the payout report, and a "tax-inclusive" button backs the tax out at the default rate. Invoices can include sales tax, which is shared out to the deposits that pay them. Each filing period shows gross, exempt, and taxable sales, tax collected, remitted, and balance owed, with its due date (the 20th of the following month, rolled past weekends and the TN holidays that can fall on it, computed for any year). Reports count income net of sales tax and gross of fees, with fees under Merchant fees.
+
 ## Development
 
 ```bash

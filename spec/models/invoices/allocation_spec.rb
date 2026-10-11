@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Invoices::Allocation do
   def call(requested = nil, invoice: 120_000, paid: 0, deposit: 120_000, allocated: 0)
     described_class.call(invoice_amount_cents: invoice, invoice_paid_cents: paid,
-                         deposit_amount_cents: deposit, deposit_allocated_cents: allocated, requested_cents: requested)
+                         deposit_gross_cents: deposit, deposit_allocated_cents: allocated, requested_cents: requested)
   end
 
   it "proposes the full amount for an exact match" do

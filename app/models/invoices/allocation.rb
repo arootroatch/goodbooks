@@ -4,9 +4,9 @@ module Invoices
       def ok? = error.nil?
     end
 
-    def self.call(invoice_amount_cents:, invoice_paid_cents:, deposit_amount_cents:, deposit_allocated_cents:, requested_cents: nil)
+    def self.call(invoice_amount_cents:, invoice_paid_cents:, deposit_gross_cents:, deposit_allocated_cents:, requested_cents: nil)
       outstanding = invoice_amount_cents - invoice_paid_cents
-      unallocated = deposit_amount_cents - deposit_allocated_cents
+      unallocated = deposit_gross_cents - deposit_allocated_cents
       return failure("This invoice is already fully paid.") unless outstanding.positive?
       return failure("This deposit is already fully allocated.") unless unallocated.positive?
       return success([ outstanding, unallocated ].min) if requested_cents.nil?

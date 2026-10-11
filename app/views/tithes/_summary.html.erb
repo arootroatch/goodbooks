@@ -1,8 +1,8 @@
 <%# Tithe at a glance: last week, this week, and the running balance. %>
 <% this_week = ledger.weeks.last %>
 <% last_week = ledger.weeks[-2] %>
-<section class="card tithe-summary">
-  <header class="tithe-summary-header">
+<section class="card summary-card tithe-summary">
+  <header class="summary-card-header">
     <h2>Tithe</h2>
     <% if local_assigns[:details_path] %><span><%= link_to "Tithe details", details_path %> →</span><% end %>
   </header>
@@ -26,7 +26,7 @@
       <div><dt>Given</dt><dd><%= money(this_week.paid_cents) %></dd></div>
     </dl>
   </div>
-  <div class="tithe-balance">
+  <div class="summary-card-total tithe-balance">
     <h3 class="card-title">Overall</h3>
     <b class="<%= "neg" if ledger.balance_cents.positive? %>"><%= tithe_balance_label(ledger.balance_cents) %></b>
     <p><%= tithe_balance_advice(ledger.balance_cents) %></p>

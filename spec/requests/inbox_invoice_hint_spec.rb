@@ -45,6 +45,25 @@ RSpec.describe "Inbox invoice hint" do
     expect(response.body).to include(new_business_invoice_payment_path(business, invoice))
   end
 
+  it "offers only the taxable category for a taxed invoice and marks paid into it" do
+    create(:sales_tax_profile, business: business)
+    sales.update!(sales_tax_treatment: "taxable")
+    create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    invoice.update!(amount_cents: 109_250, sales_tax_cents: 9_250)
+    deposit.update!(amount_cents: 109_250)
+    sign_in_as user_with_role("editor", business)
+
+    get business_inbox_path(business)
+    hint = Nokogiri::HTML(response.body).at_css(".invoice-hint").to_html
+    expect(hint).to include("Mark paid")
+    expect(hint).not_to include("Consulting")
+    expect(hint).to include(%(name="category_id"), %(value="#{sales.id}"))
+
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: deposit.id, category_id: sales.id, from_inbox: "1" }, headers: turbo
+    expect(invoice.reload).to be_paid
+    expect(deposit.reload.category).to eq(sales)
+  end
+
   it "marks paid with a turbo stream that removes the row" do
     sign_in_as user_with_role("editor", business)
     post business_invoice_payments_path(business, invoice), params: { deposit_id: deposit.id, category_id: sales.id, from_inbox: "1" }, headers: turbo
@@ -69,5 +88,22 @@ RSpec.describe "Inbox invoice hint" do
     post business_invoice_payments_path(business, invoice), params: { deposit_id: deposit.id, category_id: sales.id, from_inbox: "1" }
     expect(response).to redirect_to(business_inbox_path(business))
     expect(flash[:notice]).to eq("Payment recorded.")
+  end
+
+  it "refuses a taxed invoice paid into an exempt category from the inbox and leaves the deposit uncategorized" do
+    create(:sales_tax_profile, business: business)
+    sales.update!(sales_tax_treatment: "taxable")
+    exempt = create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt")
+    invoice.update!(amount_cents: 109_250, sales_tax_cents: 9_250)
+    deposit.update!(amount_cents: 109_250)
+    sign_in_as user_with_role("editor", business)
+
+    post business_invoice_payments_path(business, invoice), params: { deposit_id: deposit.id, category_id: exempt.id, from_inbox: "1" }, headers: turbo
+
+    expect(response.body).to include(%(action="replace" target="transaction_#{deposit.id}"))
+    expect(response.body).to include(InvoicePayments::TAXED_INVOICE_MESSAGE)
+    expect(InvoicePayment.count).to eq(0)
+    expect(deposit.reload.category).to be_nil
+    expect(invoice.reload).not_to be_paid
   end
 end

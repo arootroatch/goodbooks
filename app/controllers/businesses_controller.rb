@@ -34,6 +34,7 @@ class BusinessesController < ApplicationController
     @accounts = @business.accounts.active.order(:name)
     @open_invoices = Invoices::OpenSummary.for(@business.invoices) if @business.business?
     @tithe = Tithe.ledger_for(@business) if @business.personal?
+    @sales_tax = SalesTax.summary_for(@business) if @business.business?
   end
 
   def edit

@@ -7,9 +7,7 @@
     <% if @business.personal? %>
       <p class="subtitle">The household's personal accounts and tithe. Only household members can see this.</p>
     <% else %>
-      <p class="subtitle">
-        Taxpayer: <%= @business.person.name %>
-      </p>
+      <p class="subtitle">Taxpayer: <%= @business.person.name %></p>
     <% end %>
   </div>
   <div class="period-picker">
@@ -30,6 +28,7 @@
     </div>
   </div>
 </header>
+<%= render "sales_tax/overdue_banner", business: @business, summary: @sales_tax %>
 
 <section class="kpis">
   <div class="card kpi">
@@ -61,6 +60,7 @@
 </section>
 
 <%= render "tithes/summary", ledger: @tithe, details_path: business_tithe_path(@business) if @tithe %>
+<%= render "sales_tax/summary", business: @business, summary: @sales_tax, details_path: business_sales_tax_profile_path(@business) if @sales_tax %>
 <%= render "invoices/open_cards", summary: @open_invoices, show_business: false, list_path: ->(status) { business_invoices_path(@business, status:) } if @open_invoices %>
 
 <div class="overview-grid">

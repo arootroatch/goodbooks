@@ -103,4 +103,96 @@ RSpec.describe "Transactions" do
     get edit_business_transaction_path(business, create(:transaction))
     expect(response).to have_http_status(:not_found)
   end
+
+  describe "sales tax fields" do
+    let!(:business) { create(:business) }
+    let!(:profile) { create(:sales_tax_profile, business: business) }
+    let!(:sales) { create(:category, :income, business: business, name: "Sales") }
+    let!(:consulting) { create(:category, :income, business: business, name: "Consulting", sales_tax_treatment: "exempt") }
+    let(:account) { create(:account, :csv, business: business) }
+    let!(:payout) { create(:transaction, account: account, payee: "STRIPE PAYOUT", amount_cents: 97_070, external_id: "x1") }
+
+    before { sign_in_as user_with_role("editor", business) }
+
+    it "hides the fee, tax, and period fields on a negative imported row" do
+      debit = create(:transaction, account: account, payee: "OFFICE", amount_cents: -5_000, external_id: "x2")
+      get edit_business_transaction_path(business, debit)
+      expect(response.body).not_to include("Processor fee")
+      expect(response.body).not_to include("Sales tax period")
+      expect(response.body).not_to include(%(for="transaction_sales_tax"))
+    end
+
+    it "shows the fee and tax fields on a deposit, and the period only on a remittance" do
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include("Processor fee").and include(%(for="transaction_sales_tax"))
+      expect(response.body).not_to include("Sales tax period")
+      payout.update!(category: business.categories.sales_tax_remittance.sole, amount_cents: -5_000)
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include("Sales tax period")
+    end
+
+    it "still shows the tax field on a taxed deposit after the profile is deactivated" do
+      payout.update!(category: sales, sales_tax_cents: 500)
+      profile.update!(active: false)
+      get edit_business_transaction_path(business, payout)
+      expect(response.body).to include(%(for="transaction_sales_tax"))
+      expect(response.body).not_to include("Tax-inclusive")
+    end
+
+    it "saves a fee and tax on an imported deposit" do
+      patch business_transaction_path(business, payout),
+        params: { transaction: { category_id: sales.id, processor_fee: "29.30", sales_tax: "84.67" } }
+      expect([ payout.reload.processor_fee_cents, payout.sales_tax_cents ]).to eq([ 2_930, 8_467 ])
+    end
+
+    it "computes tax-inclusive tax on the unallocated gross and returns to the form" do
+      patch business_transaction_path(business, payout),
+        params: { apply_inclusive_tax: "1", transaction: { category_id: sales.id, processor_fee: "29.30", sales_tax: "" } }
+      expect(response).to redirect_to(edit_business_transaction_path(business, payout))
+      expect(flash[:notice]).to eq("Sales tax set to $84.67 (tax-inclusive at 9.25%).")
+      expect(payout.reload.sales_tax_cents).to eq(8_467)
+    end
+
+    [ [ "-5", "can't be negative" ], [ "abc", "is not a valid amount" ], [ "1,00", "is not a valid amount" ] ].each do |input, message|
+      it "rejects a fee of #{input.inspect}" do
+        patch business_transaction_path(business, payout), params: { transaction: { category_id: sales.id, processor_fee: input } }
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.body).to include(ERB::Util.html_escape("Processor fee #{message}"))
+      end
+    end
+
+    it "refuses tax on an exempt deposit" do
+      patch business_transaction_path(business, payout), params: { transaction: { category_id: consulting.id, sales_tax: "5.00" } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Clear the sales tax first.")
+    end
+
+    it "gives a manual remittance the default period and lets the editor pick another" do
+      cash = create(:account, business: business, name: "Cash")
+      remittance = business.categories.sales_tax_remittance.sole
+      post business_transactions_path(business), params: { transaction: { account_id: cash.id, posted_on: "2026-04-10", payee: "TN DOR",
+                                                                            amount: "84.67", direction: "out", category_id: remittance.id } }
+      created = cash.transactions.sole
+      expect(created.sales_tax_period_starts_on).to eq(Date.new(2026, 1, 1))
+      patch business_transaction_path(business, created), params: { transaction: { sales_tax_period_starts_on: "2026-04-01" } }
+      expect(created.reload.sales_tax_period_starts_on).to eq(Date.new(2026, 4, 1))
+    end
+
+    it "lists taxable deposits that still need tax" do
+      payout.update!(category: sales)
+      create(:transaction, account: account, payee: "STRIPE DONE", amount_cents: 10_925, category: sales, sales_tax_cents: 925)
+      get business_transactions_path(business, status: "needs_tax")
+      expect(response.body).to include("STRIPE PAYOUT")
+      expect(response.body).not_to include("STRIPE DONE")
+    end
+
+    it "hides the fee field on the personal book" do
+      household_owner = create(:user, :household_owner)
+      book = PersonalBookProvisioner.call(Household.first)
+      txn = create(:transaction, account: create(:account, business: book), amount_cents: 5_000)
+      sign_in_as household_owner
+      get edit_business_transaction_path(book, txn)
+      expect(response.body).not_to include("Processor fee")
+    end
+  end
 end

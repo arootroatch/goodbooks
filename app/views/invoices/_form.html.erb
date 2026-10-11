@@ -9,6 +9,9 @@
   <p><%= f.label :issue_date %> <%= f.date_field :issue_date, required: true %></p>
   <p><%= f.label :due_date %> <%= f.date_field :due_date, required: true %></p>
   <p><%= f.label :amount %> <%= f.text_field :amount, required: true, inputmode: "decimal" %></p>
+  <% if @business.collects_sales_tax? %>
+    <p><%= f.label :sales_tax, "Sales tax (included in amount)" %> <%= f.text_field :sales_tax, inputmode: "decimal" %></p>
+  <% end %>
   <p><%= f.label :description %> <%= f.text_area :description, rows: 3 %></p>
   <p><%= f.label :pdf, "PDF (optional)" %> <%= f.file_field :pdf, accept: "application/pdf" %></p>
   <% if invoice.new_record? %>

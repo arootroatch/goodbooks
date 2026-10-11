@@ -6,6 +6,7 @@ module CategoryTemplate
     { name: "Advertising", kind: "expense", schedule_c_line: "8" },
     { name: "Parking and tolls", kind: "expense", schedule_c_line: "9" },
     { name: "Commissions and fees", kind: "expense", schedule_c_line: "10" },
+    { name: "Merchant fees", kind: "expense", schedule_c_line: "10", processor_fees: true },
     { name: "Contract labor", kind: "expense", schedule_c_line: "11" },
     { name: "Insurance", kind: "expense", schedule_c_line: "15" },
     { name: "Legal and professional", kind: "expense", schedule_c_line: "17" },

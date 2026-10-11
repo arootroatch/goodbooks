@@ -1,0 +1,34 @@
+<%# Every business that collects sales tax, one row each: the next filing and what's still owed. %>
+<section class="card household-sales-tax">
+  <h2 class="card-title">Sales tax <small><%= money(rows.sum { _1.sales_tax.owed_cents }) %> owed</small></h2>
+  <table>
+    <thead>
+      <tr><th>Business</th><th>Next filing</th><th>Due</th><th class="num">Collected</th><th class="num">Remitted</th><th class="num">Owed</th></tr>
+    </thead>
+    <tbody>
+      <% rows.each do |row| %>
+        <% summary = row.sales_tax %>
+        <% next_report = summary.next_report %>
+        <tr>
+          <td><%= link_to row.business.name, business_sales_tax_profile_path(row.business) %></td>
+          <% if next_report %>
+            <td><%= link_to next_report.period.label, business_sales_tax_period_path(row.business, next_report.period.starts_on) %></td>
+            <td><%= sales_tax_due_label(next_report.period) %> <small class="muted"><%= due_phrase(next_report.period.due_on) %></small></td>
+            <td class="num"><%= money(next_report.tax_collected_cents) %></td>
+            <td class="num"><%= money(next_report.remitted_cents) %></td>
+          <% else %>
+            <td colspan="4" class="muted">Every period is filed.</td>
+          <% end %>
+          <td class="num">
+            <%= money(summary.owed_cents) %>
+            <% if summary.overdue_reports.any? %>
+              <small class="neg"><%= pluralize(summary.overdue_reports.size, "period") %> overdue</small>
+            <% else %>
+              <small class="muted">Nothing overdue</small>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

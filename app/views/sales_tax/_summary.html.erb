@@ -1,0 +1,40 @@
+<%# Sales tax at a glance: the next filing coming due and everything still owed. %>
+<% next_report = summary.next_report %>
+<section class="card summary-card sales-tax-summary">
+  <header class="summary-card-header">
+    <h2>Sales tax</h2>
+    <% if local_assigns[:details_path] %><span><%= link_to "Sales tax details", details_path %> →</span><% end %>
+  </header>
+  <div class="summary-card-total sales-tax-next">
+    <h3 class="card-title">Next filing</h3>
+    <% if next_report %>
+      <b><%= link_to next_report.period.label, business_sales_tax_period_path(business, next_report.period.starts_on) %></b>
+      <p>Due <%= sales_tax_due_label(next_report.period) %></p>
+      <small><%= due_phrase(next_report.period.due_on) %></small>
+    <% else %>
+      <p class="muted">Every period is filed.</p>
+    <% end %>
+  </div>
+  <% if next_report %>
+    <div class="summary-card-total sales-tax-collected">
+      <h3 class="card-title">Collected <%= next_report.period.label %></h3>
+      <b><%= money(next_report.tax_collected_cents) %></b>
+      <small>So far this period</small>
+    </div>
+    <div class="summary-card-total sales-tax-remitted">
+      <h3 class="card-title">Remitted <%= next_report.period.label %></h3>
+      <b><%= money(next_report.remitted_cents) %></b>
+      <small>Paid to the state</small>
+    </div>
+  <% end %>
+  <div class="summary-card-total sales-tax-owed">
+    <h3 class="card-title">Owed</h3>
+    <b class="<%= "neg" if summary.overdue_reports.any? %>"><%= money(summary.owed_cents) %></b>
+    <% if summary.overdue_reports.any? %>
+      <p class="neg"><%= pluralize(summary.overdue_reports.size, "period") %> overdue</p>
+    <% else %>
+      <p>Nothing overdue.</p>
+    <% end %>
+    <small>Unpaid tax across all periods</small>
+  </div>
+</section>

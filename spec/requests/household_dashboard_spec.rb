@@ -39,8 +39,8 @@ RSpec.describe "Household dashboard" do
     expect(personal).to have_link("Personal", href: business_path(book))
     expect(personal.all(".kpi small").map(&:text)).to eq([ "Income", "Spending", "Net" ])
     tithe = page.find(".tithe-summary")
-    expect(tithe.find(".tithe-summary-header")).to have_css("h2", text: "Tithe")
-    expect(tithe.find(".tithe-summary-header")).to have_link("Tithe details", href: business_tithe_path(book))
+    expect(tithe.find(".summary-card-header")).to have_css("h2", text: "Tithe")
+    expect(tithe.find(".summary-card-header")).to have_link("Tithe details", href: business_tithe_path(book))
   end
 
   it "offers to set up the personal book to the household owner" do

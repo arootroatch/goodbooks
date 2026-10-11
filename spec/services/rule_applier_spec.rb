@@ -30,6 +30,12 @@ RSpec.describe RuleApplier do
     expect(txn.reload).to be_transfer
   end
 
+  it "leaves a deposit with a processor fee untouched" do
+    txn = create(:transaction, account: account, payee: "ADOBE *CC", amount_cents: 5_000, processor_fee_cents: 175)
+    expect { expect(RuleApplier.new(business).apply([ txn ])).to eq(0) }.not_to raise_error
+    expect(txn.reload).to be_inbox
+  end
+
   it "marks transfers" do
     txn = create(:transaction, account: account, payee: "Card payment thank you")
     RuleApplier.new(business).apply([ txn ])
