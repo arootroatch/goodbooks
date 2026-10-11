@@ -12,23 +12,7 @@
 <% if @ledger.nil? %>
   <p><%= current_membership.owner? ? "Choose the date to start tracking from; earlier activity is ignored." : "The household owner hasn't set a tithe start date yet." %></p>
 <% else %>
-  <% this_week = @ledger.weeks.last %>
-  <section class="card tithe-summary">
-    <div class="tithe-week">
-      <h2 class="card-title">This week <small><%= tithe_week_label(this_week) %></small></h2>
-      <dl>
-        <div><dt>Income</dt><dd><%= money(this_week.income_cents) %></dd></div>
-        <div><dt>Tithe owed</dt><dd><%= money(this_week.owed_cents) %></dd></div>
-        <div><dt>Given</dt><dd><%= money(this_week.paid_cents) %></dd></div>
-      </dl>
-    </div>
-    <div class="tithe-balance">
-      <h2 class="card-title">Overall</h2>
-      <b class="<%= "neg" if @ledger.balance_cents.positive? %>"><%= tithe_balance_label(@ledger.balance_cents) %></b>
-      <p><%= tithe_balance_advice(@ledger.balance_cents) %></p>
-      <small>This year: owed <%= money(@ledger.ytd_owed_cents) %> · given <%= money(@ledger.ytd_paid_cents) %></small>
-    </div>
-  </section>
+  <%= render "tithes/summary", ledger: @ledger %>
   <table>
     <thead>
       <tr><th>Week</th><th class="num">Income</th><th class="num">Owed</th><th class="num">Paid this week</th><th class="num">Applied</th><th>Status</th><th class="num">Balance</th></tr>

@@ -233,6 +233,16 @@ RSpec.describe "Businesses" do
         expect(page).to have_css(".card-title", text: "Income vs spending")
         expect(page).to have_css('svg.chart rect.bar-expense[data-tip="Feb spending: $1,200.00"]', visible: :all)
         expect(response.body).not_to include("tax basis")
+        expect(page).to have_no_css(".tithe-summary")
+      end
+
+      it "shows the tithe card once tithe tracking has a start date" do
+        book.update!(tithe_start_on: Date.new(2026, 1, 4))
+        sign_in_as owner
+        get business_path(book)
+        card = page.find(".tithe-summary")
+        expect(card).to have_css(".tithe-this-week").and have_css(".tithe-balance", text: "Even")
+        expect(card).to have_link("Tithe details", href: business_tithe_path(book))
       end
     end
 

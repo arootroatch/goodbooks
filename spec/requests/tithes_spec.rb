@@ -47,12 +47,33 @@ RSpec.describe "Tithe" do
     book.update!(tithe_start_on: start_on)
     sign_in_as owner
     get business_tithe_path(book)
-    week = Capybara.string(response.body).find(".tithe-summary .tithe-week")
+    week = Capybara.string(response.body).find(".tithe-summary .tithe-this-week")
     week_start = Date.current - Date.current.wday
     expect(week).to have_css(".card-title", text: "This week")
     expect(week).to have_text("#{week_start.strftime('%b %-d')} – #{(week_start + 6).strftime('%b %-d, %Y')}")
     expect(week.all("dt").map(&:text)).to eq([ "Income", "Tithe owed", "Given" ])
     expect(week.all("dd").map(&:text)).to eq([ "$500.00", "$50.00", "$0.00" ])
+  end
+
+  it "shows last week's tithe owed, giving, and status in the overview card" do
+    last_week_start = Date.current - Date.current.wday - 7
+    create(:transaction, account: checking, payee: "TRANSFER FROM PAT", amount_cents: 50_000, posted_on: last_week_start + 2)
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    week = Capybara.string(response.body).find(".tithe-summary .tithe-last-week")
+    expect(week).to have_css(".card-title", text: "Last week")
+    expect(week).to have_text("#{last_week_start.strftime('%b %-d')} – #{(last_week_start + 6).strftime('%b %-d, %Y')}")
+    expect(week.all("dt").map(&:text)).to eq([ "Tithe owed", "Given" ])
+    expect(week.all("dd").map(&:text)).to eq([ "$50.00", "$0.00" ])
+    expect(week).to have_css(".badge.badge-muted", text: "Open")
+  end
+
+  it "leaves last week out when tracking started this week" do
+    book.update!(tithe_start_on: Date.current)
+    sign_in_as owner
+    get business_tithe_path(book)
+    expect(Capybara.string(response.body)).to have_no_css(".tithe-last-week")
   end
 
   it "says when the tithe is caught up" do

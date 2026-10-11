@@ -61,6 +61,8 @@
   <% end %>
 </section>
 
+<%= render "tithes/summary", ledger: @tithe, details_path: business_tithe_path(@business) if @tithe %>
+
 <div class="overview-grid">
   <section class="card">
     <h2 class="card-title">
