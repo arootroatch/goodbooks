@@ -1,9 +1,14 @@
-<h1>Assign <%= @item.institution_name %> accounts</h1>
+<header class="page-header">
+  <div>
+    <h1>Assign <%= @item.institution_name %> accounts</h1>
+    <p class="subtitle">Choose where each bank account's transactions go. Skipped accounts can be assigned later.</p>
+  </div>
+  <%= secondary_action "Back to #{@item.institution_name}", plaid_item_path(@item) %>
+</header>
 <% if @gateway_error %>
   <p class="errors">Couldn't load accounts from Plaid: <%= @gateway_error %></p>
   <%= link_to "Try again", plaid_item_assignment_path(@item) %>
 <% else %>
-  <p>Choose where each bank account's transactions go. Skipped accounts can be assigned later.</p>
   <%= form_with url: plaid_item_assignment_path(@item), method: :patch do |f| %>
     <table>
       <thead><tr><th>Bank account</th><th>Do</th><th>New account in</th><th>Name</th><th>Existing account</th><th>Sync from</th></tr></thead>
@@ -46,7 +51,11 @@
         <% end %>
       </tbody>
     </table>
-    <p>For an existing account, a blank "Sync from" starts after its latest transaction; enter an early date to import everything Plaid has. For a new account, blank imports everything.</p>
-    <%= f.submit "Save assignments" %>
+    <% if @plaid_accounts.all? { @assigned[_1[:account_id]] } %>
+      <p class="muted">Every bank account is assigned.</p>
+    <% else %>
+      <p class="muted">For an existing account, a blank "Sync from" starts after its latest transaction; enter an early date to import everything Plaid has. For a new account, blank imports everything.</p>
+      <%= f.submit "Save assignments", class: "primary" %>
+    <% end %>
   <% end %>
 <% end %>

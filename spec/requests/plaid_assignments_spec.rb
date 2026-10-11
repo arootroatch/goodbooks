@@ -40,6 +40,18 @@ RSpec.describe "Plaid account assignment" do
     expect(response.body).to include("Assigned to Pat Consulting › Operating")
   end
 
+  it "drops the form's Save button once every bank account is assigned" do
+    get plaid_item_assignment_path(item)
+    expect(Capybara.string(response.body)).to have_button("Save assignments", class: "primary")
+    %w[fake-checking fake-card fake-savings].each_with_index do |id, i|
+      create(:account, :plaid, business: business, plaid_item: item, plaid_account_id: id, name: "Feed #{i}")
+    end
+    get plaid_item_assignment_path(item)
+    page = Capybara.string(response.body)
+    expect(page).to have_no_button("Save assignments")
+    expect(page).to have_text("Every bank account is assigned.")
+  end
+
   it "404s for users who can't manage the item" do
     sign_in_as user_with_role("owner", create(:business))
     get plaid_item_assignment_path(item)

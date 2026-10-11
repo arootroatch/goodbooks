@@ -43,9 +43,9 @@ To invite others to the household, go to **Invites** and create an invite link. 
 
 Set `PLAID_CLIENT_ID`, `PLAID_SECRET`, and `PLAID_ENV` (`sandbox` or `production`) to connect banks through Plaid.
 Without all three, production hides every Plaid screen; development uses a fake "Demo Bank" so the screens can be tried
-without keys (`bin/rails demo:reset` connects it to Pat Consulting and Joint Checking).
+without keys (`bin/rails demo:reset` connects it to Sound Roots Productions and Joint Checking).
 
-- **Banks** (top nav, for anyone who owns a book) → **Connect a bank** opens Plaid Link. Afterwards each bank account
+- **Banks** (sidebar, under Settings, for anyone who owns a book) → **Connect a bank** opens Plaid Link. Afterwards each bank account
   becomes a new account in a book you own, feeds an existing manual or CSV account (pick "Existing account"; a blank
   "Sync from" starts after its latest transaction), or is skipped.
 - Transactions sync daily at 4am, when Plaid's webhook says there are updates, and on **Sync now**. Pending

@@ -58,7 +58,7 @@ input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hid
   color: var(--fg);
 }
 
-td :is(input, select) { width: auto; }
+td :is(input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hidden]), select) { width: auto; }
 
 input[type=checkbox] + label, input[type=radio] + label { display: inline; margin-left: var(--space-1); }
 

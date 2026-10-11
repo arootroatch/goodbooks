@@ -126,6 +126,24 @@ RSpec.describe "Plaid items" do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "lays out the list and item pages with page headers, status badges, and a confirmed remove" do
+      sign_in_as owner
+      get plaid_items_path
+      page = Capybara.string(response.body)
+      expect(page.find("header.page-header")).to have_css("h1", text: "Bank connections")
+        .and have_link("Connect a bank", href: new_plaid_item_path, class: "primary")
+      expect(page.find("##{ActionView::RecordIdentifier.dom_id(item)}")).to have_css(".badge.badge-pos", text: "Connected")
+
+      item.update!(status: "login_required")
+      get plaid_item_path(item)
+      page = Capybara.string(response.body)
+      header = page.find("header.page-header")
+      expect(header).to have_css("h1", text: "Demo Bank").and have_css(".badge.badge-neg", text: "Needs reconnecting")
+      expect(header).to have_link("Reconnect", href: new_plaid_item_reconnection_path(item), class: "primary")
+      expect(header).to have_button("Sync now").and have_link("All bank connections", href: plaid_items_path)
+      expect(header.find("form[data-turbo-confirm]", text: "Remove connection")["data-turbo-confirm"]).to include("Stop syncing Demo Bank?")
+    end
+
     it "marks an account Plaid no longer reports" do
       account.update!(plaid_account_id: "gone")
       sign_in_as owner

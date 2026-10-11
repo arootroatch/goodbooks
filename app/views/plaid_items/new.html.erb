@@ -1,3 +1,7 @@
-<h1>Connect a bank</h1>
-<p>Plaid opens in a window to sign in to your bank. Afterwards you choose which book each account feeds.</p>
+<header class="page-header">
+  <div>
+    <h1>Connect a bank</h1>
+    <p class="subtitle">Plaid opens in a window to sign in to your bank. Afterwards you choose which book each account feeds.</p>
+  </div>
+</header>
 <%= render "plaid_items/link", token: @link_token, url: plaid_items_path, label: "Connect with Plaid" %>

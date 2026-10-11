@@ -18,6 +18,13 @@ RSpec.describe "Transactions needing review" do
     expect(response.body).to include("Needs review (1)", "Removed by the bank")
   end
 
+  it "offers Keep and Exclude as a button group to editors" do
+    sign_in_as user_with_role("editor", business)
+    get business_inbox_path(business)
+    group = Capybara.string(response.body).find("#review_transaction_#{flagged.id} .button-group")
+    expect(group.all("button").map(&:text)).to eq(%w[Keep Exclude])
+  end
+
   it "keeps a row with a turbo stream that removes it from the list" do
     sign_in_as user_with_role("editor", business)
     patch business_transaction_review_path(business, flagged), params: { decision: "keep" }, as: :turbo_stream
@@ -70,6 +77,7 @@ RSpec.describe "Transactions needing review" do
   it "counts rows needing review per book on the dashboard" do
     sign_in_as user_with_role("viewer", business)
     get root_path
-    expect(response.body).to include("Needs review", "Pat Consulting: 1 transaction")
+    inbox = Capybara.string(response.body).find(".inbox-summary")
+    expect(inbox).to have_link("Pat Consulting: 1 transaction needs review", href: business_inbox_path(business))
   end
 end

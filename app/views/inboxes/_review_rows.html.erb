@@ -1,5 +1,5 @@
 <% if rows.any? %>
-  <h2>Needs review (<%= rows.size %>)</h2>
+  <h2 class="section-title">Needs review (<%= rows.size %>)</h2>
   <table>
     <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th>Category</th><th>Why</th><th></th></tr></thead>
     <tbody>
@@ -13,8 +13,10 @@
           <td><%= txn.review_message %></td>
           <td>
             <% if editable %>
-              <%= button_to "Keep", business_transaction_review_path(business, txn), method: :patch, params: { decision: "keep" }, form_class: "inline-form" %>
-              <%= button_to "Exclude", business_transaction_review_path(business, txn), method: :patch, params: { decision: "exclude" }, form_class: "inline-form" %>
+              <div class="button-group">
+                <%= button_to "Keep", business_transaction_review_path(business, txn), method: :patch, params: { decision: "keep" } %>
+                <%= button_to "Exclude", business_transaction_review_path(business, txn), method: :patch, params: { decision: "exclude" } %>
+              </div>
             <% end %>
           </td>
         </tr>
