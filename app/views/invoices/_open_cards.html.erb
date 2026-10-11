@@ -1,6 +1,6 @@
 <%# Sent invoices still owed, split into Overdue and Not yet due. list_path: ->(status) { path to the filtered invoice table } %>
 <div class="open-invoices">
-  <% [ [ "Overdue", summary.overdue, "overdue", "Nothing overdue." ], [ "Not yet due", summary.upcoming, "upcoming", "Nothing waiting on payment." ] ].each do |title, group, status, empty| %>
+  <% [ [ "Overdue invoices", summary.overdue, "overdue", "Nothing overdue." ], [ "Outstanding invoices", summary.upcoming, "upcoming", "Nothing waiting on payment." ] ].each do |title, group, status, empty| %>
     <section class="card open-invoices-<%= status %>">
       <h2 class="card-title"><%= title %> <small class="<%= "neg" if status == "overdue" && group.count.positive? %>"><%= money(group.total_cents) %> · <%= group.count %></small></h2>
       <% if group.invoices.empty? %>
