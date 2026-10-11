@@ -1,4 +1,14 @@
 module InvoicesHelper
+  OPEN_CARD_LIMIT = 5
+
+  def invoice_due_phrase(invoice, today = Date.current)
+    days = (invoice.due_date - today).to_i
+    if days.negative? then "#{pluralize(-days, 'day')} late"
+    elsif days.zero? then "due today"
+    else "due in #{pluralize(days, 'day')}"
+    end
+  end
+
   STATUS_BADGES = { "paid" => "badge-pos", "overdue" => "badge-neg", "draft" => "badge-muted", "void" => "badge-muted" }.freeze
 
   def invoice_status_badge(invoice)

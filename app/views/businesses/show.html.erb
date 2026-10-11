@@ -9,7 +9,6 @@
     <% else %>
       <p class="subtitle">
         Taxpayer: <%= @business.person.name %>
-        <% if (receivables = render("invoices/receivables", totals: @receivables)).present? %> · <%= receivables %><% end %>
       </p>
     <% end %>
   </div>
@@ -62,6 +61,7 @@
 </section>
 
 <%= render "tithes/summary", ledger: @tithe, details_path: business_tithe_path(@business) if @tithe %>
+<%= render "invoices/open_cards", summary: @open_invoices, show_business: false, list_path: ->(status) { business_invoices_path(@business, status:) } if @open_invoices %>
 
 <div class="overview-grid">
   <section class="card">

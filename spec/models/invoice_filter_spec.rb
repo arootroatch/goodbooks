@@ -15,6 +15,7 @@ RSpec.describe InvoiceFilter do
     expect(numbers({})).to eq(%w[D C L P])
     expect(numbers(status: "open")).to contain_exactly("C", "L")
     expect(numbers(status: "overdue")).to eq(%w[L])
+    expect(numbers(status: "upcoming")).to eq(%w[C])
     expect(numbers(status: "paid")).to eq(%w[P])
     expect(numbers(status: "draft")).to eq(%w[D])
     expect(numbers(status: "nonsense")).to eq(%w[D C L P])

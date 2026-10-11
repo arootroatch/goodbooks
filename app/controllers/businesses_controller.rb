@@ -32,7 +32,7 @@ class BusinessesController < ApplicationController
     @inbox_count = inbox.count
     @inbox_preview = inbox.order(:posted_on, :id).limit(3)
     @accounts = @business.accounts.active.order(:name)
-    @receivables = Invoice.receivables_by_business([ @business.id ])[@business.id] if @business.business?
+    @open_invoices = Invoices::OpenSummary.for(@business.invoices) if @business.business?
     @tithe = Tithe.ledger_for(@business) if @business.personal?
   end
 

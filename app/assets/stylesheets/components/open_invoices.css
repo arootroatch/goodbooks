@@ -1,0 +1,19 @@
+.open-invoices { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.open-invoices .card { margin: 0; }
+.open-invoices .card-title small.neg { color: var(--neg); }
+.open-invoices p { margin: 0; }
+.open-invoice-list { list-style: none; margin: 0; padding: 0; }
+.open-invoice-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 6.5rem;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.open-invoice-list li:first-child { border-top: 0; }
+.open-invoice-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.open-invoice-who small { display: block; color: var(--muted); font-size: var(--text-xs); }
+.open-invoice-when { text-align: right; font-size: var(--text-xs); color: var(--muted); }
+.open-invoice-when.neg { color: var(--neg); }
+.open-invoices .open-invoice-more { margin-top: var(--space-2); font-size: var(--text-xs); }

@@ -1,6 +1,6 @@
 class InvoiceFilter
   PER_PAGE = 50
-  STATUSES = { "open" => "Open", "overdue" => "Overdue", "paid" => "Paid", "draft" => "Draft", "void" => "Void" }.freeze
+  STATUSES = { "open" => "Open", "overdue" => "Overdue", "upcoming" => "Not yet due", "paid" => "Paid", "draft" => "Draft", "void" => "Void" }.freeze
 
   attr_reader :page
 
@@ -31,6 +31,7 @@ class InvoiceFilter
       case @params[:status]
       when "open" then @scope.sent
       when "overdue" then @scope.sent.where("invoices.due_date < ?", @today)
+      when "upcoming" then @scope.sent.where(invoices: { due_date: @today.. })
       when "paid", "draft", "void" then @scope.where(status: @params[:status])
       else @scope
       end

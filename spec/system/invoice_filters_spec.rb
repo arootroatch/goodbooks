@@ -9,15 +9,16 @@ RSpec.describe "Invoice filters", js: true do
   end
 
   shared_examples "live invoice filters" do
-    it "filters on change without a Filter button and keeps the summary and CSV link in step" do
+    it "filters on change without a Filter button and keeps the header CSV link in step" do
       expect(page).to have_no_button("Filter")
       select "Overdue", from: "status"
 
-      expect(page).to have_no_text("INV-NEW")
-      expect(page).to have_text("INV-OLD")
+      within("table") do
+        expect(page).to have_no_text("INV-NEW")
+        expect(page).to have_text("INV-OLD")
+      end
       expect(page).to have_current_path(/status=overdue/)
-      expect(page).to have_text("Outstanding $800.00")
-      expect(page).to have_link("Download CSV", href: /status=overdue/)
+      within("header.page-header") { expect(page).to have_link("Download CSV", href: /status=overdue/) }
     end
   end
 
