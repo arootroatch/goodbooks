@@ -18,11 +18,13 @@ RSpec.describe "Spending report on a narrow window", js: true do
         scroller.scrollLeft = 300;
         const box = scroller.getBoundingClientRect();
         const row = [...scroller.querySelectorAll('tbody tr')].find(tr => tr.textContent.includes('Groceries'));
+        const headings = [...scroller.querySelectorAll('tbody th')].filter(th => ['Income', 'Spending'].includes(th.textContent.trim()));
         return {
           mainOverflows: main.scrollWidth > main.clientWidth,
           scrolled: scroller.scrollLeft,
           firstLeft: row.firstElementChild.getBoundingClientRect().left - box.left,
-          lastRight: box.right - row.lastElementChild.getBoundingClientRect().right
+          lastRight: box.right - row.lastElementChild.getBoundingClientRect().right,
+          headingLefts: headings.map(th => th.getBoundingClientRect().left - box.left)
         };
       })()
     JS
@@ -31,5 +33,7 @@ RSpec.describe "Spending report on a narrow window", js: true do
     expect(result["scrolled"]).to eq(300)
     expect(result["firstLeft"]).to be_within(2).of(0)
     expect(result["lastRight"]).to be_within(2).of(0)
+    expect(result["headingLefts"].size).to eq(2)
+    expect(result["headingLefts"]).to all(be_within(2).of(0))
   end
 end

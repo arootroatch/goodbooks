@@ -11,7 +11,7 @@
   </thead>
   <tbody>
     <% [ [ "Income", @report.income_lines, @report.income_total ], [ "Spending", @report.expense_lines, @report.expense_total ] ].each do |heading, lines, total| %>
-      <tr><th colspan="<%= @report.months.size + 2 %>"><%= heading %></th></tr>
+      <tr><th><%= heading %></th><td colspan="<%= @report.months.size %>"></td><td></td></tr>
       <% lines.each do |line| %>
         <tr><td><%= line.name %></td><% @report.months.each do |month| %><td class="num"><%= money(line.amounts[month]) %></td><% end %><td class="num"><%= money(line.total_cents) %></td></tr>
       <% end %>
