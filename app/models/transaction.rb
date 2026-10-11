@@ -49,6 +49,9 @@ class Transaction < ApplicationRecord
     "Linked to #{numbers.join(", ")} — unlink the payment first."
   end
 
+  # First word of the payee: what a new rule matches on by default.
+  def rule_keyword = payee.to_s.squish.split.first
+
   private
 
   def apply_direction

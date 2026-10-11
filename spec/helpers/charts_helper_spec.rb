@@ -20,9 +20,11 @@ RSpec.describe ChartsHelper do
       expect(heights).to eq([ 90.0, 180.0 ]) # max 200_000 → full plot height of 180
     end
 
-    it "titles every bar with its month, series, and amount" do
-      expect(chart).to have_css("rect.bar-income title", text: "Feb income: $2,000.00", visible: :all)
-      expect(chart).to have_css("rect.bar-expense title", text: "Jan expenses: $500.00", visible: :all)
+    it "tips every bar with its month, series, and amount, with no slow native title" do
+      expect(chart).to have_css('rect.bar-income[data-tip="Feb income: $2,000.00"]', visible: :all)
+      expect(chart).to have_css('rect.bar-expense[data-tip="Jan expenses: $500.00"]', visible: :all)
+      expect(chart).to have_no_css("title", visible: :all)
+      expect(chart.find("svg", visible: :all)["data-controller"]).to eq("chart-tooltip")
     end
 
     it "labels the axes" do
@@ -52,8 +54,8 @@ RSpec.describe ChartsHelper do
     it "fades only the group at the given index" do
       faded = chart(faded_index: 0)
       expect(faded).to have_css("rect.faded", count: 2, visible: :all)
-      expect(faded).to have_css("rect.faded title", text: "Jan income", visible: :all)
-      expect(faded).to have_no_css("rect.faded title", text: "Feb", visible: :all)
+      expect(faded).to have_css('rect.faded[data-tip^="Jan income"]', visible: :all)
+      expect(faded).to have_no_css('rect.faded[data-tip^="Feb"]', visible: :all)
       expect(chart).to have_no_css("rect.faded", visible: :all)
     end
   end

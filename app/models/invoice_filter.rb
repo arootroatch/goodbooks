@@ -1,6 +1,6 @@
 class InvoiceFilter
   PER_PAGE = 50
-  STATUSES = { "open" => "Open", "overdue" => "Overdue", "paid" => "Paid", "draft" => "Draft", "void" => "Void" }.freeze
+  STATUSES = { "open" => "Open", "overdue" => "Overdue", "upcoming" => "Not yet due", "paid" => "Paid", "draft" => "Draft", "void" => "Void" }.freeze
 
   attr_reader :page
 
@@ -15,22 +15,17 @@ class InvoiceFilter
   def all = ordered
   def next_page? = filtered.count > page * PER_PAGE
   def params = @params.slice(:status, :client_id, :from, :to)
-  def outstanding_cents = open_invoices.sum(&:outstanding_cents)
-  def overdue_cents = open_invoices.select { _1.overdue?(@today) }.sum(&:outstanding_cents)
 
   private
 
   def ordered = filtered.includes(:client, :business, :payments).order(issue_date: :desc, id: :desc)
-
-  def open_invoices
-    @open_invoices ||= filtered.sent.includes(:payments).to_a
-  end
 
   def filtered
     relation =
       case @params[:status]
       when "open" then @scope.sent
       when "overdue" then @scope.sent.where("invoices.due_date < ?", @today)
+      when "upcoming" then @scope.sent.where(invoices: { due_date: @today.. })
       when "paid", "draft", "void" then @scope.where(status: @params[:status])
       else @scope
       end

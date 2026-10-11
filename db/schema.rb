@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_000002) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -53,12 +53,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_000003) do
 
   create_table "businesses", force: :cascade do |t|
     t.integer "household_id", null: false
-    t.integer "person_id", null: false
+    t.integer "person_id"
     t.string "name", null: false
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "kind", default: "business", null: false
+    t.date "tithe_start_on"
     t.index ["household_id"], name: "index_businesses_on_household_id"
+    t.index ["household_id"], name: "index_businesses_one_personal_per_household", unique: true, where: "kind = 'personal'"
     t.index ["person_id"], name: "index_businesses_on_person_id"
   end
 
@@ -66,11 +69,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_000003) do
     t.integer "business_id", null: false
     t.string "name", null: false
     t.string "kind", null: false
-    t.string "schedule_c_line", null: false
+    t.string "schedule_c_line"
     t.integer "deductible_bps", default: 10000, null: false
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "tithable", default: true, null: false
+    t.boolean "tithe", default: false, null: false
     t.index ["business_id", "name"], name: "index_categories_on_business_id_and_name", unique: true
     t.index ["business_id"], name: "index_categories_on_business_id"
   end

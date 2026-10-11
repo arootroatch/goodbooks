@@ -1,9 +1,89 @@
+<% open = @dashboard.open_invoices %>
 <header class="page-header">
-  <h1>Businesses</h1>
+  <div>
+    <h1>Household</h1>
+    <p class="subtitle">Everything at a glance, <%= @dashboard.range.first.year %> to date.</p>
+  </div>
   <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
 </header>
-<ul class="business-list">
-  <% @businesses.each do |business| %>
-    <li><%= link_to business.name, business_path(business) %> <%= render "invoices/receivables", totals: @receivables[business.id] %></li>
+
+<section class="kpis">
+  <div class="card kpi">
+    <small>Overdue</small>
+    <b class="<%= "neg" if open.overdue.count.positive? %>"><%= money(open.overdue.total_cents) %></b>
+    <em><%= pluralize(open.overdue.count, "invoice") %></em>
+  </div>
+  <div class="card kpi">
+    <small>Outstanding</small>
+    <b><%= money(open.outstanding_cents) %></b>
+    <em><%= pluralize(open.overdue.count + open.upcoming.count, "invoice") %></em>
+  </div>
+  <div class="card kpi">
+    <small>Business net <%= @dashboard.range.first.year %></small>
+    <b class="<%= "pos" if @dashboard.business_net_cents.positive? %>"><%= money(@dashboard.business_net_cents) %></b>
+    <em>Tax basis, all businesses</em>
+  </div>
+  <% if @dashboard.tithe %>
+    <div class="card kpi">
+      <small>Tithe</small>
+      <b class="<%= "neg" if @dashboard.tithe.balance_cents.positive? %>"><%= tithe_balance_label(@dashboard.tithe.balance_cents) %></b>
+    </div>
   <% end %>
-</ul>
+</section>
+
+<%= render "invoices/open_cards", summary: open, show_business: true, list_path: ->(status) { household_invoices_path(status:) } %>
+
+<h2 class="section-title">Businesses</h2>
+<div class="business-cards">
+  <% @dashboard.businesses.each do |row| %>
+    <section class="card business-card">
+      <h3 class="card-title">
+        <%= link_to row.business.name, business_path(row.business) %>
+        <% if row.inbox_count.positive? %><small><%= link_to "#{row.inbox_count} to categorize", business_inbox_path(row.business) %></small><% end %>
+      </h3>
+      <dl>
+        <div><dt>Income</dt><dd><%= money(row.report.total_income_cents) %></dd></div>
+        <div><dt>Net profit</dt><dd class="<%= "pos" if row.report.net_profit_cents.positive? %>"><%= money(row.report.net_profit_cents) %></dd></div>
+      </dl>
+      <p class="muted">
+        <% if row.outstanding_cents.positive? %>
+          Outstanding <%= money(row.outstanding_cents) %><% if row.overdue_cents.positive? %> · <span class="neg">Overdue <%= money(row.overdue_cents) %></span><% end %>
+        <% else %>
+          No open invoices
+        <% end %>
+      </p>
+    </section>
+  <% end %>
+</div>
+
+<section class="card inbox-summary">
+  <h2 class="card-title">Inbox</h2>
+  <% if @dashboard.inbox_count.positive? %>
+    <p><%= link_to "#{pluralize(@dashboard.inbox_count, "transaction")} to categorize", household_inbox_path %> →</p>
+  <% else %>
+    <div class="empty"><strong>Inbox zero</strong>Every transaction is categorized.</div>
+  <% end %>
+</section>
+
+<% if (book = @dashboard.book) %>
+  <section class="personal-summary">
+    <h2 class="section-title"><%= link_to "Personal", business_path(book) %></h2>
+    <% personal = @dashboard.personal %>
+    <% net = personal.total_income_cents - personal.total_expense_cents %>
+    <div class="kpis">
+      <div class="card kpi"><small>Income</small><b><%= money(personal.total_income_cents) %></b></div>
+      <div class="card kpi">
+        <small>Spending</small><b><%= money(personal.total_expense_cents) %></b>
+        <% if (share = share_of_income(personal.total_expense_cents, personal.total_income_cents)) %><em><%= share %></em><% end %>
+      </div>
+      <div class="card kpi"><small>Net</small><b class="<%= "pos" if net.positive? %>"><%= money(net) %></b></div>
+    </div>
+    <%= render "tithes/summary", ledger: @dashboard.tithe, details_path: business_tithe_path(book) if @dashboard.tithe %>
+  </section>
+<% elsif Current.user.household_owner? %>
+  <section class="card">
+    <h2 class="card-title">Personal</h2>
+    <p>Track the joint checking account and the tithe. The accountant never sees it.</p>
+    <%= button_to "Set up personal book", personal_book_path, class: "primary" %>
+  </section>
+<% end %>

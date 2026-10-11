@@ -1,2 +1,2 @@
-<h1>Edit business</h1>
+<h1><%= @business.personal? ? "Rename" : "Edit business" %></h1>
 <%= render "form", business: @business %>

@@ -15,7 +15,14 @@
         <td><%= client.name %><%= " (archived)" if client.archived? %></td>
         <td><%= client.email %></td>
         <td><%= truncate(client.notes, length: 80) %></td>
-        <td><%= link_to "Edit", edit_business_client_path(@business, client) if current_membership.can_edit? %></td>
+        <td>
+          <% if current_membership.can_edit? %>
+            <div class="button-group">
+              <%= link_to "Edit", edit_business_client_path(@business, client) %>
+              <%= archive_button [@business, client] %>
+            </div>
+          <% end %>
+        </td>
       </tr>
     <% end %>
   </tbody>

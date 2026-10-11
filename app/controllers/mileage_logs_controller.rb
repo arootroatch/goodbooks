@@ -1,5 +1,6 @@
 class MileageLogsController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
 
   def show
     year = year_param

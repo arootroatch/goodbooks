@@ -146,6 +146,27 @@ RSpec.describe "Navigation" do
     end
   end
 
+  it "lists the personal book right after the household in the switcher" do
+    create(:business, name: "Aardvark Co").tap { |b| create(:membership, user: household_owner, business: b, role: "owner") }
+    PersonalBookProvisioner.call(household)
+    sign_in_as household_owner
+    get root_path
+    expect(sidebar.all(".switcher li a", visible: :all).map(&:text)).to eq([ "Household", "Personal", "Aardvark Co", "Studio LLC" ])
+    expect(sidebar).to have_link("Personal", count: 1, visible: :all) # the switcher entry, no separate nav link
+  end
+
+  it "shows the personal book's own links and hides business-only ones" do
+    book = PersonalBookProvisioner.call(household)
+    sign_in_as household_owner
+    get business_accounts_path(book)
+    expect(sidebar).to have_link("Tithe", href: business_tithe_path(book))
+    expect(sidebar).to have_link("Spending", href: business_spending_report_path(book))
+    expect(sidebar).to have_no_link("Mileage")
+    expect(sidebar).to have_no_link("Invoices")
+    expect(sidebar).to have_no_link("Profit & loss")
+    expect(sidebar).to have_no_link("Schedule C")
+  end
+
   it "renders for a user with no memberships" do
     sign_in_as create(:user)
     get root_path

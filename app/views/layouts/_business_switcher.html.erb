@@ -2,7 +2,10 @@
   <summary><span class="switcher-dot"></span><%= sidebar_business&.name_in_database || "Household" %></summary>
   <ul>
     <li><%= link_to "Household", root_path %></li>
-    <% Current.user.accessible_businesses.order(:name).each do |business| %>
+    <% if current_personal_book %>
+      <li><%= link_to current_personal_book.name, business_path(current_personal_book) %></li>
+    <% end %>
+    <% Current.user.accessible_businesses.business_kind.order(:name).each do |business| %>
       <li><%= link_to business.name, business_path(business) %></li>
     <% end %>
   </ul>

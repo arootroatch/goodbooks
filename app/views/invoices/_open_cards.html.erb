@@ -1,0 +1,27 @@
+<%# Sent invoices still owed, split into Overdue and Not yet due. list_path: ->(status) { path to the filtered invoice table } %>
+<div class="open-invoices">
+  <% [ [ "Overdue invoices", summary.overdue, "overdue", "Nothing overdue." ], [ "Outstanding invoices", summary.upcoming, "upcoming", "Nothing waiting on payment." ] ].each do |title, group, status, empty| %>
+    <section class="card open-invoices-<%= status %>">
+      <h2 class="card-title"><%= title %> <small class="<%= "neg" if status == "overdue" && group.count.positive? %>"><%= money(group.total_cents) %> · <%= group.count %></small></h2>
+      <% if group.invoices.empty? %>
+        <p class="muted"><%= empty %></p>
+      <% else %>
+        <ul class="open-invoice-list">
+          <% group.invoices.first(InvoicesHelper::OPEN_CARD_LIMIT).each do |invoice| %>
+            <li>
+              <span class="open-invoice-who">
+                <%= invoice.client.name %>
+                <small><%= link_to invoice.number, business_invoice_path(invoice.business, invoice) %><% if show_business %> · <%= invoice.business.name %><% end %></small>
+              </span>
+              <span class="num"><%= money(invoice.outstanding_cents) %></span>
+              <span class="open-invoice-when <%= "neg" if invoice.overdue?(summary.today) %>"><%= invoice_due_phrase(invoice, summary.today) %></span>
+            </li>
+          <% end %>
+        </ul>
+        <% if group.count > InvoicesHelper::OPEN_CARD_LIMIT %>
+          <p class="open-invoice-more"><%= link_to "and #{group.count - InvoicesHelper::OPEN_CARD_LIMIT} more", list_path.(status) %> →</p>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

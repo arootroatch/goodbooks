@@ -33,12 +33,6 @@ RSpec.describe "Categories" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
-  it "lets editors archive" do
-    sign_in_as user_with_role("editor", business)
-    patch business_category_path(business, category), params: { category: { archived: "1" } }
-    expect(category.reload).to be_archived
-  end
-
   it "forbids viewers from writing" do
     sign_in_as user_with_role("viewer", business)
     post business_categories_path(business), params: { category: { name: "X", kind: "expense", schedule_c_line: "18" } }
@@ -60,12 +54,11 @@ RSpec.describe "Categories" do
     expect(response.body).to include("New category")
   end
 
-  it "shows edit form for editors with archived checkbox" do
+  it "shows edit form for editors" do
     sign_in_as user_with_role("editor", business)
     get edit_business_category_path(business, category)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Office expense")
-    expect(response.body).to include("category[archived]")
   end
 
   it "forbids viewers from accessing new form" do
@@ -88,13 +81,6 @@ RSpec.describe "Categories" do
     expect(category.name).to eq("Office supplies")
     expect(category.schedule_c_line).to eq("22")
     expect(category.deductible_bps).to eq(7500)
-  end
-
-  it "lets editors un-archive" do
-    archived_category = create(:category, business: business, archived_at: 1.day.ago)
-    sign_in_as user_with_role("editor", business)
-    patch business_category_path(business, archived_category), params: { category: { archived: "0" } }
-    expect(archived_category.reload.archived_at).to be_nil
   end
 
   it "returns not found for category from another business" do

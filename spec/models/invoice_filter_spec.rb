@@ -15,6 +15,7 @@ RSpec.describe InvoiceFilter do
     expect(numbers({})).to eq(%w[D C L P])
     expect(numbers(status: "open")).to contain_exactly("C", "L")
     expect(numbers(status: "overdue")).to eq(%w[L])
+    expect(numbers(status: "upcoming")).to eq(%w[C])
     expect(numbers(status: "paid")).to eq(%w[P])
     expect(numbers(status: "draft")).to eq(%w[D])
     expect(numbers(status: "nonsense")).to eq(%w[D C L P])
@@ -23,11 +24,5 @@ RSpec.describe InvoiceFilter do
   it "filters by client and issue date" do
     expect(numbers(client_id: acme.id.to_s)).to eq(%w[C])
     expect(numbers(from: (today - 45).iso8601, to: (today - 2).iso8601)).to eq(%w[C L])
-  end
-
-  it "totals outstanding and overdue over sent invoices" do
-    filter = described_class.new(business.invoices, {}, today: today)
-    expect(filter.outstanding_cents).to eq(30_000)
-    expect(filter.overdue_cents).to eq(20_000)
   end
 end

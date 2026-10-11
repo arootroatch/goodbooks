@@ -10,8 +10,8 @@ module Reports
         transactions.each do |txn|
           category = txn.category
           deductible =
-            if category&.expense? then Money.round_rational(Rational(-txn.amount_cents * category.deductible_bps, 10_000))
-            elsif category&.income? then txn.amount_cents
+            if category&.expense? && category.schedule_c_line then Money.round_rational(Rational(-txn.amount_cents * category.deductible_bps, 10_000))
+            elsif category&.income? && category.schedule_c_line then txn.amount_cents
             end
           csv << [
             txn.posted_on.iso8601, CsvSafe.text(txn.account.business.name), CsvSafe.text(txn.account.name),

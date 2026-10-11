@@ -23,12 +23,6 @@ RSpec.describe "Accounts" do
     expect(response).to have_http_status(:unprocessable_content)
   end
 
-  it "lets owners archive" do
-    sign_in_as user_with_role("owner", business)
-    patch business_account_path(business, account), params: { account: { name: "Checking", kind: "checking", archived: "1" } }
-    expect(account.reload).to be_archived
-  end
-
   it "forbids editors and viewers from changing accounts" do
     %w[editor viewer].each do |role|
       sign_in_as user_with_role(role, business)

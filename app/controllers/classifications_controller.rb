@@ -15,7 +15,7 @@ class ClassificationsController < ApplicationController
     end
 
     if params[:make_rule] == "1" && @transaction.category
-      redirect_to new_business_rule_path(@business, value: @transaction.payee.squish.split.first, category_id: @transaction.category_id)
+      redirect_to new_business_rule_path(@business, value: @transaction.rule_keyword, category_id: @transaction.category_id)
     else
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.remove(@transaction) }

@@ -7,7 +7,7 @@
   <%= f.date_field :from, value: params[:from] %>
   <%= f.date_field :to, value: params[:to] %>
   <%= f.select :account_id, options_from_collection_for_select(@business.accounts.order(:name), :id, :name, params[:account_id]), include_blank: "All accounts" %>
-  <%= f.select :category_id, options_from_collection_for_select(@business.categories.order(:name), :id, :name, params[:category_id]), include_blank: "All categories" %>
+  <%= f.select :category_id, grouped_category_options(@business.categories.order(:name), params[:category_id]), include_blank: "All categories" %>
   <%= f.select :status, [["All", ""], ["Inbox only", "inbox"]], selected: params[:status] %>
   <%= f.search_field :q, value: params[:q], placeholder: "Search payee or memo",
                      data: { action: "input->auto-submit#debouncedSubmit" } %>
@@ -25,7 +25,7 @@
           <td><%= txn.memo %></td>
           <td><%= txn.transfer? ? "Transfer" : txn.excluded? ? "Excluded" : txn.category&.name || "Inbox" %></td>
           <td class="num"><%= money(txn.amount_cents) %></td>
-          <td><%= link_to "Edit", edit_business_transaction_path(@business, txn) if current_membership.can_edit? %></td>
+          <td><% if current_membership.can_edit? %><div class="button-group"><%= link_to "Edit", edit_business_transaction_path(@business, txn) %></div><% end %></td>
         </tr>
       <% end %>
     </tbody>

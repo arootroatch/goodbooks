@@ -8,3 +8,4 @@
 
 .filters :is(input, select) { width: auto; }
 .filters input[type=search] { flex: 1 1 14rem; }
+.filters label { margin: 0; }

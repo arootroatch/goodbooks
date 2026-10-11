@@ -26,7 +26,7 @@ Cash basis: invoices never count as income. Income comes only from categorized d
 
 ### Out of scope
 
-Generating or sending invoices, recurring invoices, line items, client portals, processor-fee splitting, multiple currencies, and invoice sales tax (sub-project 3).
+Generating or sending invoices, recurring invoices, line items, client portals, processor-fee splitting, multiple currencies, and invoice sales tax (sub-project 4).
 
 ## 2. Data model
 
@@ -194,6 +194,6 @@ The PR for this sub-project must pass every check in `.github/workflows/ci.yml`.
 
 ## 9. Hand-offs to later sub-projects
 
-- **Sub-project 3 (sales tax)** adds `Invoice#sales_tax_cents` and pro-rates it onto linked deposits; `InvoicePayments#link` is where that hook goes.
-- **Sub-project 4 (Plaid)**: when sync reports a removed transaction that has invoice payments, flag it for review instead of excluding it (consistent with the parent spec's "categorized removed transaction" rule).
-- **Sub-project 6 (audit log)** covers invoices and invoice payments (already listed in the parent spec §10).
+- **Sub-project 4 (sales tax)** adds `Invoice#sales_tax_cents` and pro-rates it onto linked deposits; `InvoicePayments#link` is where that hook goes.
+- **Sub-project 5 (Plaid)**: when sync reports a removed transaction that has invoice payments, flag it for review instead of excluding it (consistent with the parent spec's "categorized removed transaction" rule).
+- **Sub-project 7 (audit log)** covers invoices and invoice payments (already listed in the parent spec §10).

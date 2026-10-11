@@ -1,5 +1,6 @@
 class InvoicesController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
   include ScalarParams
 
   PERMITTED = %i[number issue_date due_date amount description pdf].freeze
@@ -10,7 +11,10 @@ class InvoicesController < ApplicationController
   def index
     @filter = InvoiceFilter.new(@business.invoices, scalar_params(:status, :client_id, :from, :to, :page))
     respond_to do |format|
-      format.html { @invoices = @filter.results }
+      format.html do
+        @invoices = @filter.results
+        @open = Invoices::OpenSummary.for(@business.invoices)
+      end
       format.csv do
         send_data Reports::InvoiceCsv.generate(@filter.all), filename: "#{@business.name.parameterize}-invoices-#{Date.current}.csv", type: "text/csv"
       end

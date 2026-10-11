@@ -31,5 +31,5 @@
 <% end %>
 <% if @import.previewed? %>
   <%= link_to "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
-  <%= button_to "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete %>
+  <%= confirm_button "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete, confirm: "Discard this import?" %>
 <% end %>

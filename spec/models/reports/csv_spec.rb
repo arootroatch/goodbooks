@@ -37,6 +37,14 @@ RSpec.describe "Report CSVs" do
       expect(rows.first).to eq(Reports::TransactionCsv::HEADERS)
       expect(rows.second).to eq([ "2026-02-01", "Pat Consulting", "Checking", "'=cmd", nil, "-33.33", "Meals", "24b", "no", "16.67" ])
     end
+
+    it "leaves the deductible amount blank for personal expenses" do
+      book = create(:business, :personal)
+      txn = create(:transaction, account: create(:account, business: book), amount_cents: -5_000,
+                                 category: create(:category, business: book, name: "Groceries"))
+      row = CSV.parse(Reports::TransactionCsv.generate([ txn ]), headers: true).first
+      expect(row["Deductible amount"]).to be_nil
+    end
   end
 
   describe Reports::MileageLogCsv do

@@ -1,0 +1,9 @@
+.section-title { font-size: var(--text-base); font-weight: 600; margin: var(--space-5) 0 var(--space-2); }
+.section-title a { color: inherit; }
+.business-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.business-cards .card { margin: 0; }
+.business-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin: 0 0 var(--space-2); }
+.business-card dt { color: var(--muted); font-size: var(--text-xs); }
+.business-card dd { margin: 2px 0 0; font-family: var(--font-mono); font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
+.business-card p { margin: 0; font-size: var(--text-xs); }
+.inbox-summary p { margin: 0; }

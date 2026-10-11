@@ -16,15 +16,24 @@ Rails.application.routes.draw do
 
   resource :setup, only: %i[new create]
 
+  concern :archivable do
+    member do
+      patch :archive
+      patch :unarchive
+    end
+  end
+
   resources :businesses, only: %i[new create show edit update] do
+    resource :tithe, only: %i[show update], controller: "tithes"
     resources :accounts, only: %i[index new create edit update] do
+      concerns :archivable
       resources :csv_imports, only: %i[new create show destroy] do
         post :commit, on: :member
         resource :mapping, only: %i[edit update], controller: "csv_import_mappings"
       end
     end
-    resources :categories, only: %i[index new create edit update]
-    resources :clients, only: %i[index new create edit update]
+    resources :categories, only: %i[index new create edit update], concerns: :archivable
+    resources :clients, only: %i[index new create edit update], concerns: :archivable
     resources :invoices do
       member do
         patch :mark_sent
@@ -49,6 +58,7 @@ Rails.application.routes.draw do
     get "reports/mileage_log", to: "mileage_logs#show", as: :mileage_log
     get "reports/transactions", to: "transaction_exports#show", as: :transaction_export
     get "reports/aging", to: "invoice_agings#show", as: :invoice_aging
+    get "reports/spending", to: "spending_reports#show", as: :spending_report
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
@@ -57,6 +67,7 @@ Rails.application.routes.draw do
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
   resources :people, only: %i[index new create edit update]
+  resource :personal_book, only: :create
 
   get "inbox", to: "household_inboxes#show", as: :household_inbox
 

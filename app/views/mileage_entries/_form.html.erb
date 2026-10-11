@@ -9,5 +9,5 @@
   <%= f.submit %>
 <% end %>
 <% if entry.persisted? %>
-  <%= button_to "Delete", business_mileage_entry_path(@business, entry), method: :delete %>
+  <%= confirm_button "Delete", business_mileage_entry_path(@business, entry), method: :delete, confirm: "Delete this trip?" %>
 <% end %>

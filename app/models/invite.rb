@@ -26,7 +26,7 @@ class Invite < ApplicationRecord
     roles.to_h.each do |business_id, role|
       next if role.blank?
 
-      grants.build(business: Business.find(business_id), role: role)
+      grants.build(business: Business.business_kind.find(business_id), role: role)
     end
   end
 

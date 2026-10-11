@@ -1,4 +1,7 @@
-<h1>Household profit &amp; loss</h1>
+<header class="page-header">
+  <h1>Household profit &amp; loss</h1>
+  <%= secondary_action "Export household transactions (CSV)", household_transaction_export_path(from: date_range.first, to: date_range.last, format: :csv) %>
+</header>
 <%= render "shared/date_range_form", url: household_profit_and_loss_path %>
 <% if @missing_rate_years.any? %>
   <p class="flash-alert">Mileage for <%= @missing_rate_years.to_sentence %> is excluded: no IRS rate set.</p>
@@ -30,4 +33,3 @@
     <% end %>
   </tbody>
 </table>
-<p class="no-print"><%= link_to "Export household transactions (CSV)", household_transaction_export_path(from: date_range.first, to: date_range.last, format: :csv) %></p>

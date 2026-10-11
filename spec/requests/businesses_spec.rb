@@ -63,6 +63,24 @@ RSpec.describe "Businesses" do
       expect(sidebar).to have_css(".switcher summary", text: "Pat Consulting")
     end
 
+    it "words the personal book as Personal, not a business" do
+      owner = create(:user, :household_owner)
+      book = PersonalBookProvisioner.call(Household.instance)
+      sign_in_as owner
+      get edit_business_path(book)
+      expect(response.body).to include("<h1>Rename</h1>")
+      patch business_path(book), params: { business: { name: "Us" } }
+      expect(flash[:notice]).to eq("Personal book updated.")
+    end
+
+    it "keeps business wording for a business" do
+      sign_in_as user_with_role("owner", business)
+      get edit_business_path(business)
+      expect(response.body).to include("<h1>Edit business</h1>")
+      patch business_path(business), params: { business: { name: "Renamed" } }
+      expect(flash[:notice]).to eq("Business updated.")
+    end
+
     it "forbids editors and viewers" do
       %w[editor viewer].each do |role|
         sign_in_as user_with_role(role, business)
@@ -136,7 +154,7 @@ RSpec.describe "Businesses" do
       expect(axis_labels).to eq(Date::ABBR_MONTHNAMES.compact)
       expect(chart["aria-label"]).to eq("Income and expenses by month, 2026")
       expect(chart).to have_css("rect.bar-income", count: 2, visible: :all)
-      expect(chart).to have_css("rect.bar-income.faded title", text: "Mar income: $3,000.00", visible: :all)
+      expect(chart).to have_css('rect.bar-income.faded[data-tip="Mar income: $3,000.00"]', visible: :all)
       expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Year")
     end
 
@@ -149,7 +167,7 @@ RSpec.describe "Businesses" do
       expect(kpi("Income")).to have_text("$3,000.00")
       expect(axis_labels).to eq([ "Mar 1", "Mar 2", "Mar 9", "Mar 16", "Mar 23", "Mar 30" ])
       expect(chart["aria-label"]).to eq("Income and expenses by week, March 2026")
-      expect(chart).to have_css("rect.bar-income title", text: "Mar 9 income: $3,000.00", visible: :all)
+      expect(chart).to have_css('rect.bar-income[data-tip="Mar 9 income: $3,000.00"]', visible: :all)
       expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Month")
     end
 
@@ -192,6 +210,40 @@ RSpec.describe "Businesses" do
       get business_path(business, period: "decade", on: "soon")
       expect(response).to have_http_status(:ok)
       expect(page.find(".period-step")).to have_text("Jan 1 – Dec 31, 2026")
+    end
+
+    context "for the personal book" do
+      let!(:owner) { create(:user, :household_owner) }
+      let(:book) { PersonalBookProvisioner.call(Household.instance) }
+      let(:checking) { create(:account, business: book, name: "Joint checking") }
+
+      it "shows income, spending, and plain net with no tax-basis wording" do
+        paycheck = book.categories.find_by!(kind: "income")
+        groceries = book.categories.where(kind: "expense").first
+        create(:transaction, account: checking, category: paycheck, posted_on: Date.new(2026, 2, 1), amount_cents: 500_000)
+        create(:transaction, account: checking, category: groceries, posted_on: Date.new(2026, 2, 5), amount_cents: -120_000)
+        sign_in_as owner
+        get business_path(book)
+        expect(response).to have_http_status(:ok)
+        expect(page.all(".kpi small").map(&:text)).to eq([ "Income", "Spending", "Net" ])
+        expect(kpi("Net")).to have_css(".pos", text: "$3,800.00")
+        expect(kpi("Net")).to have_no_css("em")
+        expect(page).to have_css(".card-title", text: "Top spending")
+        expect(page.find(".chart-legend")).to have_text("Spending")
+        expect(page).to have_css(".card-title", text: "Income vs spending")
+        expect(page).to have_css('svg.chart rect.bar-expense[data-tip="Feb spending: $1,200.00"]', visible: :all)
+        expect(response.body).not_to include("tax basis")
+        expect(page).to have_no_css(".tithe-summary")
+      end
+
+      it "shows the tithe card once tithe tracking has a start date" do
+        book.update!(tithe_start_on: Date.new(2026, 1, 4))
+        sign_in_as owner
+        get business_path(book)
+        card = page.find(".tithe-summary")
+        expect(card).to have_css(".tithe-this-week").and have_css(".tithe-balance", text: "Even")
+        expect(card).to have_link("Tithe details", href: business_tithe_path(book))
+      end
     end
 
     it "lists the top five expense categories, largest first" do

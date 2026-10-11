@@ -30,6 +30,8 @@ class TransactionsController < ApplicationController
   end
 
   def edit
+    category = @business.categories.find_by(id: params[:category_id]) if params[:category_id].is_a?(String)
+    @transaction.category = category if category
   end
 
   def update
@@ -37,10 +39,13 @@ class TransactionsController < ApplicationController
     attrs = params.expect(transaction: permitted)
     @transaction.assign_attributes(attrs)
     @transaction.categorized_by = "user" if @transaction.category_id_changed? || @transaction.transfer_changed?
-    if @transaction.save
-      redirect_to business_transactions_path(@business), notice: "Transaction updated."
-    else
+    if !@transaction.save
       render :edit, status: :unprocessable_content
+    elsif params[:make_rule] == "1" && @transaction.category
+      redirect_to new_business_rule_path(@business, value: @transaction.rule_keyword, category_id: @transaction.category_id),
+                  notice: "Transaction updated. Now set up the rule."
+    else
+      redirect_to business_transactions_path(@business), notice: "Transaction updated."
     end
   end
 

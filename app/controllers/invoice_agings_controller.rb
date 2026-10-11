@@ -1,5 +1,6 @@
 class InvoiceAgingsController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
   include InvoiceAgingReport
 
   def show

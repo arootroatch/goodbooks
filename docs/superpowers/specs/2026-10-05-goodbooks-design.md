@@ -21,13 +21,13 @@ goodbooks is a self-hosted, Dockerized replacement for the parts of QuickBooks o
 ### Context and constraints (from the owner)
 
 - Tax situation: US federal only. Tennessee has no personal income tax, and both businesses are sole proprietorships (no TN franchise & excise). Schedule C. Filing status is married filing jointly. No W-2 or other household income.
-- Each bank or card account belongs to exactly one business; there are no mixed personal/business accounts.
+- Each bank or card account belongs to exactly one book: a business, or the household's single personal book (see `2026-10-06-goodbooks-tithing-design.md`). No account mixes personal and business activity.
 - One household per install. Not multi-tenant SaaS.
 - Hosted on a home server and exposed through Cloudflare Tunnel or Tailscale Funnel, so it is reachable from the internet.
 
 ### Explicit non-goals
 
-Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income, depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
+Invoice generation or sending, payroll, inventory, double-entry ledger, accrual accounting, state income/franchise/business tax, sales tax for states other than Tennessee, sales tax computation rules (single-article cap, per-item exemptions), economic-nexus tracking, tax credits, itemized deductions, AMT, non-business income for tax purposes (the personal book tracks personal cash flow and tithe only), depreciation schedules / Section 179, the actual-expense vehicle method, GPS mileage tracking, entity types other than sole proprietorship, filing statuses other than MFJ, and multiple households.
 
 ## 2. Stack
 
@@ -78,16 +78,17 @@ Invoice generation or sending, payroll, inventory, double-entry ledger, accrual 
 
 ## 4. Decomposition
 
-Six sub-projects, built in order. Each gets its own implementation plan.
+Seven sub-projects, built in order. Each gets its own implementation plan.
 
 1. **Core**: auth + 2FA, household/people/businesses/memberships, invite links, manual and CSV accounts, transactions, categories, rules + inbox, mileage, reports, backups, demo seed, Docker.
 2. **Invoices**
-3. **Sales tax** (Tennessee)
-4. **Plaid**
-5. **Tax engine**: quarterly estimates, home office, per-person adjustments.
-6. **Sharing polish**: email delivery of invites, session management, audit log.
+3. **Personal book + tithing** (spec: `2026-10-06-goodbooks-tithing-design.md`)
+4. **Sales tax** (Tennessee)
+5. **Plaid**
+6. **Tax engine**: quarterly estimates, home office, per-person adjustments.
+7. **Sharing polish**: email delivery of invites, session management, audit log.
 
-Sections 5–10 describe each one.
+Sections 5–10 describe sub-projects 1, 2 and 4–7; sub-project 3 has its own spec.
 
 ## 5. Sub-project 1: Core
 
@@ -116,14 +117,14 @@ Rule                  business, position, field: payee|memo, operator: contains|
                       value, amount_min_cents, amount_max_cents (both nullable),
                       action: categorize|transfer, category (when categorize)
 MileageEntry          business, date, purpose, from_location, to_location, miles_tenths, round_trip:boolean
-TaxParameters         year, standard_mileage_rate_tenth_cents, (more fields added in sub-project 5)
+TaxParameters         year, standard_mileage_rate_tenth_cents, (more fields added in sub-project 6)
 CsvImport             account, uploaded file (Active Storage), status: previewed|committed|discarded,
                       row_count, new_count, duplicate_count, committed_at
 ```
 
 Notes:
 
-- `Person` is a taxpayer, separate from `User`. The accountant is a `User` with no `Person`. The spouse is a `Person` who may or may not also be a `User`. Each business belongs to one `Person`; self-employment tax is computed per person in sub-project 5.
+- `Person` is a taxpayer, separate from `User`. The accountant is a `User` with no `Person`. The spouse is a `Person` who may or may not also be a `User`. Each business belongs to one `Person`; self-employment tax is computed per person in sub-project 6.
 - A transaction is in the **inbox** when `category_id IS NULL AND transfer = false AND excluded = false`.
 - `transfer` covers card payoffs, moves between own accounts, and owner draws/contributions. Transfers are excluded from income and expense.
 - `excluded` hides an imported transaction (duplicate, junk) without deleting it, so re-imports don't bring it back.
@@ -143,7 +144,7 @@ Notes:
 - The app generates a random token, stores its digest, and shows the full URL once for copy/paste. Expiry is 7 days, single use.
 - Accepting: if the visitor is logged in, grants are added to their memberships. Otherwise they create an account (email prefilled if given), enroll in 2FA, and receive the grants.
 - The household owner may link an accepted user to a `Person` (used to connect the spouse's login to her taxpayer record).
-- Email delivery arrives in sub-project 6.
+- Email delivery arrives in sub-project 7.
 
 ### 5.4 Accounts and transactions
 
@@ -179,7 +180,7 @@ Encoding: UTF-8 with BOM tolerated. Max file size 5 MB.
 All reports take a date range (default: current calendar year to date) and apply to one business or the household rollup (household view subject to the household-screen rule in §3).
 
 - **Profit & loss**: income categories, expense categories (with `deductible_bps` applied, showing both actual and deductible amounts), mileage deduction as its own line, net profit. Household view: one column per business plus a total.
-- **Schedule C summary**: one business, one calendar year. Totals grouped by `schedule_c_line`, with mileage in line 9. Line 30 (home office) shows "—" until sub-project 5.
+- **Schedule C summary**: one business, one calendar year. Totals grouped by `schedule_c_line`, with mileage in line 9. Line 30 (home office) shows "—" until sub-project 6.
 - **Mileage log**: an IRS-style table (date, purpose, from, to, miles) plus total and deduction. Exports as CSV, plus a print stylesheet so "Print → Save as PDF" produces a clean document.
 - **Transaction export**: CSV of transactions in range: date, business, account, payee, memo, amount, category, Schedule C line, transfer, deductible amount.
 
@@ -214,7 +215,7 @@ InvoicePayment  invoice, transaction (a deposit in the same business), amount_ce
 - When an editor categorizes a positive transaction into an income category, the app suggests open invoices in that business whose outstanding balance is ≥ the unallocated deposit amount (exact match first) and offers a one-click link.
 - Views: invoice list per business and household, filterable by status. Aging summary (current, 1–30, 31–60, 60+ days past due). CSV export.
 
-## 7. Sub-project 3: Sales tax (Tennessee)
+## 7. Sub-project 4: Sales tax (Tennessee)
 
 The app records sales tax; it does not compute it per item or act as a point of sale. Collected tax is a liability, not income. Remittances are not expenses. Gross receipts on the P&L, Schedule C, and the tax engine exclude collected sales tax, and remittances are not deducted (the "exclude from both" method).
 
@@ -252,7 +253,7 @@ SalesTaxPeriod   business, starts_on, ends_on, due_on, status: open|filed|paid, 
 - Income totals across P&L, Schedule C, and the tax engine use `amount_cents − sales_tax_cents`. The `sales_tax_remittance` category is excluded from expenses. Report calculators get specs that prove both.
 - `demo:seed` gives one business an active profile (quarterly), a mix of direct, invoiced, and marketplace sales, and one filed + paid period.
 
-## 8. Sub-project 4: Plaid
+## 8. Sub-project 5: Plaid
 
 - `Plaid::Client` is a thin wrapper over the official `plaid` Ruby gem, exposing `create_link_token`, `exchange_public_token`, `accounts`, `transactions_sync(cursor)`, `item_remove`, and webhook verification. Specs use `FakePlaidClient`, injected through configuration.
 - `PlaidItem`: household, institution name, `access_token` (encrypted), `item_id`, `cursor`, status: `ok | login_required | error`, last_synced_at, last_error.
@@ -264,7 +265,7 @@ SalesTaxPeriod   business, starts_on, ends_on, due_on, status: open|filed|paid, 
 - Env: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (sandbox|production). Without them, Plaid UI is hidden.
 - `demo:seed` creates a fake Plaid item and account with synced-looking transactions (no network).
 
-## 9. Sub-project 5: Tax engine (federal, MFJ, sole proprietors)
+## 9. Sub-project 6: Tax engine (federal, MFJ, sole proprietors)
 
 ### 9.1 Inputs
 
@@ -318,7 +319,7 @@ For a tax year, as of a quarter:
 
 `Tax::Estimator` gets worked examples computed by hand and checked into the specs: zero profit, profit under $400, one spouse above the wage base, both spouses, Additional Medicare threshold crossed, safe harbor at 100% vs 110%, each annualization period, home office capped by profit, SE health insurance cap, and payments that exceed the requirement.
 
-## 10. Sub-project 6: Sharing polish
+## 10. Sub-project 7: Sharing polish
 
 - **Email delivery**: when `SMTP_*` env vars are set, invites with an email are sent via Action Mailer (deliver_later). Otherwise the copy-link flow from Core remains.
 - **Session management**: each user sees their active sessions (device, IP, last seen) and can revoke them. The household owner can revoke all sessions for any user and remove a user's memberships.

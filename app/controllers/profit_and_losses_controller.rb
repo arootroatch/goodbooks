@@ -1,5 +1,6 @@
 class ProfitAndLossesController < ApplicationController
   include BusinessScoped
+  include BusinessKindOnly
   include DateRangeParams
 
   def show

@@ -44,7 +44,7 @@ RSpec.describe "Memberships" do
     expect(membership.reload).to be_owner
     delete business_membership_path(business, membership)
     expect(Membership.exists?(membership.id)).to be(true)
-    expect(flash[:alert]).to eq("A business needs at least one owner.")
+    expect(flash[:alert]).to eq("Every book needs at least one owner.")
   end
 
   it "changes roles under a business lock" do

@@ -3,8 +3,5 @@
   <p><%= f.label :name %> <%= f.text_field :name, required: true %></p>
   <p><%= f.label :email %> <%= f.email_field :email %></p>
   <p><%= f.label :notes %> <%= f.text_area :notes, rows: 3 %></p>
-  <% if client.persisted? %>
-    <p><%= f.label :archived %> <%= f.check_box :archived, { checked: client.archived? }, "1", "0" %></p>
-  <% end %>
   <%= f.submit %>
 <% end %>
