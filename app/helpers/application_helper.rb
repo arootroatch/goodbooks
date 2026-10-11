@@ -1,5 +1,6 @@
 module ApplicationHelper
   def primary_action(label, path) = link_to(label, path, class: "button primary")
+  def secondary_action(label, path) = link_to(label, path, class: "button no-print")
 
   def archive_button(target)
     archived = target.last.archived?

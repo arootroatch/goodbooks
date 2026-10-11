@@ -1,6 +1,6 @@
 <header class="page-header">
   <h1>Tithe</h1>
-  <%= link_to "Download CSV", business_tithe_path(@business, format: :csv), class: "button" if @ledger %>
+  <%= secondary_action "Download CSV", business_tithe_path(@business, format: :csv) if @ledger %>
 </header>
 <% if current_membership.owner? %>
   <%= form_with model: @business, url: business_tithe_path(@business), method: :patch, class: "filters" do |f| %>

@@ -1,7 +1,9 @@
-<h1>Spending</h1>
+<header class="page-header">
+  <h1>Spending</h1>
+  <%= secondary_action "Download CSV", business_spending_report_path(@business, format: :csv, from: date_range.first, to: date_range.last) %>
+</header>
 <%= render "shared/date_range_form", url: business_spending_report_path(@business) %>
 <%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: business_inbox_path(@business) %>
-<p><%= link_to "Download CSV", business_spending_report_path(@business, format: :csv, from: date_range.first, to: date_range.last) %></p>
 <div class="table-scroll">
 <table class="frozen-ends">
   <thead>

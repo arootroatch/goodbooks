@@ -30,3 +30,27 @@ RSpec.describe "Page create actions" do
     end
   end
 end
+
+RSpec.describe "Page download actions" do
+  let!(:household) { create(:household) }
+  let(:owner) { create(:user, :household_owner) }
+  let!(:business) { BusinessProvisioner.call(build(:business, person: create(:person, household:)), owner:) }
+  let!(:book) { PersonalBookProvisioner.call(household) }
+
+  [
+    [ "Download CSV", "spending", -> { business_spending_report_path(book) } ],
+    [ "Download CSV", "invoice aging", -> { business_invoice_aging_path(business) } ],
+    [ "Download CSV", "household aging", -> { household_invoice_aging_path } ],
+    [ "Export transactions (CSV)", "P&L", -> { business_profit_and_loss_path(business) } ],
+    [ "Export household transactions (CSV)", "household P&L", -> { household_profit_and_loss_path } ],
+    [ "Mileage log (CSV)", "Schedule C", -> { business_schedule_c_path(business) } ]
+  ].each do |label, page_name, path|
+    it "puts \"#{label}\" in the header of #{page_name} as a button" do
+      sign_in_as owner
+      get instance_exec(&path)
+      page = Capybara.string(response.body)
+      expect(page.find("main header.page-header")).to have_link(label, class: "button")
+      expect(page).to have_link(label, count: 1)
+    end
+  end
+end

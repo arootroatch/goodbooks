@@ -1,4 +1,7 @@
-<h1>Profit &amp; loss</h1>
+<header class="page-header">
+  <h1>Profit &amp; loss</h1>
+  <%= secondary_action "Export transactions (CSV)", business_transaction_export_path(@business, from: date_range.first, to: date_range.last, format: :csv) %>
+</header>
 <%= render "shared/date_range_form", url: business_profit_and_loss_path(@business) %>
 <% if @mileage.missing_rate_years.any? %>
   <p class="flash-alert">Mileage for <%= @mileage.missing_rate_years.to_sentence %> is excluded: no IRS rate set.</p>
@@ -21,4 +24,3 @@
     <tr><th>Net profit (tax basis)</th><th></th><th class="num"><%= money(@report.net_profit_cents) %></th></tr>
   </tbody>
 </table>
-<p class="no-print"><%= link_to "Export transactions (CSV)", business_transaction_export_path(@business, from: date_range.first, to: date_range.last, format: :csv) %></p>
