@@ -32,13 +32,15 @@ RSpec.describe "Tithe" do
     expect(page.find(".tithe-summary .tithe-balance")).to have_text("Give $50.00 to catch up")
     expect(page.find(".tithe-summary .tithe-balance")).to have_text("This year: owed $150.00 · given $100.00")
     expect(page).to have_css(".tithe-summary + table")
+    expect(page.find(".tithe-summary .tithe-summary-header")).to have_css("h2", text: "Tithe")
+    expect(page.find(".tithe-summary")).to have_no_link("Tithe details")
     expect(page).to have_css("td .badge.badge-warn", text: "Partial")
     get business_tithe_path(book, format: :csv)
     expect(response.media_type).to eq("text/csv")
     expect(response.body.lines.first).to start_with("Week starting,Week ending,Income,Owed")
     expect(response.body.lines.first).to end_with("Balance (positive = behind)\n")
     get root_path
-    expect(response.body).to include("Tithe: Behind $50.00")
+    expect(Capybara.string(response.body).find(".kpi", text: "Tithe")).to have_text("Behind $50.00")
   end
 
   it "sums up this week's income, tithe owed, and giving in the overview card" do

@@ -25,10 +25,4 @@ RSpec.describe InvoiceFilter do
     expect(numbers(client_id: acme.id.to_s)).to eq(%w[C])
     expect(numbers(from: (today - 45).iso8601, to: (today - 2).iso8601)).to eq(%w[C L])
   end
-
-  it "totals outstanding and overdue over sent invoices" do
-    filter = described_class.new(business.invoices, {}, today: today)
-    expect(filter.outstanding_cents).to eq(30_000)
-    expect(filter.overdue_cents).to eq(20_000)
-  end
 end

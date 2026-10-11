@@ -2,9 +2,13 @@
 <% this_week = ledger.weeks.last %>
 <% last_week = ledger.weeks[-2] %>
 <section class="card tithe-summary">
+  <header class="tithe-summary-header">
+    <h2>Tithe</h2>
+    <% if local_assigns[:details_path] %><%= link_to "Tithe details", details_path %> →<% end %>
+  </header>
   <% if last_week %>
     <div class="tithe-last-week">
-      <h2 class="card-title">Last week <small><%= tithe_week_label(last_week) %></small></h2>
+      <h3 class="card-title">Last week <small><%= tithe_week_label(last_week) %></small></h3>
       <dl>
         <div><dt>Tithe owed</dt><dd><%= money(last_week.owed_cents) %></dd></div>
         <div><dt>Given</dt><dd><%= money(last_week.paid_cents) %></dd></div>
@@ -13,7 +17,7 @@
     </div>
   <% end %>
   <div class="tithe-this-week">
-    <h2 class="card-title">This week <small><%= tithe_week_label(this_week) %></small></h2>
+    <h3 class="card-title">This week <small><%= tithe_week_label(this_week) %></small></h3>
     <dl>
       <div><dt>Income</dt><dd><%= money(this_week.income_cents) %></dd></div>
       <div><dt>Tithe owed</dt><dd><%= money(this_week.owed_cents) %></dd></div>
@@ -21,10 +25,7 @@
     </dl>
   </div>
   <div class="tithe-balance">
-    <h2 class="card-title">
-      Overall
-      <% if local_assigns[:details_path] %><small><%= link_to "Tithe details", details_path %> →</small><% end %>
-    </h2>
+    <h3 class="card-title">Overall</h3>
     <b class="<%= "neg" if ledger.balance_cents.positive? %>"><%= tithe_balance_label(ledger.balance_cents) %></b>
     <p><%= tithe_balance_advice(ledger.balance_cents) %></p>
     <small>This year: owed <%= money(ledger.ytd_owed_cents) %> · given <%= money(ledger.ytd_paid_cents) %></small>

@@ -15,16 +15,10 @@ class InvoiceFilter
   def all = ordered
   def next_page? = filtered.count > page * PER_PAGE
   def params = @params.slice(:status, :client_id, :from, :to)
-  def outstanding_cents = open_invoices.sum(&:outstanding_cents)
-  def overdue_cents = open_invoices.select { _1.overdue?(@today) }.sum(&:outstanding_cents)
 
   private
 
   def ordered = filtered.includes(:client, :business, :payments).order(issue_date: :desc, id: :desc)
-
-  def open_invoices
-    @open_invoices ||= filtered.sent.includes(:payments).to_a
-  end
 
   def filtered
     relation =
