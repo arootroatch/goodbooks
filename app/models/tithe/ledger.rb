@@ -5,7 +5,7 @@ module Tithe
   class Ledger
     RATE = Rational(1, 10)
     Entry = Data.define(:posted_on, :cents, :kind, :source)
-    Week = Data.define(:starts_on, :ends_on, :income_cents, :owed_cents, :paid_cents, :paid_toward_cents, :status, :balance_cents, :entries)
+    Week = Data.define(:starts_on, :ends_on, :income_cents, :owed_cents, :paid_cents, :paid_toward_cents, :status, :opening_balance_cents, :balance_cents, :entries)
 
     attr_reader :weeks, :owed_cents, :paid_cents, :balance_cents, :credit_cents, :ytd_owed_cents, :ytd_paid_cents
 
@@ -21,9 +21,10 @@ module Tithe
         income = week_entries.select { _1.kind == :income }.sum(&:cents)
         paid = week_entries.select { _1.kind == :payment }.sum(&:cents)
         owed = Money.round_rational(income * RATE)
+        opening = @owed_cents - @paid_cents
         @owed_cents += owed
         @paid_cents += paid
-        { starts_on:, income:, owed:, paid:, balance: @owed_cents - @paid_cents, entries: week_entries }
+        { starts_on:, income:, owed:, paid:, opening:, balance: @owed_cents - @paid_cents, entries: week_entries }
       end
       @balance_cents = @owed_cents - @paid_cents
       @credit_cents = [ -@balance_cents, 0 ].max
@@ -41,7 +42,7 @@ module Tithe
         remaining -= toward
         Week.new(starts_on: w[:starts_on], ends_on: w[:starts_on] + 6, income_cents: w[:income], owed_cents: w[:owed],
                  paid_cents: w[:paid], paid_toward_cents: toward, status: status_for(w[:owed], toward),
-                 balance_cents: w[:balance], entries: w[:entries])
+                 opening_balance_cents: w[:opening], balance_cents: w[:balance], entries: w[:entries])
       end
     end
 

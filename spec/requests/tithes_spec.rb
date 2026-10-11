@@ -57,8 +57,9 @@ RSpec.describe "Tithe" do
     expect(week.all("dd").map(&:text)).to eq([ "$500.00", "$50.00", "$0.00" ])
   end
 
-  it "shows last week's income, tithe owed, giving, balance at week's end, and status in the overview card" do
+  it "shows last week's income, tithe owed, giving, the balance going into it, and status in the overview card" do
     last_week_start = Date.current - Date.current.wday - 7
+    create(:transaction, account: checking, payee: "TRANSFER FROM PAT", amount_cents: 100_000, posted_on: start_on)
     create(:transaction, account: checking, payee: "TRANSFER FROM PAT", amount_cents: 50_000, posted_on: last_week_start + 2)
     book.update!(tithe_start_on: start_on)
     sign_in_as owner
@@ -66,8 +67,8 @@ RSpec.describe "Tithe" do
     week = Capybara.string(response.body).find(".tithe-summary .tithe-last-week")
     expect(week).to have_css(".card-title", text: "Last week")
     expect(week).to have_text("#{last_week_start.strftime('%b %-d')} – #{(last_week_start + 6).strftime('%b %-d, %Y')}")
-    expect(week.all("dt").map(&:text)).to eq([ "Income", "Tithe owed", "Given", "Balance" ])
-    expect(week.all("dd").map(&:text)).to eq([ "$500.00", "$50.00", "$0.00", "Behind $50.00" ])
+    expect(week.all("dt").map(&:text)).to eq([ "Income", "Tithe owed", "Given", "Balance before" ])
+    expect(week.all("dd").map(&:text)).to eq([ "$500.00", "$50.00", "$0.00", "Behind $100.00" ])
     expect(week).to have_css(".badge.badge-muted", text: "Open")
   end
 

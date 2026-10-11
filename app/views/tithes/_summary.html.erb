@@ -13,7 +13,7 @@
         <div><dt>Income</dt><dd><%= money(last_week.income_cents) %></dd></div>
         <div><dt>Tithe owed</dt><dd><%= money(last_week.owed_cents) %></dd></div>
         <div><dt>Given</dt><dd><%= money(last_week.paid_cents) %></dd></div>
-        <div><dt>Balance</dt><dd class="<%= "neg" if last_week.balance_cents.positive? %>"><%= tithe_balance_label(last_week.balance_cents) %></dd></div>
+        <div><dt>Balance before</dt><dd class="<%= "neg" if last_week.opening_balance_cents.positive? %>"><%= tithe_balance_label(last_week.opening_balance_cents) %></dd></div>
       </dl>
       <%= tithe_status_badge(last_week.status) %>
     </div>

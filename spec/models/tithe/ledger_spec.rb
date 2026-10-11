@@ -44,6 +44,7 @@ RSpec.describe Tithe::Ledger do
     expect(result.weeks.map(&:paid_toward_cents)).to eq([ 1_000, 1_000, 500 ])
     expect(result.weeks.map(&:paid_cents)).to eq([ 0, 0, 2_500 ])
     expect(result.weeks.map(&:balance_cents)).to eq([ 1_000, 2_000, 500 ])
+    expect(result.weeks.map(&:opening_balance_cents)).to eq([ 0, 1_000, 2_000 ])
     expect(result.balance_cents).to eq(500)
     expect(result.credit_cents).to eq(0)
   end
