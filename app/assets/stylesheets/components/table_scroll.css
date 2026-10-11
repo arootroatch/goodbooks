@@ -1,0 +1,13 @@
+/* Wide tables scroll inside their own box; .frozen-ends keeps the first and last columns in view, like frozen panes. */
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.table-scroll > table { width: max-content; min-width: 100%; margin: 0; border: 0; border-radius: 0; overflow: visible; }
+.frozen-ends tr > :is(:first-child, :last-child):not([colspan]) { position: sticky; z-index: 1; background: var(--surface); }
+.frozen-ends tr > :first-child:not([colspan]) { left: 0; box-shadow: inset -1px 0 var(--border); }
+.frozen-ends tr > :last-child:not([colspan]) { right: 0; box-shadow: inset 1px 0 var(--border); }
+.frozen-ends tbody tr:hover > :is(:first-child, :last-child):not([colspan]) { background: var(--hover); }
