@@ -36,6 +36,10 @@
 </section>
 
 <%= render "invoices/open_cards", summary: open, show_business: true, list_path: ->(status) { household_invoices_path(status:) } %>
+<% @dashboard.businesses.select(&:sales_tax).each do |row| %>
+  <%= render "sales_tax/summary", business: row.business, summary: row.sales_tax, show_business: true,
+                                  details_path: business_sales_tax_profile_path(row.business) %>
+<% end %>
 
 <h2 class="section-title">Businesses</h2>
 <div class="business-cards">
@@ -56,7 +60,6 @@
           No open invoices
         <% end %>
       </p>
-      <% if row.sales_tax %><p class="muted"><%= render "sales_tax/summary", business: row.business, summary: row.sales_tax %></p><% end %>
     </section>
   <% end %>
 </div>

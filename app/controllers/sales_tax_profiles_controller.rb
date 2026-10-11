@@ -9,6 +9,7 @@ class SalesTaxProfilesController < ApplicationController
   def show
     @collects = @business.collects_sales_tax?
     @reports = @collects ? SalesTax.reports_for(@business).reverse : []
+    @summary = SalesTax.summary_for(@business)
     @profile = @business.sales_tax_profile
     @profile ||= SalesTaxProfile.new(business: @business, filing_frequency: "quarterly", default_rate_bps: 925,
                                      starts_on: Date.current.beginning_of_quarter, active: true) if current_membership.owner?

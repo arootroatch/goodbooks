@@ -1,6 +1,7 @@
 <header class="page-header">
   <h1>Sales tax</h1>
 </header>
+<%= render "sales_tax/summary", business: @business, summary: @summary if @summary %>
 <% if current_membership.owner? %>
   <%= form_with model: @profile, url: business_sales_tax_profile_path(@business), method: :patch, class: "card" do |f| %>
     <%= render "shared/errors", record: @profile %>
