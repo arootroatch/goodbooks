@@ -18,7 +18,7 @@ class CategoriesController < ApplicationController
   def create
     @category = @business.categories.new(params.expect(category: PERMITTED))
     if @category.save
-      redirect_to business_categories_path(@business), notice: "Category created."
+      redirect_to category_return_path(@category), notice: "Category created."
     else
       render :new, status: :unprocessable_content
     end
@@ -38,6 +38,12 @@ class CategoriesController < ApplicationController
   private
 
   def archivable = @category
+
+  # Back to the transaction that asked for this category, with it selected; otherwise the category list.
+  def category_return_path(category)
+    transaction = Transaction.for_businesses(@business.id).find_by(id: params[:transaction_id]) if params[:transaction_id].is_a?(String)
+    transaction ? edit_business_transaction_path(@business, transaction, category_id: category.id) : business_categories_path(@business)
+  end
 
   def set_category
     @category = @business.categories.find(params[:id])

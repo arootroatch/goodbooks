@@ -24,7 +24,11 @@
           [["Income", @business.categories.income.active.or(@business.categories.income.where(id: transaction.category_id)).order(:name)],
            ["Expense", @business.categories.expense.active.or(@business.categories.expense.where(id: transaction.category_id)).order(:name)]],
           :last, :first, :id, :name, include_blank: "Uncategorized" %>
+    <%= link_to "New category", new_business_category_path(@business, transaction_id: transaction.id) if transaction.persisted? %>
   </p>
+  <% if transaction.persisted? %>
+    <p><label><%= check_box_tag :make_rule, "1", false %> Make a rule from this transaction</label></p>
+  <% end %>
   <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
   <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
   <%= f.submit %>
