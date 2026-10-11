@@ -20,3 +20,4 @@
 @media (max-width: 800px) {
   .summary-card > :not(.summary-card-header) + * { border-left: 0; padding-left: 0; border-top: 1px solid var(--border); padding-top: var(--space-3); }
 }
+.summary-card-total b a { color: inherit; }
