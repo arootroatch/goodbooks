@@ -154,7 +154,7 @@ RSpec.describe "Businesses" do
       expect(axis_labels).to eq(Date::ABBR_MONTHNAMES.compact)
       expect(chart["aria-label"]).to eq("Income and expenses by month, 2026")
       expect(chart).to have_css("rect.bar-income", count: 2, visible: :all)
-      expect(chart).to have_css("rect.bar-income.faded title", text: "Mar income: $3,000.00", visible: :all)
+      expect(chart).to have_css('rect.bar-income.faded[data-tip="Mar income: $3,000.00"]', visible: :all)
       expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Year")
     end
 
@@ -167,7 +167,7 @@ RSpec.describe "Businesses" do
       expect(kpi("Income")).to have_text("$3,000.00")
       expect(axis_labels).to eq([ "Mar 1", "Mar 2", "Mar 9", "Mar 16", "Mar 23", "Mar 30" ])
       expect(chart["aria-label"]).to eq("Income and expenses by week, March 2026")
-      expect(chart).to have_css("rect.bar-income title", text: "Mar 9 income: $3,000.00", visible: :all)
+      expect(chart).to have_css('rect.bar-income[data-tip="Mar 9 income: $3,000.00"]', visible: :all)
       expect(period_nav).to have_css('a[aria-current="page"]', count: 1, text: "Month")
     end
 
@@ -231,7 +231,7 @@ RSpec.describe "Businesses" do
         expect(page).to have_css(".card-title", text: "Top spending")
         expect(page.find(".chart-legend")).to have_text("Spending")
         expect(page).to have_css(".card-title", text: "Income vs spending")
-        expect(page).to have_css("svg.chart rect.bar-expense title", text: "Feb spending: $1,200.00", visible: :all)
+        expect(page).to have_css('svg.chart rect.bar-expense[data-tip="Feb spending: $1,200.00"]', visible: :all)
         expect(response.body).not_to include("tax basis")
       end
     end

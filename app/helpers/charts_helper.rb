@@ -23,14 +23,15 @@ module ChartsHelper
         height = (BOTTOM - TOP) * value.to_f / max
         parts << tag.rect(x: (group_x + group_width * 0.15 + bar_width * j).round(1), y: (BOTTOM - height).round(1),
                           width: bar_width.round(1), height: height.round(1), rx: 1.5,
-                          class: [ "bar", "bar-#{s[:key]}", ("faded" if faded) ]) do
-          tag.title("#{name} #{s[:name].downcase}: #{Money.new(value)}")
-        end
+                          class: [ "bar", "bar-#{s[:key]}", ("faded" if faded) ],
+                          data: { tip: "#{name} #{s[:name].downcase}: #{Money.new(value)}" })
       end
       parts << tag.text(name, x: (group_x + group_width / 2).round(1), y: HEIGHT - 10, class: "chart-axis", "text-anchor": "middle")
     end
 
-    tag.svg(safe_join(parts), class: "chart", role: "img", aria: { label: }, viewBox: "0 0 #{WIDTH} #{HEIGHT}")
+    tag.svg(safe_join(parts), class: "chart", role: "img", aria: { label: }, viewBox: "0 0 #{WIDTH} #{HEIGHT}",
+                              data: { controller: "chart-tooltip",
+                                      action: "mouseover->chart-tooltip#show mouseout->chart-tooltip#hide" })
   end
 
   def compact_dollars(cents)
