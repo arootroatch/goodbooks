@@ -15,7 +15,7 @@
           <% if current_membership.can_edit? %>
             <div class="button-group">
               <%= link_to "Edit", edit_business_rule_path(@business, rule) %>
-              <%= button_to "Delete", business_rule_path(@business, rule), method: :delete %>
+              <%= confirm_button "Delete", business_rule_path(@business, rule), method: :delete, confirm: "Delete this rule?" %>
             </div>
           <% end %>
         </td>

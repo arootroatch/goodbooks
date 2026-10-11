@@ -10,7 +10,7 @@
           <td><%= payment.deposit.payee %></td>
           <td class="num"><%= money(payment.amount_cents) %></td>
           <td>
-            <%= button_to "Unlink", business_invoice_payment_path(@business, invoice, payment), method: :delete, form_class: "inline-form" if current_membership.can_edit? %>
+            <%= confirm_button "Unlink", business_invoice_payment_path(@business, invoice, payment), method: :delete, form_class: "inline-form", confirm: "Unlink this payment from the invoice?" if current_membership.can_edit? %>
           </td>
         </tr>
       <% end %>

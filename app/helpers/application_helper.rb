@@ -2,9 +2,18 @@ module ApplicationHelper
   def primary_action(label, path) = link_to(label, path, class: "button primary")
   def secondary_action(label, path) = link_to(label, path, class: "button no-print")
 
+  def confirm_button(label, path, confirm:, **options)
+    button_to label, path, **options, form: { data: { turbo_confirm: confirm } }
+  end
+
   def archive_button(target)
-    archived = target.last.archived?
-    button_to archived ? "Unarchive" : "Archive", polymorphic_path(target, action: archived ? :unarchive : :archive), method: :patch
+    record = target.last
+    if record.archived?
+      button_to "Unarchive", polymorphic_path(target, action: :unarchive), method: :patch
+    else
+      confirm_button "Archive", polymorphic_path(target, action: :archive), method: :patch,
+                                confirm: "Archive this #{record.model_name.human.downcase}? It will be hidden until you unarchive it."
+    end
   end
 
   def money(cents)

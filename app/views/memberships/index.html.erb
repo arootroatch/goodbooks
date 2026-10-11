@@ -15,7 +15,7 @@
             <%= f.submit "Save" %>
           <% end %>
         </td>
-        <td><div class="button-group"><%= button_to "Remove", business_membership_path(@business, membership), method: :delete %></div></td>
+        <td><div class="button-group"><%= confirm_button "Remove", business_membership_path(@business, membership), method: :delete, confirm: "Remove #{membership.user.name} from #{@business.name}?" %></div></td>
       </tr>
     <% end %>
   </tbody>

@@ -30,5 +30,5 @@
   <%= f.submit %>
 <% end %>
 <% if transaction.persisted? && transaction.account.manual? %>
-  <%= button_to "Delete", business_transaction_path(@business, transaction), method: :delete %>
+  <%= confirm_button "Delete", business_transaction_path(@business, transaction), method: :delete, confirm: "Delete this transaction?" %>
 <% end %>
