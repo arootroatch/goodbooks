@@ -1,7 +1,8 @@
-<%= business_nav @business %>
-<h1>Sales tax</h1>
+<header class="page-header">
+  <h1>Sales tax</h1>
+</header>
 <% if current_membership.owner? %>
-  <%= form_with model: @profile, url: business_sales_tax_profile_path(@business), method: :patch do |f| %>
+  <%= form_with model: @profile, url: business_sales_tax_profile_path(@business), method: :patch, class: "card" do |f| %>
     <%= render "shared/errors", record: @profile %>
     <p><%= f.label :tn_account_number, "TN account number" %> <%= f.text_field :tn_account_number %></p>
     <p><%= f.label :filing_frequency, "Filing frequency" %> <%= f.select :filing_frequency, SalesTaxProfile::FREQUENCIES.map { [ _1.humanize, _1 ] } %></p>

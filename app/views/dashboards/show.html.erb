@@ -56,6 +56,7 @@
           No open invoices
         <% end %>
       </p>
+      <% if row.sales_tax %><p class="muted"><%= render "sales_tax/summary", business: row.business, summary: row.sales_tax %></p><% end %>
     </section>
   <% end %>
 </div>

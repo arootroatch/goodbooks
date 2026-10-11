@@ -21,8 +21,8 @@ implementation plan, or blank before one exists.
 | # | Sub-project | Contents | Design | Kaneo | Size | Status |
 |---|---|---|---|---|---|---|
 | 1 | **Core** | auth + mandatory TOTP 2FA, household / people / businesses / memberships, invite links, manual and CSV accounts, transactions, categories, rules + inbox, mileage, reports, backups, demo seed, Docker | [§5](superpowers/specs/2026-10-05-goodbooks-design.md#5-sub-project-1-core) | GB-2, GB-8 | 21 | Merged |
-| 2 | **Invoices** | clients, invoice tracking (not generation), payments linked to deposits, inbox "Mark paid" hint, aging, PDFs, CSV; the CI `test` job and the Brakeman fix | [§6](superpowers/specs/2026-10-05-goodbooks-design.md#6-sub-project-2-invoices), refined by [its own spec](superpowers/specs/2026-10-06-goodbooks-invoices-design.md) | GB-3 | 15 | In review (PR #6) |
-| 3 | **Personal book + tithing** | the household's personal book (a `Business` with `kind: "personal"`), weekly tithe ledger, spending report, personal-book exclusion from every business-only path | [own spec](superpowers/specs/2026-10-06-goodbooks-tithing-design.md) (inserted in [§4](superpowers/specs/2026-10-05-goodbooks-design.md#4-decomposition)) | GB-9 | 10 | In review (PR #7, stacked on #6) |
+| 2 | **Invoices** | clients, invoice tracking (not generation), payments linked to deposits, inbox "Mark paid" hint, aging, PDFs, CSV; the CI `test` job and the Brakeman fix | [§6](superpowers/specs/2026-10-05-goodbooks-design.md#6-sub-project-2-invoices), refined by [its own spec](superpowers/specs/2026-10-06-goodbooks-invoices-design.md) | GB-3 | 15 | Merged |
+| 3 | **Personal book + tithing** | the household's personal book (a `Business` with `kind: "personal"`), weekly tithe ledger, spending report, personal-book exclusion from every business-only path | [own spec](superpowers/specs/2026-10-06-goodbooks-tithing-design.md) (inserted in [§4](superpowers/specs/2026-10-05-goodbooks-design.md#4-decomposition)) | GB-9 | 10 | Merged |
 | 4 | **Sales tax (Tennessee)** | per-business profile, taxable/exempt treatment on income categories, Stripe processor fees, collected tax kept out of income, filing periods and remittances, period report, dashboard due card | [own spec](superpowers/specs/2026-10-08-goodbooks-sales-tax-design.md) | GB-4 | 15 | In review (PR #8) |
 | 5 | **Plaid** | Link + token exchange, `transactions/sync`, daily / webhook / manual sync job, re-link on `ITEM_LOGIN_REQUIRED`, verified webhooks, fake client | [§8](superpowers/specs/2026-10-05-goodbooks-design.md#8-sub-project-5-plaid) | GB-5 | 17 | In review (PR #9) |
 | 6 | **Tax engine** | federal MFJ quarterly estimates (SE tax, QBI, brackets, safe harbor vs annualized), home office, per-person adjustments, Schedule C line 30 | [§9](superpowers/specs/2026-10-05-goodbooks-design.md#9-sub-project-6-tax-engine-federal-mfj-sole-proprietors) | GB-6 | | Not started |
@@ -51,8 +51,8 @@ implementation plan, or blank before one exists.
 
 ```
 ✓ 1 Core
-    └── ◐ 2 Invoices
-            └── ◐ 3 Personal book + tithing
+    └── ✓ 2 Invoices
+            └── ✓ 3 Personal book + tithing
                     ├── ◐ 4 Sales tax ── ○ 6 Tax engine ── ○ 7 Sharing polish
                     └── ◐ 5 Plaid
 ```

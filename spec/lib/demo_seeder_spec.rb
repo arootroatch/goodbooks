@@ -25,7 +25,7 @@ RSpec.describe DemoSeeder do
 
   it "seeds a sales tax business with paid, due, and open periods" do
     run
-    business = Business.find_by!(name: "Pat Consulting")
+    business = Business.find_by!(name: "Sound Roots Productions")
     expect(business).to be_collects_sales_tax
     reports = SalesTax.reports_for(business, today: today)
     completed = reports.select { _1.period.ends_on < today }

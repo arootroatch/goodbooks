@@ -47,10 +47,10 @@ class DemoSeeder
     seed_invoices(sound_roots, payer: "ACME CORP", others: [ "Northwind Traders", "Globex" ], prefix: "INV-")
     seed_invoices(gardens, payer: "BLUE OX DESIGN CO", others: [ "Initech", "Umbrella Bakery" ], prefix: "WRG-")
     seed_personal(household)
-    seed_sales_tax(consulting)
+    seed_sales_tax(sound_roots)
   end
 
-  # Pat Consulting collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
+  # Sound Roots Productions collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
   # taxed invoices (one by check, one inside a batched payout, one open), and every completed quarter but the latest filed and remitted.
   def seed_sales_tax(business)
     start = @today.beginning_of_quarter << 15

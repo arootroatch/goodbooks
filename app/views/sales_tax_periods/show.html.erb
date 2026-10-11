@@ -1,9 +1,16 @@
-<%= business_nav @business %>
 <% period = @report.period %>
-<h1>Sales tax · <%= period.label %> <%= sales_tax_status_badge(@report) %></h1>
-<p><%= period.starts_on %> – <%= period.ends_on %> · due <%= sales_tax_due_label(period) %></p>
+<header class="page-header">
+  <div>
+    <h1>Sales tax · <%= period.label %> <%= sales_tax_status_badge(@report) %></h1>
+    <p class="subtitle"><%= period.starts_on %> – <%= period.ends_on %> · due <%= sales_tax_due_label(period) %></p>
+  </div>
+  <div class="page-actions">
+    <%= secondary_action "All periods", business_sales_tax_profile_path(@business) %>
+    <%= secondary_action "Download CSV", business_sales_tax_period_path(@business, period.starts_on, format: :csv) %>
+  </div>
+</header>
 <%# dt and dd on separate lines so page text reads "Tax collected $84.67" %>
-<dl class="details">
+<dl class="details card">
   <dt>Gross sales</dt>
   <dd><%= money(@report.gross_sales_cents) %></dd>
   <dt>Exempt sales</dt>
@@ -20,9 +27,10 @@
 
 <% if @report.filing %>
   <p>Filed <%= @report.filing.filed_on %><%= " · confirmation #{@report.filing.confirmation_number}" if @report.filing.confirmation_number.present? %></p>
-  <%= button_to "Unfile", business_sales_tax_period_filing_path(@business, period.starts_on), method: :delete if current_membership.can_edit? %>
+  <%= confirm_button "Unfile", business_sales_tax_period_filing_path(@business, period.starts_on), method: :delete,
+                     confirm: "Unfile #{period.label}? It goes back to due." if current_membership.can_edit? %>
 <% elsif current_membership.can_edit? %>
-  <%= form_with scope: :sales_tax_filing, url: business_sales_tax_period_filing_path(@business, period.starts_on), class: "inline-form" do |f| %>
+  <%= form_with scope: :sales_tax_filing, url: business_sales_tax_period_filing_path(@business, period.starts_on), class: "filters" do |f| %>
     <%= f.label :filed_on, "Filed on" %> <%= f.date_field :filed_on, value: Date.current %>
     <%= f.label :confirmation_number, "Confirmation number" %> <%= f.text_field :confirmation_number %>
     <%= f.submit "Mark filed" %>
@@ -74,4 +82,3 @@
 <% else %>
   <p>No remittances for this period yet.</p>
 <% end %>
-<p><%= link_to "Download CSV", business_sales_tax_period_path(@business, period.starts_on, format: :csv) %> · <%= link_to "All periods", business_sales_tax_profile_path(@business) %></p>
