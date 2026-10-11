@@ -4,7 +4,7 @@
 <section class="card tithe-summary">
   <header class="tithe-summary-header">
     <h2>Tithe</h2>
-    <% if local_assigns[:details_path] %><%= link_to "Tithe details", details_path %> →<% end %>
+    <% if local_assigns[:details_path] %><span><%= link_to "Tithe details", details_path %> →</span><% end %>
   </header>
   <% if last_week %>
     <div class="tithe-last-week">
