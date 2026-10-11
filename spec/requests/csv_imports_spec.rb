@@ -74,6 +74,15 @@ RSpec.describe "CSV imports" do
     let!(:import) { mapped.csv_imports.create!(file: fixture) }
     let(:editor) { user_with_role("editor", business) }
 
+    it "offers Import, Change column mapping, and Discard as buttons in one row" do
+      sign_in_as editor
+      get business_account_csv_import_path(business, mapped, import)
+      actions = Capybara.string(response.body).find(".actions")
+      expect(actions).to have_button("Import", class: "primary").and have_button("Discard")
+      expect(actions).to have_link("Change column mapping", class: "button",
+                                                            href: edit_business_account_csv_import_mapping_path(business, mapped, import))
+    end
+
     it "commits once and refuses a second commit" do
       sign_in_as editor
       post commit_business_account_csv_import_path(business, mapped, import)

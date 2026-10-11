@@ -1,14 +1,15 @@
-<h1><%= current_personal_book ? "Inbox: all books" : "Inbox: all businesses" %></h1>
+<header class="page-header">
+  <h1><%= current_personal_book ? "Inbox: all books" : "Inbox: all businesses" %></h1>
+</header>
 <% @groups.each do |business, transactions, total| %>
-  <h2><%= link_to business.name, business_inbox_path(business) %> (<%= total %>)</h2>
-  <%= render "inboxes/review_rows", business: business, rows: @reviews.fetch(business.id, []), editable: @memberships.fetch(business.id).can_edit? %>
+  <% editable = @memberships.fetch(business.id).can_edit? %>
+  <h2 class="section-title"><%= link_to business.name, business_inbox_path(business) %> (<%= total %>)</h2>
+  <%= render "inboxes/review_rows", business: business, rows: @reviews.fetch(business.id, []), editable: editable %>
   <%= render "shared/inbox_truncation", shown: transactions.size, total: total %>
-  <table>
-    <tbody>
-      <% transactions.each do |txn| %>
-        <%= render "inboxes/row", business: business, txn: txn, categories: @categories.fetch(business.id, []),
-              editable: @memberships.fetch(business.id).can_edit?, matcher: @matcher %>
-      <% end %>
-    </tbody>
-  </table>
+  <% if transactions.any? %>
+    <%= render "inboxes/table", business: business, transactions: transactions, categories: @categories.fetch(business.id, []),
+                                editable: editable, matcher: @matcher %>
+  <% else %>
+    <div class="empty"><strong>Inbox zero</strong>Every transaction is categorized.</div>
+  <% end %>
 <% end %>

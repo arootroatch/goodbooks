@@ -1,4 +1,6 @@
-<h1>Preview import into <%= @account.name %></h1>
+<header class="page-header">
+  <h1>Preview import into <%= @account.name %></h1>
+</header>
 <% if @file_error %>
   <p class="errors"><%= @file_error %></p>
 <% elsif @import.previewed? %>
@@ -31,11 +33,13 @@
       <% end %>
     </tbody>
   </table>
-  <%= button_to "Import", commit_business_account_csv_import_path(@business, @account, @import) %>
 <% else %>
   <p>This import was <%= @import.status %>.</p>
 <% end %>
 <% if @import.previewed? %>
-  <%= link_to "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
-  <%= confirm_button "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete, confirm: "Discard this import?" %>
+  <div class="actions">
+    <%= button_to "Import", commit_business_account_csv_import_path(@business, @account, @import), class: "primary" unless @file_error %>
+    <%= secondary_action "Change column mapping", edit_business_account_csv_import_mapping_path(@business, @account, @import) %>
+    <%= confirm_button "Discard", business_account_csv_import_path(@business, @account, @import), method: :delete, confirm: "Discard this import?" %>
+  </div>
 <% end %>

@@ -144,6 +144,15 @@ RSpec.describe "Plaid items" do
       expect(header.find("form[data-turbo-confirm]", text: "Remove connection")["data-turbo-confirm"]).to include("Stop syncing Demo Bank?")
     end
 
+    it "lists each assigned account on its own line with its book" do
+      create(:account, :plaid, business: business, plaid_item: item, plaid_account_id: "fake-card", name: "Card")
+      sign_in_as owner
+      get plaid_items_path
+      accounts = Capybara.string(response.body).find("##{ActionView::RecordIdentifier.dom_id(item)} ul.plain-list")
+      expect(accounts.all("li").map { _1.text.squish }).to eq([ "Card #{business.name}", "Operating #{business.name}" ])
+      expect(accounts).to have_css("li .muted", text: business.name)
+    end
+
     it "marks an account Plaid no longer reports" do
       account.update!(plaid_account_id: "gone")
       sign_in_as owner

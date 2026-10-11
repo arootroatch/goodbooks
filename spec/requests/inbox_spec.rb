@@ -127,6 +127,32 @@ RSpec.describe "Inbox" do
     end
   end
 
+  it "gives every household inbox table a header row" do
+    flagged_account = create(:account, :plaid, business: business)
+    create(:transaction, account: flagged_account, payee: "USPS", plaid_transaction_id: "p-1", review_reason: "removed_by_bank")
+    second = create(:business, name: "Second Biz")
+    create(:transaction, account: create(:account, business: second), payee: "SECOND PAYEE")
+    owner = user_with_role("owner", business)
+    create(:membership, user: owner, business: second, role: "owner")
+    sign_in_as owner
+    get household_inbox_path
+    page = Capybara.string(response.body)
+    expect(page.find("header.page-header")).to have_css("h1", text: "Inbox: all businesses")
+    expect(page.all("table").size).to eq(3)
+    page.all("table").each { |table| expect(table).to have_css("thead th", text: "Payee") }
+  end
+
+  it "shows inbox zero instead of an empty table for a book with nothing to categorize" do
+    empty = create(:business, name: "Empty Biz")
+    owner = user_with_role("owner", business)
+    create(:membership, user: owner, business: empty, role: "owner")
+    sign_in_as owner
+    get household_inbox_path
+    page = Capybara.string(response.body)
+    expect(page.all("table").size).to eq(1)
+    expect(page).to have_css(".empty", text: "Inbox zero")
+  end
+
   describe "length limit" do
     before do
       stub_const("InboxesController::LIMIT", 1)
