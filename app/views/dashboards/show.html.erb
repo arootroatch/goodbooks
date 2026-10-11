@@ -36,9 +36,8 @@
 </section>
 
 <%= render "invoices/open_cards", summary: open, show_business: true, list_path: ->(status) { household_invoices_path(status:) } %>
-<% @dashboard.businesses.select(&:sales_tax).each do |row| %>
-  <%= render "sales_tax/summary", business: row.business, summary: row.sales_tax, show_business: true,
-                                  details_path: business_sales_tax_profile_path(row.business) %>
+<% if (sales_tax_rows = @dashboard.businesses.select(&:sales_tax)).any? %>
+  <%= render "sales_tax/household_card", rows: sales_tax_rows %>
 <% end %>
 
 <h2 class="section-title">Businesses</h2>

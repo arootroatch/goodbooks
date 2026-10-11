@@ -44,8 +44,16 @@ RSpec.describe "Sales tax on the dashboard" do
 
       get root_path
       page = Capybara.string(response.body)
-      card = expect_sales_tax_card(page)
-      expect(card.find(".summary-card-header")).to have_text("Pat Consulting")
+      card = page.find(".household-sales-tax")
+      expect(card.find(".card-title")).to have_text("Sales tax").and have_text("$9.25 owed")
+      expect(card.all("thead th").map(&:text)).to eq([ "Business", "Next filing", "Due", "Collected", "Remitted", "Owed" ])
+      row = card.find("tbody tr", text: "Pat Consulting")
+      expect(row).to have_link("Pat Consulting", href: business_sales_tax_profile_path(business))
+      expect(row).to have_link("Q2 2026", href: business_sales_tax_period_path(business, "2026-04-01"))
+      expect(row.all("td").map(&:text).map(&:squish))
+        .to eq([ "Pat Consulting", "Q2 2026", "Jul 20, 2026 due in 80 days", "$0.00", "$0.00", "$9.25 1 period overdue" ])
+      expect(row.find("td.num:last-child")).to have_css(".neg", text: "1 period overdue")
+      expect(page).to have_no_css(".sales-tax-summary")
       expect(page.find(".business-card")).to have_no_text("Sales tax")
       expect(response.body).to include("Sales tax for Pat Consulting", "Q1 2026", "isn't filed")
     end
@@ -62,10 +70,25 @@ RSpec.describe "Sales tax on the dashboard" do
     end
   end
 
+  it "lists every business that collects sales tax in one household card" do
+    travel_to Date.new(2026, 5, 1) do
+      seed_q1_sale
+      other = create(:business, name: "Acme Gardens")
+      create(:sales_tax_profile, business: other, filing_frequency: "monthly", starts_on: Date.new(2026, 5, 1))
+      owner = user_with_role("owner", business)
+      create(:membership, business: other, user: owner, role: "owner")
+      sign_in_as owner
+      get root_path
+      card = Capybara.string(response.body).find(".household-sales-tax")
+      expect(card.all("tbody tr td:first-child").map(&:text)).to eq([ "Acme Gardens", "Pat Consulting" ])
+      expect(card.find("tbody tr", text: "Acme Gardens")).to have_text("May 2026").and have_text("Nothing overdue")
+    end
+  end
+
   it "shows nothing for businesses without sales tax" do
     sign_in_as user_with_role("owner", business)
     get root_path
-    expect(Capybara.string(response.body)).to have_no_css(".sales-tax-summary")
+    expect(Capybara.string(response.body)).to have_no_css(".household-sales-tax")
     get business_path(business)
     expect(Capybara.string(response.body)).to have_no_css(".sales-tax-summary")
   end

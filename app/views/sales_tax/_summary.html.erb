@@ -2,7 +2,7 @@
 <% next_report = summary.next_report %>
 <section class="card summary-card sales-tax-summary">
   <header class="summary-card-header">
-    <h2>Sales tax<% if local_assigns[:show_business] %> <small><%= business.name %></small><% end %></h2>
+    <h2>Sales tax</h2>
     <% if local_assigns[:details_path] %><span><%= link_to "Sales tax details", details_path %> →</span><% end %>
   </header>
   <div class="summary-card-total sales-tax-next">
