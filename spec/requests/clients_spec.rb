@@ -31,17 +31,14 @@ RSpec.describe "Clients" do
     expect(client.reload.name).to eq("Acme")
   end
 
-  it "lets editors add, rename, and archive clients" do
+  it "lets editors add and rename clients" do
     sign_in_as user_with_role("editor", business)
     post business_clients_path(business), params: { client: { name: "Globex", email: "ap@globex.test", notes: "Net 30" } }
     expect(response).to redirect_to(business_clients_path(business))
     expect(business.clients.find_by!(name: "Globex").email).to eq("ap@globex.test")
 
-    patch business_client_path(business, client), params: { client: { name: "Acme Corp", archived: "1" } }
+    patch business_client_path(business, client), params: { client: { name: "Acme Corp" } }
     expect(client.reload.name).to eq("Acme Corp")
-    expect(client).to be_archived
-    patch business_client_path(business, client), params: { client: { archived: "0" } }
-    expect(client.reload).not_to be_archived
   end
 
   it "re-renders invalid input" do

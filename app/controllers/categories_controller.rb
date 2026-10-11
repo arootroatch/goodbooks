@@ -1,10 +1,11 @@
 class CategoriesController < ApplicationController
   include BusinessScoped
+  include Archiving
 
   PERMITTED = %i[name kind schedule_c_line deductible_percent tithable tithe].freeze
 
   before_action :require_editor!, except: :index
-  before_action :set_category, only: %i[edit update]
+  before_action :set_category, only: %i[edit update archive unarchive]
 
   def index
     @categories = @business.categories.order(:archived_at, :kind, :name)
@@ -27,11 +28,7 @@ class CategoriesController < ApplicationController
   end
 
   def update
-    attrs = params.expect(category: [ *PERMITTED, :archived ])
-    archived = attrs.delete(:archived)
-    @category.assign_attributes(attrs)
-    @category.archived_at = archived == "1" ? (@category.archived_at || Time.current) : nil unless archived.nil?
-    if @category.save
+    if @category.update(params.expect(category: PERMITTED))
       redirect_to business_categories_path(@business), notice: "Category updated."
     else
       render :edit, status: :unprocessable_content
@@ -39,6 +36,8 @@ class CategoriesController < ApplicationController
   end
 
   private
+
+  def archivable = @category
 
   def set_category
     @category = @business.categories.find(params[:id])

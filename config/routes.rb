@@ -16,16 +16,24 @@ Rails.application.routes.draw do
 
   resource :setup, only: %i[new create]
 
+  concern :archivable do
+    member do
+      patch :archive
+      patch :unarchive
+    end
+  end
+
   resources :businesses, only: %i[new create show edit update] do
     resource :tithe, only: %i[show update], controller: "tithes"
     resources :accounts, only: %i[index new create edit update] do
+      concerns :archivable
       resources :csv_imports, only: %i[new create show destroy] do
         post :commit, on: :member
         resource :mapping, only: %i[edit update], controller: "csv_import_mappings"
       end
     end
-    resources :categories, only: %i[index new create edit update]
-    resources :clients, only: %i[index new create edit update]
+    resources :categories, only: %i[index new create edit update], concerns: :archivable
+    resources :clients, only: %i[index new create edit update], concerns: :archivable
     resources :invoices do
       member do
         patch :mark_sent

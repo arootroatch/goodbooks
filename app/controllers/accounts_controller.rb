@@ -1,10 +1,11 @@
 class AccountsController < ApplicationController
   include BusinessScoped
+  include Archiving
 
   CREATABLE_SOURCES = %w[manual csv].freeze
 
   before_action :require_owner!, except: :index
-  before_action :set_account, only: %i[edit update]
+  before_action :set_account, only: %i[edit update archive unarchive]
 
   def index
     @accounts = @business.accounts.order(:archived_at, :name)
@@ -34,11 +35,7 @@ class AccountsController < ApplicationController
   end
 
   def update
-    attrs = params.expect(account: %i[name kind archived])
-    archived = attrs.delete(:archived)
-    @account.assign_attributes(attrs)
-    @account.archived_at = archived == "1" ? (@account.archived_at || Time.current) : nil unless archived.nil?
-    if @account.save
+    if @account.update(params.expect(account: %i[name kind]))
       redirect_to business_accounts_path(@business), notice: "Account updated."
     else
       render :edit, status: :unprocessable_content
@@ -46,6 +43,8 @@ class AccountsController < ApplicationController
   end
 
   private
+
+  def archivable = @account
 
   def set_account
     @account = @business.accounts.find(params[:id])

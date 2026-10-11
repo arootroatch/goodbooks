@@ -15,7 +15,7 @@
             <%= f.submit "Save" %>
           <% end %>
         </td>
-        <td><%= button_to "Remove", business_membership_path(@business, membership), method: :delete %></td>
+        <td><div class="button-group"><%= button_to "Remove", business_membership_path(@business, membership), method: :delete %></div></td>
       </tr>
     <% end %>
   </tbody>

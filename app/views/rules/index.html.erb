@@ -13,8 +13,10 @@
         <td><%= [rule.amount_min_cents && "≥ #{money(rule.amount_min_cents)}", rule.amount_max_cents && "≤ #{money(rule.amount_max_cents)}"].compact.join(" ") %></td>
         <td>
           <% if current_membership.can_edit? %>
-            <%= link_to "Edit", edit_business_rule_path(@business, rule) %>
-            <%= button_to "Delete", business_rule_path(@business, rule), method: :delete, form_class: "inline-form" %>
+            <div class="button-group">
+              <%= link_to "Edit", edit_business_rule_path(@business, rule) %>
+              <%= button_to "Delete", business_rule_path(@business, rule), method: :delete %>
+            </div>
           <% end %>
         </td>
       </tr>

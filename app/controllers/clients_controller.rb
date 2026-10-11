@@ -1,11 +1,12 @@
 class ClientsController < ApplicationController
   include BusinessScoped
+  include Archiving
   include BusinessKindOnly
 
   PERMITTED = %i[name email notes].freeze
 
   before_action :require_editor!, except: :index
-  before_action :set_client, only: %i[edit update]
+  before_action :set_client, only: %i[edit update archive unarchive]
 
   def index
     @show_archived = params[:archived] == "1"
@@ -30,11 +31,7 @@ class ClientsController < ApplicationController
   end
 
   def update
-    attrs = params.expect(client: [ *PERMITTED, :archived ])
-    archived = attrs.delete(:archived)
-    @client.assign_attributes(attrs)
-    @client.archived_at = archived == "1" ? (@client.archived_at || Time.current) : nil unless archived.nil?
-    if @client.save
+    if @client.update(params.expect(client: PERMITTED))
       redirect_to business_clients_path(@business), notice: "Client updated."
     else
       render :edit, status: :unprocessable_content
@@ -42,6 +39,8 @@ class ClientsController < ApplicationController
   end
 
   private
+
+  def archivable = @client
 
   def set_client
     @client = @business.clients.find(params[:id])

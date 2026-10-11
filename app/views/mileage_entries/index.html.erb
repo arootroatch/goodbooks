@@ -22,7 +22,7 @@
         <td><%= entry.from_location %></td>
         <td><%= entry.to_location %></td>
         <td class="num"><%= Tenths.format(entry.effective_miles_tenths) %><%= " (round trip)" if entry.round_trip? %></td>
-        <td><%= link_to "Edit", edit_business_mileage_entry_path(@business, entry) if current_membership.can_edit? %></td>
+        <td><% if current_membership.can_edit? %><div class="button-group"><%= link_to "Edit", edit_business_mileage_entry_path(@business, entry) %></div><% end %></td>
       </tr>
     <% end %>
   </tbody>

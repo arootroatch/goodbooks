@@ -25,7 +25,7 @@
           <td><%= txn.memo %></td>
           <td><%= txn.transfer? ? "Transfer" : txn.excluded? ? "Excluded" : txn.category&.name || "Inbox" %></td>
           <td class="num"><%= money(txn.amount_cents) %></td>
-          <td><%= link_to "Edit", edit_business_transaction_path(@business, txn) if current_membership.can_edit? %></td>
+          <td><% if current_membership.can_edit? %><div class="button-group"><%= link_to "Edit", edit_business_transaction_path(@business, txn) %></div><% end %></td>
         </tr>
       <% end %>
     </tbody>

@@ -1,6 +1,11 @@
 module ApplicationHelper
   def primary_action(label, path) = link_to(label, path, class: "button primary")
 
+  def archive_button(target)
+    archived = target.last.archived?
+    button_to archived ? "Unarchive" : "Archive", polymorphic_path(target, action: archived ? :unarchive : :archive), method: :patch
+  end
+
   def money(cents)
     return "—" if cents.nil?
     return Money.new(cents).to_s unless cents.negative?

@@ -12,7 +12,7 @@
   </thead>
   <tbody>
     <% @categories.each do |category| %>
-      <tr>
+      <tr id="<%= dom_id(category) %>">
         <td><%= category.name %><%= " (archived)" if category.archived? %></td>
         <td><%= category.kind %></td>
         <% if @business.personal? %>
@@ -21,7 +21,14 @@
           <td><%= ScheduleC.label(category.schedule_c_line) %></td>
           <td class="num"><%= category.deductible_percent %>%</td>
         <% end %>
-        <td><%= link_to "Edit", edit_business_category_path(@business, category) if current_membership.can_edit? %></td>
+        <td>
+          <% if current_membership.can_edit? %>
+            <div class="button-group">
+              <%= link_to "Edit", edit_business_category_path(@business, category) %>
+              <%= archive_button [@business, category] %>
+            </div>
+          <% end %>
+        </td>
       </tr>
     <% end %>
   </tbody>

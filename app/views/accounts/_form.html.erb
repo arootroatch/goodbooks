@@ -5,8 +5,5 @@
     <p><%= f.label :source %> <%= f.select :source, [["Manual entry", "manual"], ["CSV import", "csv"]] %></p>
   <% end %>
   <p><%= f.label :kind %> <%= f.select :kind, Account.kinds.keys.map { [_1.humanize, _1] } %></p>
-  <% if account.persisted? %>
-    <p><%= f.label :archived %> <%= f.check_box :archived, { checked: account.archived? }, "1", "0" %></p>
-  <% end %>
   <%= f.submit %>
 <% end %>
