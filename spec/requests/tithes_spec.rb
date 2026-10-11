@@ -27,9 +27,11 @@ RSpec.describe "Tithe" do
     get business_tithe_path(book)
     expect(response.body).to include("Behind $50.00", "TRANSFER FROM PAT", "CHECK 1042 GRACE CHURCH")
     page = Capybara.string(response.body)
-    expect(page.find("header.page-header")).to have_link("Download CSV", href: business_tithe_path(book, format: :csv))
-    expect(page.all(".kpi small").map(&:text)).to eq([ "Balance", "Owed this year", "Paid this year" ])
-    expect(page.find(".kpi", text: "Balance")).to have_css("b", text: "Behind $50.00")
+    expect(page.find("header.page-header")).to have_link("Download CSV", href: business_tithe_path(book, format: :csv), class: "button")
+    expect(page.find(".tithe-summary .tithe-balance")).to have_css("b.neg", text: "Behind $50.00")
+    expect(page.find(".tithe-summary .tithe-balance")).to have_text("Give $50.00 to catch up")
+    expect(page.find(".tithe-summary .tithe-balance")).to have_text("This year: owed $150.00 · given $100.00")
+    expect(page).to have_css(".tithe-summary + table")
     expect(page).to have_css("td .badge.badge-warn", text: "Partial")
     get business_tithe_path(book, format: :csv)
     expect(response.media_type).to eq("text/csv")
@@ -37,6 +39,27 @@ RSpec.describe "Tithe" do
     expect(response.body.lines.first).to end_with("Balance (positive = behind)\n")
     get root_path
     expect(response.body).to include("Tithe: Behind $50.00")
+  end
+
+  it "sums up this week's income, tithe owed, and giving in the overview card" do
+    seed_week
+    create(:transaction, account: checking, payee: "TRANSFER FROM PAT", amount_cents: 50_000, posted_on: Date.current)
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    week = Capybara.string(response.body).find(".tithe-summary .tithe-week")
+    week_start = Date.current - Date.current.wday
+    expect(week).to have_css(".card-title", text: "This week")
+    expect(week).to have_text("#{week_start.strftime('%b %-d')} – #{(week_start + 6).strftime('%b %-d, %Y')}")
+    expect(week.all("dt").map(&:text)).to eq([ "Income", "Tithe owed", "Given" ])
+    expect(week.all("dd").map(&:text)).to eq([ "$500.00", "$50.00", "$0.00" ])
+  end
+
+  it "says when the tithe is caught up" do
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    expect(Capybara.string(response.body).find(".tithe-balance")).to have_text("Even").and have_text("You're caught up.")
   end
 
   it "saves, rejects, and clears the start date" do

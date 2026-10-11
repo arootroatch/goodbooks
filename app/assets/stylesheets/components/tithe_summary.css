@@ -1,0 +1,12 @@
+.tithe-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-5); }
+.tithe-summary dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+.tithe-summary dt { color: var(--muted); font-size: var(--text-xs); }
+.tithe-summary dd { margin: 2px 0 0; font-family: var(--font-mono); font-size: var(--text-xl); font-variant-numeric: tabular-nums; }
+.tithe-balance { border-left: 1px solid var(--border); padding-left: var(--space-5); }
+.tithe-balance b { display: block; font-family: var(--font-mono); font-size: var(--text-2xl); font-weight: 500; letter-spacing: -0.02em; }
+.tithe-balance p { margin: var(--space-1) 0; }
+.tithe-balance small { color: var(--muted); font-size: var(--text-xs); }
+@media (max-width: 800px) {
+  .tithe-summary { grid-template-columns: minmax(0, 1fr); }
+  .tithe-balance { border-left: 0; padding-left: 0; border-top: 1px solid var(--border); padding-top: var(--space-3); }
+}

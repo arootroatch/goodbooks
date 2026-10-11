@@ -1,6 +1,6 @@
 <header class="page-header">
   <h1>Tithe</h1>
-  <%= link_to "Download CSV", business_tithe_path(@business, format: :csv) if @ledger %>
+  <%= link_to "Download CSV", business_tithe_path(@business, format: :csv), class: "button" if @ledger %>
 </header>
 <% if current_membership.owner? %>
   <%= form_with model: @business, url: business_tithe_path(@business), method: :patch, class: "filters" do |f| %>
@@ -12,18 +12,21 @@
 <% if @ledger.nil? %>
   <p><%= current_membership.owner? ? "Choose the date to start tracking from; earlier activity is ignored." : "The household owner hasn't set a tithe start date yet." %></p>
 <% else %>
-  <section class="kpis">
-    <div class="card kpi">
-      <small>Balance</small>
+  <% this_week = @ledger.weeks.last %>
+  <section class="card tithe-summary">
+    <div class="tithe-week">
+      <h2 class="card-title">This week <small><%= tithe_week_label(this_week) %></small></h2>
+      <dl>
+        <div><dt>Income</dt><dd><%= money(this_week.income_cents) %></dd></div>
+        <div><dt>Tithe owed</dt><dd><%= money(this_week.owed_cents) %></dd></div>
+        <div><dt>Given</dt><dd><%= money(this_week.paid_cents) %></dd></div>
+      </dl>
+    </div>
+    <div class="tithe-balance">
+      <h2 class="card-title">Overall</h2>
       <b class="<%= "neg" if @ledger.balance_cents.positive? %>"><%= tithe_balance_label(@ledger.balance_cents) %></b>
-    </div>
-    <div class="card kpi">
-      <small>Owed this year</small>
-      <b><%= money(@ledger.ytd_owed_cents) %></b>
-    </div>
-    <div class="card kpi">
-      <small>Paid this year</small>
-      <b><%= money(@ledger.ytd_paid_cents) %></b>
+      <p><%= tithe_balance_advice(@ledger.balance_cents) %></p>
+      <small>This year: owed <%= money(@ledger.ytd_owed_cents) %> · given <%= money(@ledger.ytd_paid_cents) %></small>
     </div>
   </section>
   <table>
