@@ -25,7 +25,7 @@ table {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  margin-bottom: var(--space-4);
+  margin: var(--space-4) 0;
 }
 th, td { text-align: left; padding: 7px var(--space-3); border-bottom: 1px solid var(--border); }
 th { font-size: var(--text-xs); font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }

@@ -19,6 +19,15 @@ RSpec.describe "Spending report" do
     expect(response.body).to include("Groceries")
   end
 
+  it "uses the spaced, live-updating filter bar for the date range" do
+    sign_in_as owner
+    get business_spending_report_path(book)
+    form = Capybara.string(response.body).find("form.filters")
+    expect(form["data-controller"]).to eq("auto-submit")
+    expect(form["data-action"]).to eq("change->auto-submit#submit")
+    expect(form).to have_field("from").and have_field("to")
+  end
+
   it "clamps an absurd date range to 2000-01-01 through today and says so" do
     sign_in_as owner
     get business_spending_report_path(book, from: "0202-01-01", to: "9999-12-31")

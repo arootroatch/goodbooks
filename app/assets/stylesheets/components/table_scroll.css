@@ -1,7 +1,7 @@
 /* Wide tables scroll inside their own box; .frozen-ends keeps the first and last columns in view, like frozen panes. */
 .table-scroll {
   overflow-x: auto;
-  margin-bottom: var(--space-4);
+  margin: var(--space-4) 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
