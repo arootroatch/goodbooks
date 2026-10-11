@@ -16,6 +16,17 @@ RSpec.describe "Transaction list filters" do
     expect(response.body).not_to include("My own payee")
   end
 
+  it "groups the category filter into Income and Expense, keeping the selection" do
+    sales = create(:category, :income, business:, name: "Sales")
+    create(:category, business:, name: "Supplies")
+    get business_transactions_path(business, category_id: sales.id)
+    select = Capybara.string(response.body).find("select[name=category_id]")
+    expect(select.all("optgroup").map { _1[:label] }).to eq(%w[Income Expense])
+    expect(select.find("optgroup[label=Income]")).to have_css("option[selected]", text: "Sales")
+    expect(select.find("optgroup[label=Expense]")).to have_css("option", text: "Supplies")
+    expect(select).to have_css("option[value='']", text: "All categories")
+  end
+
   it "ignores non-scalar filter values" do
     get business_transactions_path(business, account_id: [ account.id ], q: { "x" => "y" })
     expect(response).to have_http_status(:ok)
