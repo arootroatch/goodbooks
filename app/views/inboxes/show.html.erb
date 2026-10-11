@@ -5,11 +5,6 @@
   <% end %>
 </header>
 <%= render "shared/inbox_truncation", shown: @transactions.size, total: @total %>
-<table>
-  <thead><tr><th>Date</th><th>Account</th><th>Payee</th><th class="num">Amount</th><th></th></tr></thead>
-  <tbody>
-    <% @transactions.each do |txn| %>
-      <%= render "inboxes/row", business: @business, txn: txn, categories: @categories, editable: current_membership.can_edit?, matcher: @matcher %>
-    <% end %>
-  </tbody>
-</table>
+<%= render "inboxes/review_rows", business: @business, rows: @review, editable: current_membership.can_edit? %>
+<%= render "inboxes/table", business: @business, transactions: @transactions, categories: @categories,
+                            editable: current_membership.can_edit?, matcher: @matcher %>

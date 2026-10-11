@@ -13,8 +13,8 @@ button:hover, input[type=submit]:hover, input[type=button]:hover, a.button:hover
 a.button { display: inline-block; text-decoration: none; line-height: normal; }
 form.button_to { display: inline; }
 
-.primary, a.button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.primary:hover, a.button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.primary, input.primary, a.button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.primary:hover, input.primary:hover, a.button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .danger { color: var(--neg); }
 .ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .ghost:hover { color: var(--fg); }

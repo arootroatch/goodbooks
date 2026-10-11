@@ -74,6 +74,15 @@ RSpec.describe "CSV imports" do
     let!(:import) { mapped.csv_imports.create!(file: fixture) }
     let(:editor) { user_with_role("editor", business) }
 
+    it "offers Import, Change column mapping, and Discard as buttons in one row" do
+      sign_in_as editor
+      get business_account_csv_import_path(business, mapped, import)
+      actions = Capybara.string(response.body).find(".actions")
+      expect(actions).to have_button("Import", class: "primary").and have_button("Discard")
+      expect(actions).to have_link("Change column mapping", class: "button",
+                                                            href: edit_business_account_csv_import_mapping_path(business, mapped, import))
+    end
+
     it "commits once and refuses a second commit" do
       sign_in_as editor
       post commit_business_account_csv_import_path(business, mapped, import)
@@ -166,5 +175,19 @@ RSpec.describe "CSV imports" do
       get new_business_account_csv_import_path(business, mapped)
       expect(response).to have_http_status(:not_found)
     end
+  end
+
+  it "says how many rows were already synced from the bank" do
+    sign_in_as user_with_role("editor", business)
+    plaid_account = create(:account, :plaid, business: business, csv_mapping: CsvImport::Mapping.new(
+      date_column: "Date", payee_column: "Description", amount_column: "Amount", date_format: "MM/DD/YYYY"
+    ).to_h)
+    create(:transaction, account: plaid_account, posted_on: Date.new(2026, 10, 1), amount_cents: -8215, payee: "Kroger", plaid_transaction_id: "p-1")
+    upload = Rack::Test::UploadedFile.new(Rails.root.join("spec/fixtures/files/plaid_overlap.csv"), "text/csv")
+    csv_import = plaid_account.csv_imports.create!(file: upload)
+    get business_account_csv_import_path(business, plaid_account, csv_import)
+    expect(response.body).to include("1 already synced from the bank", "Already synced from bank")
+    post commit_business_account_csv_import_path(business, plaid_account, csv_import)
+    expect(flash[:notice]).to include("1 already synced from the bank")
   end
 end

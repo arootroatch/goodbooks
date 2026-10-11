@@ -1,0 +1,31 @@
+<header class="page-header">
+  <h1>Bank connections</h1>
+  <%= primary_action "Connect a bank", new_plaid_item_path if Current.user.owned_books.exists? %>
+</header>
+<% if @items.any? %>
+  <table>
+    <thead><tr><th>Bank</th><th>Status</th><th>Last synced</th><th>Accounts</th></tr></thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr id="<%= dom_id(item) %>">
+          <td><%= link_to item.institution_name, plaid_item_path(item) %></td>
+          <td><%= plaid_status_badge(item) %></td>
+          <td><%= item.last_synced_at ? "#{time_ago_in_words(item.last_synced_at)} ago" : "Never" %></td>
+          <td>
+            <% if item.accounts.any? %>
+              <ul class="plain-list">
+                <% item.accounts.sort_by(&:name).each do |account| %>
+                  <li><%= account.name %> <small class="muted"><%= book_label(account.business) %></small></li>
+                <% end %>
+              </ul>
+            <% else %>
+              <span class="muted">None assigned</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty"><strong>No banks connected yet</strong>Connect a bank to sync its transactions automatically.</div>
+<% end %>

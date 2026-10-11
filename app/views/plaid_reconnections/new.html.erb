@@ -1,0 +1,7 @@
+<header class="page-header">
+  <div>
+    <h1>Reconnect <%= @item.institution_name %></h1>
+    <p class="subtitle">Your bank needs you to sign in again before goodbooks can keep syncing.</p>
+  </div>
+</header>
+<%= render "plaid_items/link", token: @link_token, url: plaid_item_reconnection_path(@item), label: "Reconnect with Plaid" %>

@@ -6,6 +6,7 @@
   </div>
   <%= primary_action "New business", new_business_path if Current.user.household_owner? %>
 </header>
+<%= render "plaid_items/reconnect_banners", items: @reconnect_items %>
 
 <% @dashboard.businesses.each do |row| %>
   <%= render "sales_tax/overdue_banner", business: row.business, summary: row.sales_tax %>
@@ -69,6 +70,9 @@
     <p><%= link_to "#{pluralize(@dashboard.inbox_count, "transaction")} to categorize", household_inbox_path %> →</p>
   <% else %>
     <div class="empty"><strong>Inbox zero</strong>Every transaction is categorized.</div>
+  <% end %>
+  <% @review_books.each do |book| %>
+    <p><%= link_to "#{book_label(book)}: #{pluralize(@review_counts[book.id], "transaction")} #{@review_counts[book.id] == 1 ? "needs" : "need"} review", business_inbox_path(book) %> →</p>
   <% end %>
 </section>
 

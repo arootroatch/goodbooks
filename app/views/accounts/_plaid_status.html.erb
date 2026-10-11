@@ -1,0 +1,4 @@
+<% item = account.plaid_item %>
+plaid · <%= item.institution_name %> ····<%= account.plaid_mask %>
+· <%= item.last_synced_at ? "synced #{time_ago_in_words(item.last_synced_at)} ago" : "not synced yet" %>
+<%= "· needs reconnecting" if item.login_required? %>
