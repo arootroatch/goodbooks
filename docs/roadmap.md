@@ -85,7 +85,12 @@ Read it as:
   accounts need a balance of their own; see the open questions below).
 
 **Critical path:** `1 → 2 → 3 → 4 → 6 → 7`. Plaid and Goals are off it: once 3 merged, 4 and 5
-could run side by side, and 8 can start any time now that 5 is on `main`.
+could run side by side.
+
+**Goals and Tax engine can run in parallel.** Neither depends on the other. The tax engine
+excludes the personal book and works on its own tax inputs, payments and pages. Goals works on
+accounts, transactions and the personal book. They overlap only on the dashboard view and
+`db/schema.rb`, so whichever merges second rebases.
 
 ---
 
