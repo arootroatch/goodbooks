@@ -15,7 +15,7 @@
       <%= link_to "Enter them", @parameters ? edit_tax_parameter_path(@parameters) : new_tax_parameter_path(year: @year) %>
     <% end %>
   </p>
-  <%= render "tax_years/inputs", businesses: @businesses, people: @people %>
+  <%= render "tax_years/inputs", businesses: @businesses, people: @people, year: @year %>
 <% else %>
   <%= render "tax_years/due_card", estimate: @estimate, household: @household, show_page_link: false, title: "Estimated tax" %>
   <%= render "tax_years/warnings", estimate: @estimate %>

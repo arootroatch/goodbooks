@@ -70,6 +70,14 @@ RSpec.describe "Taxes page" do
     sign_in_as owner
     get tax_year_path(2027)
     expect(response.body).to include("Inputs").and include(business.name).and include("Pat Example")
+    expect(response.body).to include(edit_business_home_office_path(business, 2027))
+  end
+
+  it "hides the home office link from a household owner who isn't a member of the book" do
+    other = create(:business, household:)
+    sign_in_as owner
+    get tax_year_path(2027)
+    expect(response.body).not_to include(edit_business_home_office_path(other, 2027))
   end
 
   it "treats mileage-only parameters as incomplete, with inputs and the payment log" do

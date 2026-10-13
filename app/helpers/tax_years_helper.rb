@@ -19,6 +19,11 @@ module TaxYearsHelper
     end
   end
 
+  def can_edit_home_office?(business_id)
+    business = Current.user.accessible_businesses.find_by(id: business_id)
+    business.present? && Current.user.can_edit_home_office?(business)
+  end
+
   def tax_rate_label(bps) = "#{PercentAttribute.format_bps(bps)}%"
 
   private

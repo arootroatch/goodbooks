@@ -21,9 +21,16 @@
         <% end %>
       </tr>
     <% end %>
-    <tr><td><%= ScheduleC.label("30") %></td><td class="num">—</td></tr>
     <tr><th>Gross income</th><th class="num"><%= money(@summary.gross_income_cents) %></th></tr>
     <tr><th>Total expenses</th><th class="num"><%= money(@summary.total_expenses_cents) %></th></tr>
+    <tr><th>Tentative profit (line 29)</th><th class="num"><%= money(@summary.tentative_profit_cents) %></th></tr>
+    <tr>
+      <td><%= ScheduleC.label("30") %></td>
+      <td class="num"><%= @summary.home_office_used_cents ? money(@summary.home_office_used_cents) : "—" %></td>
+      <% if @can_edit_home_office %>
+        <td class="no-print"><%= link_to @home_office ? "Edit home office" : "Add home office", edit_business_home_office_path(@business, @year) %></td>
+      <% end %>
+    </tr>
     <tr><th>Net profit</th><th class="num"><%= money(@summary.net_profit_cents) %></th></tr>
   </tbody>
 </table>

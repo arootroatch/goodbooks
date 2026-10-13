@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       post :apply, on: :collection
     end
     resources :mileage_entries, except: :show
+    resources :home_offices, only: %i[edit update], param: :year
     resources :memberships, only: %i[index update destroy]
     resource :inbox, only: :show
     get "reports/profit_and_loss", to: "profit_and_losses#show", as: :profit_and_loss

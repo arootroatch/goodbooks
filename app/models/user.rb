@@ -20,6 +20,12 @@ class User < ApplicationRecord
     memberships.find_by(business: business)
   end
 
+  # A household owner or the book's owner member, and only within books they belong to.
+  def can_edit_home_office?(business)
+    membership = membership_for(business)
+    membership.present? && (household_owner? || membership.owner?)
+  end
+
   # Books (business or personal) this user can connect bank accounts to.
   def owned_books
     Business.active.where(id: memberships.owner.select(:business_id))

@@ -12,7 +12,7 @@
         <td class="num"><%= money(line.annualized_cents) %></td>
         <td class="num"><%= money(line.home_office_used_cents) %></td>
         <td class="num"><%= money(line.carryover_cents) %></td>
-        <td></td>
+        <td><%= link_to "Home office", edit_business_home_office_path(line.business.id, year) if can_edit_home_office?(line.business.id) %></td>
       </tr>
     <% end %>
   </tbody>

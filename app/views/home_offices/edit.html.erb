@@ -1,0 +1,23 @@
+<header class="page-header"><h1>Home office <%= @home_office.year %> — <%= @business.name %></h1></header>
+<%= form_with model: @home_office, url: business_home_office_path(@business, @home_office.year), method: :patch do |f| %>
+  <%= render "shared/errors", record: @home_office %>
+  <fieldset>
+    <legend>Method</legend>
+    <p><%= f.radio_button :calculation, "simplified" %> <%= f.label :calculation_simplified, "Simplified ($ per square foot, up to the yearly maximum)" %></p>
+    <p><%= f.radio_button :calculation, "regular" %> <%= f.label :calculation_regular, "Regular (the office's share of home costs)" %></p>
+  </fieldset>
+  <p><%= f.label :office_sqft, "Office (sq ft)" %> <%= f.number_field :office_sqft, min: 1, required: true %></p>
+  <fieldset>
+    <legend>Regular method only</legend>
+    <p><%= f.label :home_sqft, "Whole home (sq ft)" %> <%= f.number_field :home_sqft, min: 1 %></p>
+    <p class="muted">Yearly totals for the whole home; the office's share is applied for you.</p>
+    <p><%= f.label :rent, "Rent ($)" %> <%= f.text_field :rent %></p>
+    <p><%= f.label :mortgage_interest, "Mortgage interest ($)" %> <%= f.text_field :mortgage_interest %></p>
+    <p><%= f.label :utilities, "Utilities ($)" %> <%= f.text_field :utilities %></p>
+    <p><%= f.label :insurance, "Insurance ($)" %> <%= f.text_field :insurance %></p>
+    <p><%= f.label :repairs, "Repairs and maintenance ($)" %> <%= f.text_field :repairs %></p>
+    <p><%= f.label :other, "Other ($)" %> <%= f.text_field :other %></p>
+    <p><%= f.label :depreciation, "Depreciation, business portion ($, from your accountant)" %> <%= f.text_field :depreciation %></p>
+  </fieldset>
+  <%= f.submit "Save" %>
+<% end %>
