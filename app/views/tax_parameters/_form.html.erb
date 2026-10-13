@@ -2,5 +2,45 @@
   <%= render "shared/errors", record: tax_parameters %>
   <p><%= f.label :year %> <%= f.number_field :year, disabled: tax_parameters.persisted? %></p>
   <p><%= f.label :mileage_rate_cents, "IRS standard mileage rate (cents per mile)" %> <%= f.text_field :mileage_rate_cents, size: 6 %></p>
+
+  <h2>Federal estimated tax</h2>
+  <p class="muted">From the IRS's annual inflation adjustments. Leave blank for a year you only track mileage in.</p>
+  <p><%= f.label :standard_deduction_mfj, "Standard deduction, married filing jointly ($)" %> <%= f.text_field :standard_deduction_mfj, size: 12 %></p>
+
+  <fieldset>
+    <legend>Tax brackets, married filing jointly</legend>
+    <table>
+      <thead><tr><th>Taxable income from ($)</th><th>Rate (%)</th></tr></thead>
+      <tbody>
+        <% (tax_parameters.bracket_rows + [ {}, {} ]).each do |row| %>
+          <tr>
+            <td><%= text_field_tag "tax_parameter[bracket_rows][][floor]", row["floor"], id: nil, size: 12, "aria-label": "Bracket floor" %></td>
+            <td><%= text_field_tag "tax_parameter[bracket_rows][][rate]", row["rate"], id: nil, size: 6, "aria-label": "Bracket rate" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <fieldset>
+    <legend>Self-employment tax</legend>
+    <p><%= f.label :se_earnings_percent, "Share of profit subject to SE tax (%)" %> <%= f.text_field :se_earnings_percent, size: 6 %></p>
+    <p><%= f.label :ss_rate_percent, "Social Security rate (%)" %> <%= f.text_field :ss_rate_percent, size: 6 %></p>
+    <p><%= f.label :ss_wage_base, "Social Security wage base ($)" %> <%= f.text_field :ss_wage_base, size: 12 %></p>
+    <p><%= f.label :medicare_rate_percent, "Medicare rate (%)" %> <%= f.text_field :medicare_rate_percent, size: 6 %></p>
+    <p><%= f.label :additional_medicare_percent, "Additional Medicare rate (%)" %> <%= f.text_field :additional_medicare_percent, size: 6 %></p>
+    <p><%= f.label :additional_medicare_threshold_mfj, "Additional Medicare threshold, MFJ ($)" %> <%= f.text_field :additional_medicare_threshold_mfj, size: 12 %></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Deductions and limits</legend>
+    <p><%= f.label :qbi_percent, "QBI deduction (%)" %> <%= f.text_field :qbi_percent, size: 6 %></p>
+    <p><%= f.label :qbi_threshold_mfj, "QBI threshold, MFJ ($)" %> <%= f.text_field :qbi_threshold_mfj, size: 12 %></p>
+    <p><%= f.label :home_office_simplified_rate, "Simplified home office rate ($ per sq ft)" %> <%= f.text_field :home_office_simplified_rate, size: 6 %></p>
+    <p><%= f.label :home_office_simplified_max_sqft, "Simplified home office maximum (sq ft)" %> <%= f.number_field :home_office_simplified_max_sqft, min: 1 %></p>
+    <p><%= f.label :safe_harbor_high_agi_threshold, "Safe harbor 110% applies above prior-year AGI of ($)" %> <%= f.text_field :safe_harbor_high_agi_threshold, size: 12 %></p>
+    <p><%= f.label :annual_additions_limit, "Retirement annual additions limit ($)" %> <%= f.text_field :annual_additions_limit, size: 12 %></p>
+    <p><%= f.label :elective_deferral_limit, "401(k) elective deferral limit ($)" %> <%= f.text_field :elective_deferral_limit, size: 12 %></p>
+  </fieldset>
   <%= f.submit %>
 <% end %>
