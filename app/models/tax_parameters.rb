@@ -38,6 +38,17 @@ class TaxParameters < ApplicationRecord
     FEDERAL_COLUMNS.all? { self[_1].present? } && brackets_mfj.present? && brackets_rise?(brackets_mfj)
   end
 
+  def to_tax_params
+    Tax::Params.new(
+      standard_deduction_cents: standard_deduction_mfj_cents,
+      brackets: brackets_mfj.map { Tax::Bracket.new(floor_cents: _1.fetch("floor_cents"), rate_bps: _1.fetch("rate_bps")) },
+      ss_wage_base_cents:, se_earnings_bps:, ss_rate_bps:, medicare_rate_bps:, additional_medicare_bps:,
+      additional_medicare_threshold_cents: additional_medicare_threshold_mfj_cents, qbi_bps:, qbi_threshold_cents: qbi_threshold_mfj_cents,
+      home_office_rate_cents: home_office_simplified_rate_cents, home_office_max_sqft: home_office_simplified_max_sqft,
+      safe_harbor_high_agi_threshold_cents:, annual_additions_limit_cents:, elective_deferral_limit_cents:
+    )
+  end
+
   def mileage_rate_cents
     @mileage_rate_input || (standard_mileage_rate_tenth_cents && Tenths.format(standard_mileage_rate_tenth_cents))
   end
