@@ -5,6 +5,10 @@
 # Reference data for every environment. Safe to run repeatedly.
 # Schedule C categories come from CategoryTemplate (code), applied when a business is created.
 
-TaxParameters.find_or_create_by!(year: 2026) do |params|
-  params.standard_mileage_rate_tenth_cents = 725 # IRS 2026 business rate: 72.5¢/mile
+TaxParameters::Published::YEARS.each do |year, values|
+  params = TaxParameters.find_or_create_by!(year: year) do |row|
+    row.standard_mileage_rate_tenth_cents = values.fetch(:standard_mileage_rate_tenth_cents)
+  end
+  blanks = values.select { |column, _| params[column].nil? }
+  params.update!(blanks) if blanks.any?
 end

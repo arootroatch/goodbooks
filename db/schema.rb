@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_000001) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -286,6 +286,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
     t.integer "standard_mileage_rate_tenth_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "standard_deduction_mfj_cents"
+    t.json "brackets_mfj"
+    t.integer "ss_wage_base_cents"
+    t.integer "se_earnings_bps"
+    t.integer "ss_rate_bps"
+    t.integer "medicare_rate_bps"
+    t.integer "additional_medicare_bps"
+    t.integer "additional_medicare_threshold_mfj_cents"
+    t.integer "qbi_bps"
+    t.integer "qbi_threshold_mfj_cents"
+    t.integer "home_office_simplified_rate_cents"
+    t.integer "home_office_simplified_max_sqft"
+    t.integer "safe_harbor_high_agi_threshold_cents"
+    t.integer "annual_additions_limit_cents"
+    t.integer "elective_deferral_limit_cents"
     t.index ["year"], name: "index_tax_parameters_on_year", unique: true
   end
 
