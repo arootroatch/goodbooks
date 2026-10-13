@@ -72,6 +72,15 @@ RSpec.describe "Taxes page" do
     expect(response.body).to include("Inputs").and include(business.name).and include("Pat Example")
   end
 
+  it "treats mileage-only parameters as incomplete, with inputs and the payment log" do
+    mileage_only = create(:tax_parameters, year: 2028)
+    sign_in_as owner
+    get tax_year_path(2028)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Federal tax figures for 2028 are incomplete.").and include("Inputs").and include("Payments")
+    expect(Nokogiri::HTML(response.body).at_css("a[href='#{edit_tax_parameter_path(mileage_only)}']").text).to eq("Enter them")
+  end
+
   it "renders a year that hasn't started when it has parameters" do
     create(:tax_parameters, :federal_2026, year: 2027)
     sign_in_as owner

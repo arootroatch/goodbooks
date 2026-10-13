@@ -5,7 +5,7 @@ module TaxYearsHelper
   end
 
   def tax_period_label(worksheet)
-    if worksheet.elapsed_days.nil? then "annualized #{tax_factor_label(Tax::PeriodInput::FACTORS.fetch(worksheet.quarter))}"
+    if worksheet.elapsed_days.nil? then "annualized ×#{tax_factor_label(Tax::PeriodInput::FACTORS.fetch(worksheet.quarter))}"
     elsif worksheet.elapsed_days.zero? then "no activity yet"
     else "projected from #{pluralize(worksheet.elapsed_days, 'day')}"
     end
@@ -24,6 +24,7 @@ module TaxYearsHelper
   private
 
   # A Rational factor as a plain decimal ("4", "2.4", "1.5"), never through Float.
+  # Requires a terminating decimal expansion (denominator of only 2s and 5s), as every Tax::PeriodInput::FACTORS value has.
   def tax_factor_label(factor)
     factor = factor.to_r
     return factor.numerator.to_s if factor.denominator == 1

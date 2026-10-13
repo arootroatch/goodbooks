@@ -4,9 +4,9 @@ RSpec.describe TaxYearsHelper do
   describe "#tax_period_label" do
     def worksheet(quarter, elapsed_days = nil) = Struct.new(:quarter, :elapsed_days).new(quarter, elapsed_days)
 
-    it "names the annualization factor of a full period without floats" do
-      expect({ 1 => "4", 2 => "2.4", 3 => "1.5", 4 => "1" }.keys.map { helper.tax_period_label(worksheet(_1)) })
-        .to eq([ "annualized 4", "annualized 2.4", "annualized 1.5", "annualized 1" ])
+    it "names the annualization factor of a full period" do
+      expect((1..4).map { helper.tax_period_label(worksheet(_1)) })
+        .to eq([ "annualized ×4", "annualized ×2.4", "annualized ×1.5", "annualized ×1" ])
     end
 
     it "describes a period still in progress" do
