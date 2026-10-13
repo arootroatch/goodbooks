@@ -81,7 +81,7 @@ PersonAdjustment person, year                               unique(person, year)
 
 ## 4. Calculation (`Tax::Estimator`, pure)
 
-### 4.1 Inputs (`Tax::Inputs.load(tax_year:, today:)`, query)
+### 4.1 Inputs (`Tax::Inputs.load(household:, year:, tax_parameters:, today:)`, query)
 
 For each business-kind business (archived ones included), and for each Schedule AI period, the year-to-date **profit before home office** = `Reports::ScheduleCSummary#net_profit_cents` over Jan 1 to the period's end. Also: the business's person, the year's `TaxParameters`, the `TaxYear`, each person's `PersonAdjustment`, each business's `HomeOffice`, and the payments. Archived businesses are included because their profit for the year is still taxable.
 
