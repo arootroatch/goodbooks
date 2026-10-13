@@ -29,6 +29,16 @@ RSpec.describe "Tax adjustments" do
     expect(response).to redirect_to(tax_year_path(2026))
   end
 
+  it "keeps a person's own user without household access on their form after saving" do
+    spouse_user.memberships.find_by!(business:).destroy!
+    sign_in_as spouse_user
+    patch person_adjustment_path(spouse, 2026), params: params
+    expect(response).to redirect_to(edit_person_adjustment_path(spouse, 2026))
+    follow_redirect!
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Adjustments saved.")
+  end
+
   it "forbids editing someone else's when the user can see the household" do
     sign_in_as spouse_user
     get edit_person_adjustment_path(owner_person, 2026)

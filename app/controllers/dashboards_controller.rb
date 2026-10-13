@@ -7,6 +7,6 @@ class DashboardsController < ApplicationController
       .group("accounts.business_id").count
     @review_books = Current.user.accessible_businesses.active.where(id: @review_counts.keys).order(:name)
     @reconnect_items = PlaidItem.needing_reconnect_for(Current.user).to_a
-    @tax_estimate = Tax.estimate(household: Household.instance, year: Date.current.year) if Current.user.can_view_household?
+    @tax_estimate = Tax.estimate(household: Household.instance, year: Tax.current_year) if Current.user.can_view_household?
   end
 end

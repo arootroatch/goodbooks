@@ -134,7 +134,7 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 
 | Route | Who | What |
 |---|---|---|
-| `GET /taxes` | household access | redirect to the current year |
+| `GET /taxes` | household access | redirect to the current tax year (the year whose next installment is due: last year until its January installment's due date passes) |
 | `GET /taxes/:year` | household access | the taxes page; `?quarter=1..4` selects a quarter |
 | `GET/PATCH /taxes/:year/edit` | household owner | prior-year total tax and AGI (creates the `TaxYear`) |
 | `/taxes/:year/payments` `new create edit update destroy` | household owner | estimated payments |
@@ -156,7 +156,7 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 
 **Payment form**: a transaction picker listing negative transactions from accounts the user can access, dated Jan 1 of the tax year through Jan 31 of the next year, newest first, with a payee search. Payees matching `IRS|USATAXPYMT|EFTPS` (case-insensitive) sort first. "No transaction" switches to manual date and amount.
 
-**Dashboard**: a "Next estimated tax" card for users with household access: due date, pay at least, and the IRS link. Hidden when parameters for the current year aren't ready.
+**Dashboard**: a "Next estimated tax" card for users with household access: due date, pay at least, and the IRS link. Shown for the current tax year (the year whose next installment is due: last year until its January installment's due date passes). Hidden when that year's parameters aren't ready.
 
 **Settings nav**: adds "Household" (household owner).
 

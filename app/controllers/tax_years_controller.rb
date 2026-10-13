@@ -7,7 +7,7 @@ class TaxYearsController < ApplicationController
   before_action -> { @year = tax_year_from(params[:year]) }, except: :index
 
   def index
-    redirect_to tax_year_path(Date.current.year)
+    redirect_to tax_year_path(Tax.current_year)
   end
 
   def show

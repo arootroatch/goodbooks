@@ -13,7 +13,7 @@ class EstimatedPaymentsController < ApplicationController
   end
 
   def create
-    @payment = TaxYear.for(Household.instance, @year).estimated_payments.new
+    @payment = EstimatedPayment.new(tax_year: Household.instance.tax_years.find_or_initialize_by(year: @year))
     debit_id = params.dig(:estimated_payment, :debit_id)
     if debit_id.present?
       @payment.link(Tax::PaymentCandidates.scope_for(Current.user).find(debit_id))

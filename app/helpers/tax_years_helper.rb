@@ -19,6 +19,11 @@ module TaxYearsHelper
     end
   end
 
+  def tax_payment_link_sentence(payment, visible_book_ids)
+    label = tax_payment_debit_label(payment, visible_book_ids)
+    label.start_with?("Linked") ? "#{label}." : "Linked to #{label}."
+  end
+
   def can_edit_home_office?(business_id)
     business = Current.user.accessible_businesses.find_by(id: business_id)
     business.present? && Current.user.can_edit_home_office?(business)

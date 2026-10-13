@@ -21,6 +21,13 @@ RSpec.describe "Taxes page" do
     expect(response).to redirect_to(tax_year_path(2026))
   end
 
+  it "redirects /taxes to the previous year until its January installment is due" do
+    travel_to Date.new(2027, 1, 10)
+    sign_in_as owner
+    get tax_years_path
+    expect(response).to redirect_to(tax_year_path(2026))
+  end
+
   it "shows pay at least, the due date, the IRS link, the worksheet, and the estimate note" do
     sign_in_as owner
     get tax_year_path(2026)
@@ -33,6 +40,20 @@ RSpec.describe "Taxes page" do
     expect(link.text).to include("Pay on IRS.gov")
     expect(link["target"]).to eq("_blank")
     expect(link["rel"]).to eq("noopener noreferrer")
+  end
+
+  it "shows the Home office and Adjustments links to the household owner but not the accountant" do
+    pat = create(:person, household:, name: "Pat Example")
+    business.update!(person: pat)
+    links = [ edit_business_home_office_path(business, 2026), edit_person_adjustment_path(pat, 2026) ]
+    sign_in_as owner
+    get tax_year_path(2026)
+    expect(response.body).to include(*links)
+    delete session_path
+    sign_in_as accountant
+    get tax_year_path(2026)
+    expect(response).to have_http_status(:ok)
+    links.each { expect(response.body).not_to include(_1) }
   end
 
   it "uses the household's IRS URL" do

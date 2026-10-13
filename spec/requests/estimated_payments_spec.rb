@@ -35,6 +35,8 @@ RSpec.describe "Estimated payments" do
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.body).to include("must be money paid out")
     expect(EstimatedPayment.count).to eq(0)
+    expect(TaxYear.count).to eq(0)
+    expect(Nokogiri::HTML(response.body).at_css("input[name='estimated_payment[amount]']")["value"]).to be_blank
   end
 
   it "refuses a debit already recorded" do
@@ -50,6 +52,31 @@ RSpec.describe "Estimated payments" do
     sign_in_as owner
     post tax_year_estimated_payments_path(2026), params: { estimated_payment: { debit_id: hidden.id } }
     expect(response).to have_http_status(:not_found)
+    expect(TaxYear.count).to eq(0)
+  end
+
+  it "leaves no tax year behind when a hand entry is invalid" do
+    sign_in_as owner
+    post tax_year_estimated_payments_path(2026), params: { estimated_payment: { paid_on: "2026-04-15", amount: "0" } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(TaxYear.count).to eq(0)
+  end
+
+  it "doesn't prefill the hand-entry form with a refused debit" do
+    sign_in_as owner
+    2.times { post tax_year_estimated_payments_path(2026), params: { estimated_payment: { debit_id: irs.id } } }
+    form = Nokogiri::HTML(response.body).at_css("form[action='#{tax_year_estimated_payments_path(2026)}'] input[name='estimated_payment[paid_on]']")
+    expect(form["value"]).to be_blank
+    expect(response.body).not_to include("4,500.00\"")
+  end
+
+  it "says a payment linked to a hidden book is linked to a bank transaction, once" do
+    hidden = create(:transaction, account: create(:account, business: create(:business, household:)), amount_cents: -100, posted_on: Date.new(2026, 4, 1))
+    payment = create(:estimated_payment, tax_year: create(:tax_year, household:), debit: hidden, paid_on: hidden.posted_on, amount_cents: 100)
+    sign_in_as owner
+    get edit_tax_year_estimated_payment_path(2026, payment)
+    expect(response.body).to include("Linked to a bank transaction.")
+    expect(response.body).not_to include("Linked to Linked")
   end
 
   it "edits and deletes a payment" do

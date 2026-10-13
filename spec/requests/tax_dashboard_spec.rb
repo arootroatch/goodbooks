@@ -18,6 +18,16 @@ RSpec.describe "Estimated tax on the dashboard" do
     expect(card.at_css("a[href='#{tax_year_path(2026)}']")).to be_present
   end
 
+  it "shows last year's Q4 installment in January" do
+    create(:tax_parameters, :federal_2026)
+    travel_to Date.new(2027, 1, 10)
+    sign_in_as owner
+    get root_path
+    card = Nokogiri::HTML(response.body).at_css(".tax-due")
+    expect(card.text).to include("Jan 15, 2027")
+    expect(card.at_css("a[href='#{tax_year_path(2026)}']")).to be_present
+  end
+
   it "is hidden when the year's federal figures are incomplete" do
     create(:tax_parameters)
     sign_in_as owner

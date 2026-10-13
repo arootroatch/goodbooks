@@ -28,4 +28,4 @@
 
 <h2>Or enter it by hand</h2>
 <p class="muted">For a payment with no bank transaction, such as last year's overpayment applied to this year.</p>
-<%= render "form", payment: @payment, url: tax_year_estimated_payments_path(@year), method: :post, submit: "Record payment" %>
+<%= render "form", payment: @payment.debit ? EstimatedPayment.new : @payment, url: tax_year_estimated_payments_path(@year), method: :post, submit: "Record payment" %>
