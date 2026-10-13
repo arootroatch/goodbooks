@@ -1,0 +1,6 @@
+<header class="page-header"><h1>Edit payment</h1></header>
+<%= render "shared/errors", record: @payment %>
+<% if @payment.debit %>
+  <p class="muted">Linked to <%= tax_payment_debit_label(@payment, Current.user.accessible_businesses.ids) %>.</p>
+<% end %>
+<%= render "form", payment: @payment, url: tax_year_estimated_payment_path(@year, @payment), method: :patch, submit: "Save" %>
