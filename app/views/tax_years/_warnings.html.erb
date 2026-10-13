@@ -1,0 +1,6 @@
+<% estimate.warnings.each do |warning| %>
+  <p class="flash-alert">
+    <%= warning.message %>
+    <%= link_to "Enter them", edit_tax_year_path(estimate.year) if warning.kind == :prior_year_missing && Current.user.household_owner? %>
+  </p>
+<% end %>

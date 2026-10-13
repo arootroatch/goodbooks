@@ -1,0 +1,28 @@
+<header class="page-header">
+  <h1>Taxes <%= @year %></h1>
+  <%= secondary_action "Prior-year figures", edit_tax_year_path(@year) if Current.user.household_owner? %>
+</header>
+<p class="no-print">
+  <%= link_to "← #{@year - 1}", tax_year_path(@year - 1) %>
+  <%= link_to "#{@year + 1} →", tax_year_path(@year + 1) %>
+</p>
+<p class="muted">This is an estimate. Verify with your accountant.</p>
+
+<% if @estimate.nil? %>
+  <p class="flash-alert">
+    Federal tax figures for <%= @year %> are incomplete.
+    <% if Current.user.household_owner? %>
+      <%= link_to "Enter them", @parameters ? edit_tax_parameter_path(@parameters) : new_tax_parameter_path(year: @year) %>
+    <% end %>
+  </p>
+  <%= render "tax_years/inputs", businesses: @businesses, people: @people %>
+<% else %>
+  <%= render "tax_years/due_card", estimate: @estimate, household: @household, show_page_link: false, title: "Estimated tax" %>
+  <%= render "tax_years/warnings", estimate: @estimate %>
+  <%= render "shared/uncategorized_notice", count: @uncategorized_count, inbox_path: household_inbox_path %>
+  <%= render "tax_years/installments", estimate: @estimate %>
+  <%= render "tax_years/breakdown", worksheet: @estimate.worksheet, year: @year %>
+  <%= render "tax_years/worksheet", estimate: @estimate, worksheet: @estimate.worksheet %>
+<% end %>
+
+<%= render "tax_years/payments", payments: @payments, year: @year, visible_book_ids: @visible_book_ids %>

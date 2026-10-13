@@ -1,0 +1,22 @@
+<table class="tax-installments">
+  <thead>
+    <tr><th>Quarter</th><th>Due</th><th class="num">Regular</th><th class="num">Annualized</th><th class="num">Paid</th><th class="num">Pay at least</th></tr>
+  </thead>
+  <tbody>
+    <% estimate.installments.each do |row| %>
+      <tr<%= ' aria-current="true"'.html_safe if row.quarter == estimate.quarter %>>
+        <td><%= link_to "Q#{row.quarter}", tax_year_path(estimate.year, quarter: row.quarter) %></td>
+        <td><%= row.due_on.strftime("%b %-d, %Y") %></td>
+        <td class="num"><%= money(row.regular_cents) %></td>
+        <td class="num"><%= row.annualized_cents ? money(row.annualized_cents) : "—" %></td>
+        <td class="num"><%= money(row.paid_cents) %></td>
+        <td class="num"><strong><%= money(row.pay_at_least_cents) %></strong></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p class="muted">
+  Required for the year: <%= money(estimate.required_annual_cents) %>, the lesser of 90% of projected tax (<%= money(estimate.ninety_percent_cents) %>)
+  <% if estimate.safe_harbor_cents %>and the prior-year safe harbor (<%= money(estimate.safe_harbor_cents) %>)<% end %>.
+  "Pay at least" is the lesser of the regular and annualized installments, an approximation of the Form 2210 rules.
+</p>

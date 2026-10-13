@@ -68,6 +68,9 @@ Rails.application.routes.draw do
 
   resources :tax_parameters, only: %i[index new create edit update]
   resource :household, only: %i[edit update]
+  resources :tax_years, path: "taxes", param: :year, only: %i[index show edit update] do
+    resources :estimated_payments, path: "payments", only: %i[new create edit update destroy]
+  end
 
   resources :invites, only: %i[index new create destroy]
   get "join", to: "invite_acceptances#show", as: :join

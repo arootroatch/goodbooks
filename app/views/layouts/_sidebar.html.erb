@@ -38,6 +38,7 @@
     <%= nav_link "Household P&L", household_profit_and_loss_path if Current.user.can_view_household? %>
     <%= nav_link "Household invoices", household_invoices_path if Current.user.can_view_household? %>
     <%= nav_link "Household aging", household_invoice_aging_path if Current.user.can_view_household? %>
+    <%= nav_link "Taxes", tax_years_path if Current.user.can_view_household? %>
   <% end %>
 
   <div class="sidebar-footer">

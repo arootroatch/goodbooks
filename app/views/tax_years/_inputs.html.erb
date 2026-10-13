@@ -1,0 +1,24 @@
+<%# Locals: businesses, people. Shown when there are not enough tax figures for an estimate. %>
+<section class="tax-inputs">
+  <h2>Inputs</h2>
+  <h3>Businesses</h3>
+  <% if businesses.empty? %>
+    <p class="muted">No businesses yet.</p>
+  <% else %>
+    <ul>
+      <% businesses.each do |business| %>
+        <li><%= business.name %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <h3>People</h3>
+  <% if people.empty? %>
+    <p class="muted">No people yet.</p>
+  <% else %>
+    <ul>
+      <% people.each do |person| %>
+        <li><%= person.name %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

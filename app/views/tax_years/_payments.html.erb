@@ -1,0 +1,21 @@
+<section class="tax-payments">
+  <h2>Payments</h2>
+  <% if payments.empty? %>
+    <p class="muted">No estimated payments recorded for <%= year %>.</p>
+  <% else %>
+    <table>
+      <thead><tr><th>Paid</th><th>Quarter</th><th class="num">Amount</th><th>Bank transaction</th><th></th></tr></thead>
+      <tbody>
+        <% payments.each do |payment| %>
+          <tr id="<%= dom_id(payment) %>">
+            <td><%= payment.paid_on.iso8601 %></td>
+            <td>Q<%= payment.quarter %></td>
+            <td class="num"><%= money(payment.amount_cents) %></td>
+            <td><%= tax_payment_debit_label(payment, visible_book_ids) %></td>
+            <td></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

@@ -133,6 +133,19 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_link("Invoice aging", href: business_invoice_aging_path(business))
   end
 
+  it "links the taxes page for users who can view the household" do
+    sign_in_as household_owner
+    get root_path
+    expect(sidebar).to have_link("Taxes", href: tax_years_path)
+  end
+
+  it "hides the taxes link from users without household access" do
+    create(:business, household:, name: "Other Co")
+    sign_in_as user_with_role("owner", business)
+    get root_path
+    expect(sidebar).to have_no_link("Taxes")
+  end
+
   it "links household invoices from the household menu" do
     sign_in_as household_owner
     get root_path
