@@ -28,7 +28,7 @@ Tell the household how much federal estimated tax to pay each quarter, when it i
 7. The page never guesses: missing parameters or prior-year figures produce a banner linking to the form that fixes them.
 8. The personal book never feeds an estimate, and the accountant (who has household access but no personal-book membership) sees payment dates and amounts but never a personal-book transaction.
 9. A "Pay on IRS.gov" link opens the household's configured URL in a new tab, from the taxes page and the dashboard card.
-10. `demo:seed` shows a 2026 tax year with prior-year figures, a home office, adjustments for both people, Q1 and Q2 paid through linked debits, and Q3 due.
+10. `demo:seed` shows the current tax year with prior-year figures, a home office, adjustments for both people, every installment already due paid through linked debits, and the next one due.
 11. The PR passes every CI check (Brakeman, bundler-audit, importmap audit, RuboCop, RSpec).
 
 ### Out of scope
@@ -58,9 +58,9 @@ Household        + irs_payment_url (string, not null, default "https://www.irs.g
 TaxYear          household, year                            unique(household, year)
                  prior_year_total_tax_cents, prior_year_agi_cents   (both nullable)
 EstimatedPayment tax_year, quarter (1–4), paid_on, amount_cents (> 0),
-                 transaction (nullable)                     unique(transaction_id) where not null
+                 debit (nullable, a Transaction)            unique(debit_id) where not null
 HomeOffice       business, year                             unique(business, year)
-                 method: simplified|regular, office_sqft, home_sqft (regular only),
+                 calculation: simplified|regular, office_sqft, home_sqft (regular only),
                  rent_cents, mortgage_interest_cents, utilities_cents, insurance_cents,
                  repairs_cents, other_cents, depreciation_cents   (all default 0)
 PersonAdjustment person, year                               unique(person, year)
@@ -72,11 +72,11 @@ PersonAdjustment person, year                               unique(person, year)
 
 - **`TaxParameters#estimate_ready?`** is true when every new column is present and `brackets_mfj` is a non-empty, ascending list starting at floor 0. The existing mileage rate stays required as before. The form validates the bracket rows (non-negative floors, strictly ascending, rate 0–10000 bps).
 - **`TaxYear`** rows are created on demand: the first save of the prior-year form, or the first payment recorded for that year (`TaxYear.for(household, year)` = find or create).
-- **`EstimatedPayment`**:
+- **`EstimatedPayment`** (the link is named `debit`, column `debit_id`, like `InvoicePayment#deposit`; nothing is named `transaction`):
   - Linked: the transaction must be negative and belong to an account the recording user can access; the amount defaults to its absolute value and `paid_on` to its date. Both stay editable (an IRS debit can include a separate balance-due payment).
   - The quarter defaults to the first installment of the tax year whose due date is on or after `paid_on`, else 4. Editable.
-  - Destroying a linked transaction nullifies the link (`has_one :estimated_payment, dependent: :nullify`); the payment stays as a manual one.
-- **`HomeOffice`** belongs only to business-kind books (validation). `home_sqft` is required and ≥ `office_sqft` for the regular method. `depreciation_cents` is the business portion, entered from the accountant.
+  - Destroying a linked transaction nullifies the link (`Transaction has_one :estimated_payment, foreign_key: :debit_id, dependent: :nullify`, and the foreign key is `on_delete: :nullify`); the payment stays as a manual one.
+- **`HomeOffice`** belongs only to business-kind books (validation). `home_sqft` is required and ≥ `office_sqft` for the regular method. (The column is `calculation`, not `method`, which would shadow `Object#method`.) `depreciation_cents` is the business portion, entered from the accountant.
 - **`PersonAdjustment`** amounts are full-year expected figures.
 
 ## 4. Calculation (`Tax::Estimator`, pure)
@@ -116,7 +116,7 @@ The page shows one **selected quarter** (default: the earliest installment whose
 
 ### 4.4 Warnings (on the `Tax::Estimate`)
 
-QBI above threshold; prior-year figures missing; a retirement contribution over the limit (SEP: min(annual additions limit, 20% × (person's net profit − half SE tax)); Solo 401(k): min(annual additions limit, elective deferral limit + 20% × (person's net profit − half SE tax))); the full-year home office exceeds profit (carryover); uncategorized transactions in business-kind books for the year (count, linking to the household inbox).
+QBI above threshold; prior-year figures missing; a retirement contribution over the limit (SEP: min(annual additions limit, 20% × (person's net profit − half SE tax)); Solo 401(k): min(annual additions limit, elective deferral limit + 20% × (person's net profit − half SE tax))); the full-year home office exceeds profit (carryover). The taxes page also shows the count of uncategorized transactions in business-kind books for the year, linking to the household inbox (computed by the controller, not the engine).
 
 ### 4.5 Due dates (`Tax::DueDates`, pure)
 
@@ -140,7 +140,7 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 | `/taxes/:year/payments` `new create edit update destroy` | household owner | estimated payments |
 | `/businesses/:business_id/home_offices/:year` `edit update` | household owner or business owner | home office for a business-kind book |
 | `/people/:person_id/adjustments/:year` `edit update` | household owner or the person's user | health insurance and retirement |
-| `/tax_parameters` (existing) | household owner | grows the new fields; brackets edited as rows with a Stimulus add/remove controller |
+| `/tax_parameters` (existing) | household owner | grows the new fields; brackets edited as rows: the existing brackets plus two blank rows; blank rows are dropped on save (no JavaScript) |
 | `GET/PATCH /household/edit` | household owner | household name and IRS payment URL |
 
 `edit`/`update` on home offices and adjustments create the row on first save (find or initialize by year).
@@ -188,13 +188,13 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 - Parameters not ready for the year: the taxes page shows inputs, the payment log, and a banner linking to the parameters form; no estimate numbers. The dashboard card is hidden.
 - Prior-year figures missing: the estimate runs without safe harbor; a banner links to the prior-year form.
 - Uncategorized transactions in the year: a warning with the count, reusing `shared/_uncategorized_notice`.
-- Mileage rate missing for the year: already handled by `MileageTotals`; surfaced as the same banner the reports show.
+- Mileage rate missing for the year: the mileage rate is a required column, so a year without one has no `TaxParameters` row and gets the incomplete-figures banner above.
 - A year outside 2000–2100 in the URL: 404.
 - Validation errors re-render the form with `shared/_errors` and 422.
 
 ## 9. Components summary
 
-**Pure (no database):** `Tax::DueDates`, `Tax::Brackets` (progressive tax with slices), `Tax::HomeOfficeDeduction`, `Tax::Estimator` → `Tax::Estimate` (+ `Tax::PeriodWorksheet`, `Tax::PersonSe` value objects), `Tax::PaymentQuarter` (default quarter for a date).
+**Pure (no database):** `Tax::DueDates` (due dates, and `quarter_on` for a payment's default quarter), `Tax::Brackets` (progressive tax with slices), `Tax::HomeOfficeDeduction`, `Tax::PeriodCalculator` → `Tax::PeriodWorksheet`, `Tax::Estimator` → `Tax::Estimate`, and the input value objects.
 
 **Query:** `Tax::Inputs`, `Tax::PaymentCandidates` (transaction picker scope).
 
@@ -206,7 +206,7 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 
 - `Tax::Estimator`: hand-computed worked examples checked into the specs, each with its arithmetic in a comment: zero profit; SE earnings under $400; one spouse above the wage base; both spouses with profit; Additional Medicare threshold crossed; safe harbor at 100% and 110%; each of the four periods' factors; a period in progress (days-elapsed factor); home office capped by profit with carryover; SE health insurance cap; a loss in one business offsetting the same person's other business; QBI threshold warning; missing prior year; payments exceeding the requirement (floored at 0); the lesser-of choice going each way.
 - `Tax::DueDates`: weekend rolls, MLK Day on Jan 15–21, Emancipation Day observed (2017, 2022, 2023 → Apr 18).
-- `Tax::Brackets`, `Tax::HomeOfficeDeduction`, `Tax::PaymentQuarter`: unit specs.
+- `Tax::Brackets`, `Tax::HomeOfficeDeduction`, `Tax::DueDates.quarter_on`: unit specs.
 - `Tax::Inputs`: excludes the personal book; nets collected sales tax; respects the period cutoffs; includes archived businesses with activity.
 - Models: validations in §3.1; `estimate_ready?`; nullify on transaction destroy.
 - Request specs per controller (§6.1): no household access → 404; viewer/accountant can read taxes but writes → 403; business owner edits only their own business's home office; a person's user edits only their own adjustments; the household owner edits everything; personal-book home office → 404; inaccessible transaction id → 404; the accountant's payment log omits the personal-book transaction.
@@ -221,7 +221,7 @@ Known cases: 2017 → Apr 18, 2022 → Apr 18, 2023 → Apr 18.
 - A `TaxYear` with prior-year total tax and AGI.
 - A simplified home office on the owner's business.
 - Adjustments: SE health insurance for the owner, a SEP contribution for the spouse.
-- "IRS USATAXPYMT" debits in joint checking on the Q1 and Q2 due dates, each linked to an `EstimatedPayment`, so Q3 shows as due.
+- "IRS USATAXPYMT" debits in joint checking on each installment due date already past, each linked to an `EstimatedPayment`, so the next installment shows as due.
 
 ## 12. Parent spec amendments
 
