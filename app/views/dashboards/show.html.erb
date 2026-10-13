@@ -40,6 +40,9 @@
 <% if (sales_tax_rows = @dashboard.businesses.select(&:sales_tax)).any? %>
   <%= render "sales_tax/household_card", rows: sales_tax_rows %>
 <% end %>
+<% if @tax_estimate %>
+  <%= render "tax_years/due_card", estimate: @tax_estimate, household: Household.instance, show_page_link: true, title: "Next estimated tax" %>
+<% end %>
 
 <h2 class="section-title">Businesses</h2>
 <div class="business-cards">
