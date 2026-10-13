@@ -28,6 +28,7 @@ RSpec.describe "Navigation" do
     get business_transactions_path(business)
     expect(sidebar).to have_no_link("Members")
     expect(sidebar).to have_no_link("Tax parameters")
+    expect(sidebar).to have_no_link("Household", href: edit_household_path)
     expect(sidebar).to have_no_link("People")
     expect(sidebar).to have_no_link("Invites")
   end
@@ -39,6 +40,7 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_link("Household inbox", href: household_inbox_path)
     expect(sidebar).to have_link("Household P&L", href: household_profit_and_loss_path)
     expect(sidebar).to have_link("Tax parameters", href: tax_parameters_path)
+    expect(sidebar).to have_link("Household", href: edit_household_path)
     expect(sidebar).to have_link("Invites", href: invites_path)
     expect(sidebar).to have_link("People", href: people_path)
   end

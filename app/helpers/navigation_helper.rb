@@ -7,6 +7,7 @@ module NavigationHelper
 
   def settings_links(user = Current.user)
     [
+      (nav_link "Household", edit_household_path if user.household_owner?),
       (nav_link "Tax parameters", tax_parameters_path if user.household_owner?),
       (nav_link "Invites", invites_path if user.household_owner? || user.memberships.owner.exists?),
       (nav_link "Banks", plaid_items_path if show_bank_connections?),
