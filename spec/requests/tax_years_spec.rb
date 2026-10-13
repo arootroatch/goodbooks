@@ -66,10 +66,11 @@ RSpec.describe "Taxes page" do
   end
 
   it "lists the household's businesses and people on the incomplete page" do
-    create(:person, household:, name: "Pat Example")
+    pat = create(:person, household:, name: "Pat Example")
     sign_in_as owner
     get tax_year_path(2027)
     expect(response.body).to include("Inputs").and include(business.name).and include("Pat Example")
+    expect(response.body).to include(edit_person_adjustment_path(pat, 2027))
     expect(response.body).to include(edit_business_home_office_path(business, 2027))
   end
 

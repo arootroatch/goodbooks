@@ -26,6 +26,11 @@ class User < ApplicationRecord
     membership.present? && (household_owner? || membership.owner?)
   end
 
+  # A household owner, or the person's own login.
+  def can_edit_adjustments?(person)
+    household_owner? || person.user_id == id
+  end
+
   # Books (business or personal) this user can connect bank accounts to.
   def owned_books
     Business.active.where(id: memberships.owner.select(:business_id))

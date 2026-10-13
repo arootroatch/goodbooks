@@ -20,7 +20,10 @@
   <% else %>
     <ul>
       <% people.each do |person| %>
-        <li><%= person.name %></li>
+        <li>
+          <%= person.name %>
+          <%= link_to "Adjustments", edit_person_adjustment_path(person, year) if can_edit_adjustments?(person.id) %>
+        </li>
       <% end %>
     </ul>
   <% end %>

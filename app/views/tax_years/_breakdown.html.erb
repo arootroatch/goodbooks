@@ -32,7 +32,7 @@
         <td class="num"><%= money(line.se_tax_cents) %></td>
         <td class="num"><%= money(line.health_insurance_cents) %></td>
         <td class="num"><%= money(line.retirement_cents) %></td>
-        <td></td>
+        <td><%= link_to "Adjustments", edit_person_adjustment_path(line.person.id, year) if can_edit_adjustments?(line.person.id) %></td>
       </tr>
     <% end %>
   </tbody>

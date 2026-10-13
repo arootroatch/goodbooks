@@ -24,6 +24,11 @@ module TaxYearsHelper
     business.present? && Current.user.can_edit_home_office?(business)
   end
 
+  def can_edit_adjustments?(person_id)
+    person = Household.instance.people.find_by(id: person_id)
+    person.present? && Current.user.can_edit_adjustments?(person)
+  end
+
   def tax_rate_label(bps) = "#{PercentAttribute.format_bps(bps)}%"
 
   private

@@ -40,6 +40,22 @@ RSpec.describe User do
     end
   end
 
+  describe "#can_edit_adjustments?" do
+    let(:person) { create(:person, user: create(:user)) }
+
+    it "is true for a household owner" do
+      expect(create(:user, :household_owner).can_edit_adjustments?(person)).to be(true)
+    end
+
+    it "is true for the person's own user" do
+      expect(person.user.can_edit_adjustments?(person)).to be(true)
+    end
+
+    it "is false for another user" do
+      expect(create(:user).can_edit_adjustments?(person)).to be(false)
+    end
+  end
+
   describe "#verify_otp" do
     let(:user) { create(:user) }
 

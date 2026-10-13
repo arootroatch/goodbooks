@@ -6,7 +6,7 @@
   <thead><tr><th>Name</th><th>Login</th><th></th></tr></thead>
   <tbody>
     <% @people.each do |person| %>
-      <tr><td><%= person.name %></td><td><%= person.user&.email_address || "—" %></td><td><div class="button-group"><%= link_to "Edit", edit_person_path(person) %></div></td></tr>
+      <tr><td><%= person.name %></td><td><%= person.user&.email_address || "—" %></td><td><div class="button-group"><%= link_to "Edit", edit_person_path(person) %><%= link_to "Tax adjustments", edit_person_adjustment_path(person, Date.current.year) %></div></td></tr>
     <% end %>
   </tbody>
 </table>

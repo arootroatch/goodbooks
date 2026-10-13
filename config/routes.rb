@@ -76,7 +76,9 @@ Rails.application.routes.draw do
   resources :invites, only: %i[index new create destroy]
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
-  resources :people, only: %i[index new create edit update]
+  resources :people, only: %i[index new create edit update] do
+    resources :adjustments, only: %i[edit update], param: :year, controller: "person_adjustments"
+  end
   resource :personal_book, only: :create
   resources :plaid_items, only: %i[index new create show destroy] do
     post :sync, on: :member
