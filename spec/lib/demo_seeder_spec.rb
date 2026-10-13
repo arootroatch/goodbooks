@@ -136,4 +136,27 @@ RSpec.describe DemoSeeder do
     expect(Transaction.where.not(plaid_transaction_id: nil).where(categorized_by: "rule")).to exist
     expect(Transaction.needs_review.sole).to have_attributes(payee: "USPS", review_reason: "removed_by_bank")
   end
+
+  it "seeds a tax year with every past installment paid from joint checking" do
+    load Rails.root.join("db/seeds.rb")
+    run
+    household = Household.instance
+    tax_year = household.tax_years.find_by!(year: 2026)
+    expect(tax_year.prior_year).to be_present
+    payments = tax_year.estimated_payments.order(:quarter)
+    expect(payments.map(&:quarter)).to eq([ 1, 2, 3 ])
+    expect(payments.map { _1.debit.payee }).to all(eq("IRS USATAXPYMT"))
+    expect(payments.map { _1.debit.account.name }).to all(eq("Joint Checking"))
+    expect(HomeOffice.find_by!(business: Business.find_by!(name: "Sound Roots Productions"), year: 2026)).to be_present
+    expect(PersonAdjustment.where(year: 2026).count).to eq(2)
+    estimate = Tax.estimate(household:, year: 2026, today:)
+    expect(estimate.quarter).to eq(4)
+    expect(estimate.next_due_on).to eq(Date.new(2027, 1, 15))
+  end
+
+  it "copies every federal figure when it fills in a missing year" do
+    load Rails.root.join("db/seeds.rb")
+    run
+    expect(TaxParameters.for_year(2025)).to be_estimate_ready
+  end
 end
