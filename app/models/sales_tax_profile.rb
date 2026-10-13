@@ -1,5 +1,6 @@
 class SalesTaxProfile < ApplicationRecord
   include PercentAttribute
+  include BusinessKindValidation
 
   FREQUENCIES = %w[monthly quarterly annual].freeze
   REMITTANCE_CATEGORY_NAME = "Sales tax remittance".freeze
@@ -12,7 +13,6 @@ class SalesTaxProfile < ApplicationRecord
   percent_attribute :default_rate_percent, bps: :default_rate_bps, example: "9.25"
   validates :starts_on, presence: true
   validates :tn_account_number, length: { maximum: 50 }
-  validate :business_kind_only
   validate :starts_on_not_in_future
   validate :calendar_unchanged_once_used, on: :update
 
@@ -25,10 +25,6 @@ class SalesTaxProfile < ApplicationRecord
   def period_start?(date) = calendar.include_start?(date)
 
   private
-
-  def business_kind_only
-    errors.add(:business, "must be a business, not the personal book") if business&.personal?
-  end
 
   def starts_on_not_in_future
     errors.add(:starts_on, "can't be in the future") if starts_on && starts_on > Date.current

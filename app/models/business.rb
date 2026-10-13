@@ -12,6 +12,7 @@ class Business < ApplicationRecord
   has_many :transactions, through: :accounts
   has_one :sales_tax_profile, dependent: :destroy
   has_many :sales_tax_filings, dependent: :destroy
+  has_many :home_offices, dependent: :destroy
 
   enum :kind, { business: "business", personal: "personal" }, validate: true, scopes: false
 
