@@ -1,7 +1,8 @@
 module Reports
   class ScheduleCSummary
-    def initialize(category_totals:, mileage_deduction_cents:)
+    def initialize(category_totals:, mileage_deduction_cents:, home_office_cents: nil)
       @pnl = ProfitAndLoss.new(category_totals:, mileage_deduction_cents:)
+      @home_office_cents = home_office_cents
     end
 
     def lines
@@ -17,6 +18,13 @@ module Reports
 
     def gross_income_cents = lines.fetch("1", 0) - lines.fetch("2", 0) + lines.fetch("6", 0)
     def total_expenses_cents = lines.except(*ScheduleC::INCOME_LINES).values.sum
-    def net_profit_cents = gross_income_cents - total_expenses_cents
+    def tentative_profit_cents = gross_income_cents - total_expenses_cents
+
+    # Line 30, capped so the home office never creates a loss.
+    def home_office_used_cents
+      @home_office_cents && [ @home_office_cents, [ tentative_profit_cents, 0 ].max ].min
+    end
+
+    def net_profit_cents = tentative_profit_cents - home_office_used_cents.to_i
   end
 end

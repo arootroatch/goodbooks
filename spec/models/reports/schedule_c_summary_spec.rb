@@ -42,4 +42,24 @@ RSpec.describe Reports::ScheduleCSummary do
     expect(with_refund.total_expenses_cents).to eq(10_000)
     expect(with_refund.net_profit_cents).to eq(485_000)
   end
+
+  describe "home office" do
+    let(:totals) { [ total("Sales", "income", 100_000, "1") ] }
+
+    it "subtracts the home office after tentative profit" do
+      summary = described_class.new(category_totals: totals, mileage_deduction_cents: 0, home_office_cents: 30_000)
+      expect(summary).to have_attributes(tentative_profit_cents: 100_000, home_office_used_cents: 30_000, net_profit_cents: 70_000)
+    end
+
+    it "caps the home office at tentative profit" do
+      summary = described_class.new(category_totals: totals, mileage_deduction_cents: 0, home_office_cents: 150_000)
+      expect(summary).to have_attributes(home_office_used_cents: 100_000, net_profit_cents: 0)
+    end
+
+    it "has no line 30 without a home office" do
+      summary = described_class.new(category_totals: totals, mileage_deduction_cents: 0)
+      expect(summary.home_office_used_cents).to be_nil
+      expect(summary.net_profit_cents).to eq(100_000)
+    end
+  end
 end
