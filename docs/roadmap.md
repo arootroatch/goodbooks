@@ -25,7 +25,7 @@ implementation plan, or blank before one exists.
 | 3 | **Personal book + tithing** | the household's personal book (a `Business` with `kind: "personal"`), weekly tithe ledger, spending report, personal-book exclusion from every business-only path | [own spec](superpowers/specs/2026-10-06-goodbooks-tithing-design.md) (inserted in [§4](superpowers/specs/2026-10-05-goodbooks-design.md#4-decomposition)) | GB-9 | 10 | Merged |
 | 4 | **Sales tax (Tennessee)** | per-business profile, taxable/exempt treatment on income categories, Stripe processor fees, collected tax kept out of income, filing periods and remittances, period report, dashboard due card | [own spec](superpowers/specs/2026-10-08-goodbooks-sales-tax-design.md) | GB-4 | 15 | Merged |
 | 5 | **Plaid** | Link + token exchange, account assignment to any owned book (new or attach to existing), CSV ↔ Plaid dedup by claiming, needs-review flags, `transactions/sync`, daily / webhook / manual sync job, re-link on `ITEM_LOGIN_REQUIRED`, verified webhooks, fake client | [own spec](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | GB-5 | 17 | Merged |
-| 6 | **Tax engine** | federal MFJ quarterly estimates (SE tax, QBI, brackets, safe harbor vs annualized), home office, per-person adjustments, Schedule C line 30 | [§9](superpowers/specs/2026-10-05-goodbooks-design.md#9-sub-project-6-tax-engine-federal-mfj-sole-proprietors) | GB-6 | | Not started |
+| 6 | **Tax engine** | federal MFJ quarterly estimates (SE tax, QBI, brackets, safe harbor vs annualized), home office, per-person adjustments, Schedule C line 30 | [own spec](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | GB-6 | | Specced |
 | 7 | **Sharing polish** | SMTP invite delivery, session management, audit log | [§10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | GB-7 | | Not started |
 | 8 | **Goals** | payment goals (progress toward a target from payments matched to the goal, e.g. paying back a loan) and savings goals (target amounts filled in priority order from one account's balance), dashboard progress widget, per-goal report of contributing transactions; account balances as groundwork | [notes below](#goals-sub-project-8) | GB-11 | | Not started |
 
@@ -74,7 +74,7 @@ Read it as:
 - **Plaid needs Invoices** for the removed-transaction rule (below), and Personal book because
   the joint checking account it will feed lives there.
 - **Tax engine needs Sales tax** because net profit is income *net of collected sales tax*
-  ([§9.2](superpowers/specs/2026-10-05-goodbooks-design.md#92-calculation-taxestimator-pure) step 1),
+  ([tax engine spec §4.1](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md#41-inputs-taxinputsloadtax_year-today-query)),
   and Personal book because tax estimates must not see personal activity.
 - **Sharing polish comes last** because the audit log covers the records of every earlier
   sub-project: invoices, payments, sales tax periods and tax inputs ([§10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish)).
@@ -114,6 +114,7 @@ the plan that found them.
   book. ([tithing spec, Out of scope](superpowers/specs/2026-10-06-goodbooks-tithing-design.md#out-of-scope))
 - **6 Tax engine — exclude the personal book from every estimate.**
   ([tithing spec, Success criteria](superpowers/specs/2026-10-06-goodbooks-tithing-design.md#success-criteria) item 5)
+  Covered by the [tax engine spec](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) §4.1 and §6.1.
 - **7 Sharing polish — the audit log covers invoices and invoice payments.**
   ([invoices spec §9](superpowers/specs/2026-10-06-goodbooks-invoices-design.md#9-hand-offs-to-later-sub-projects))
 
@@ -196,6 +197,6 @@ the lines. Move the Kaneo task in the same change.
 | 3 Personal book + tithing | [design](superpowers/specs/2026-10-06-goodbooks-tithing-design.md) | [Personal book + tithing](superpowers/plans/2026-10-06-goodbooks-tithing.md) |
 | 4 Sales tax | [design](superpowers/specs/2026-10-08-goodbooks-sales-tax-design.md) | [Sales tax](superpowers/plans/2026-10-08-goodbooks-sales-tax.md) |
 | 5 Plaid | [design](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | [Plaid](superpowers/plans/2026-10-08-goodbooks-plaid.md) |
-| 6 Tax engine | [design §9](superpowers/specs/2026-10-05-goodbooks-design.md#9-sub-project-6-tax-engine-federal-mfj-sole-proprietors) | — |
+| 6 Tax engine | [design](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | — |
 | 7 Sharing polish | [design §10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | — |
 | 8 Goals | [notes](#goals-sub-project-8) (needs a spec) | — |
