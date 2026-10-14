@@ -28,7 +28,7 @@
   <fieldset data-goal-kind-target="savings" <%= "hidden" unless goal.savings? %>>
     <legend>Account</legend>
     <p>
-      <%= f.collection_select :account_id, @business.accounts.active.where.not(kind: "credit").order(:name), :id, :name,
+      <%= f.collection_select :account_id, @business.accounts.active.where.not(kind: "credit").or(@business.accounts.where(id: goal.account_id)).order(:name), :id, :name,
             include_blank: "Choose an account" %>
     </p>
   </fieldset>

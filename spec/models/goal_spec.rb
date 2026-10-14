@@ -13,7 +13,8 @@ RSpec.describe Goal do
   it "accepts a payment goal with a full matcher or none at all, not a partial one" do
     expect(build(:goal, business: book)).to be_valid
     expect(build(:goal, business: book, match_field: nil, match_operator: nil, match_value: nil)).to be_valid
-    expect(build(:goal, business: book, match_value: "")).not_to be_valid
+    expect(build(:goal, business: book, match_value: "")).to be_valid
+    expect(build(:goal, business: book, match_field: nil, match_value: "tony")).not_to be_valid
     expect(build(:goal, business: book, match_operator: "regex")).not_to be_valid
     expect(build(:goal, business: book, match_amount_min: "50", match_amount_max: "10")).not_to be_valid
   end
@@ -137,6 +138,14 @@ RSpec.describe Goal do
       second.move_to!(1)
       expect(book.goals.ordered).to eq([ second, first ])
       expect([ auto, hand ].map { _1.reload.goal }).to eq([ second, first ])
+    end
+
+    it "renumbers only active goals, so a position among active rows skips archived ones" do
+      a = create(:goal, business: book, name: "A")
+      create(:goal, business: book, name: "X", archived_at: Time.current)
+      c = create(:goal, business: book, name: "C")
+      a.move_to!(2)
+      expect(book.goals.active.ordered).to eq([ c, a ])
     end
 
     it "frees matcher links and turns hand links into hand unlinks when deleted" do

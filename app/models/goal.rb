@@ -61,7 +61,7 @@ class Goal < ApplicationRecord
 
   def move_to!(new_position)
     ApplicationRecord.transaction do
-      ids = business.goals.ordered.where.not(id: id).pluck(:id)
+      ids = business.goals.active.ordered.where.not(id: id).pluck(:id)
       ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
       ids.each.with_index(1) { |goal_id, position| Goal.where(id: goal_id).update_all(position: position) }
       GoalMatcher.new(business).rematch if payments?
@@ -92,6 +92,7 @@ class Goal < ApplicationRecord
       self.match_value = match_value.presence
       self.match_field = match_field.presence
       self.match_operator = match_operator.presence
+      self.match_field = self.match_operator = self.match_amount_min_cents = self.match_amount_max_cents = nil if match_value.blank?
     end
   end
 

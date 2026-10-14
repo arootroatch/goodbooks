@@ -28,7 +28,7 @@ Bring bank and card activity in automatically. A book owner connects a bank thro
 
 ### Out of scope
 
-Investment, liability, and balance products; Plaid's own categories and the personal finance category taxonomy; recurring-transaction APIs; pending transactions (only posted ones are imported); multiple households; a Plaid "Sync now" for all items at once.
+Investment, liability, and balance products; Plaid's own categories and the personal finance category taxonomy; recurring-transaction APIs; pending transactions (only posted ones are imported); multiple households; a Plaid "Sync now" for all items at once. Since Goals (sub-project 8), the current balances returned by `/transactions/sync` are stored per account; `/accounts/balance/get` remains out of scope.
 
 ## 2. Approach
 

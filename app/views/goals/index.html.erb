@@ -41,7 +41,7 @@
     <ul class="plain-list">
       <% @completed.each do |goal| %>
         <li id="<%= dom_id(goal) %>">
-          <%= goal.name %> <span class="muted">· target <%= money(goal.target_cents) %></span>
+          <%= link_to goal.name, business_goal_path(@business, goal) %> <span class="muted">· target <%= money(goal.target_cents) %></span>
           <%= archive_button [ @business, goal ] if current_membership.can_edit? %>
         </li>
       <% end %>

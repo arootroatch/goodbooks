@@ -15,7 +15,13 @@
   <% end %>
 </header>
 
-<section class="card"><%= render "goals/bar", row: @row %></section>
+<section class="card">
+  <% if @goal.archived? && @goal.savings? %>
+    <span class="muted">Archived · target <%= money(@goal.target_cents) %></span>
+  <% else %>
+    <%= render "goals/bar", row: @row %>
+  <% end %>
+</section>
 
 <% if @goal.payments? %>
   <section class="card">
@@ -43,6 +49,7 @@
     <% end %>
   </section>
 <% else %>
+  <% unless @goal.archived? %>
   <section class="card">
     <h2 class="card-title"><%= @goal.account.name %> · <%= money(@goal.account.balance_cents) %></h2>
     <table class="goal-allocation">
@@ -56,6 +63,7 @@
       </tbody>
     </table>
   </section>
+  <% end %>
   <section class="card">
     <h2 class="card-title">Deposits and withdrawals</h2>
     <% if @history.any? %>

@@ -76,6 +76,8 @@ RSpec.describe "Goals" do
     expect(response).to have_http_status(:forbidden)
     patch archive_business_goal_path(book, goal)
     expect(response).to have_http_status(:forbidden)
+    patch unarchive_business_goal_path(book, goal)
+    expect(response).to have_http_status(:forbidden)
     delete business_goal_path(book, goal)
     expect(response).to have_http_status(:forbidden)
 
@@ -91,5 +93,56 @@ RSpec.describe "Goals" do
     sign_in_as user_with_role("viewer", book)
     get business_path(book)
     expect(response.body).to include(%(href="#{business_goals_path(book)}"))
+  end
+
+  it "creates a hand-only payment goal from exactly what the form posts" do
+    sign_in_as user_with_role("editor", book)
+    post business_goals_path(book), params: { goal: payment_params.merge(match_value: "") }
+    expect(response).to redirect_to(business_goals_path(book))
+    goal = book.goals.sole
+    expect(goal.matcher?).to be(false)
+    expect(goal).to have_attributes(match_field: nil, match_operator: nil, match_amount_min_cents: nil, match_amount_max_cents: nil)
+  end
+
+  it "turns a matcher goal hand-only when its text is blanked, clearing its matcher links" do
+    txn = create(:transaction, account: savings, payee: "ZELLE TONY", amount_cents: -1_500_00)
+    goal = create(:goal, business: book, match_field: "payee", match_operator: "contains", match_value: "tony")
+    expect(txn.reload.goal).to eq(goal)
+    sign_in_as user_with_role("editor", book)
+    patch business_goal_path(book, goal), params: { goal: payment_params.merge(match_value: "") }
+    expect(goal.reload.matcher?).to be(false)
+    expect(txn.reload.goal).to be_nil
+  end
+
+  it "reorders active goals by their position among active rows, skipping archived ones" do
+    a = create(:goal, business: book)
+    create(:goal, business: book, archived_at: Time.current)
+    c = create(:goal, business: book)
+    sign_in_as user_with_role("editor", book)
+    patch move_business_goal_path(book, a), params: { position: 2 }, as: :json
+    expect(book.goals.active.ordered).to eq([ c, a ])
+  end
+
+  it "links an archived goal's report from Completed, without a progress bar for savings" do
+    goal = create(:goal, :savings, business: book, account: savings, name: "Old fund", target: "6,000", archived_at: Time.current)
+    sign_in_as user_with_role("viewer", book)
+    get business_goals_path(book)
+    expect(Nokogiri::HTML(response.body).at_css(".goal-completed a[href='#{business_goal_path(book, goal)}']")).to be_present
+    get business_goal_path(book, goal)
+    page = Nokogiri::HTML(response.body)
+    expect(page.css(".goal-track")).to be_empty
+    expect(response.body).to include("Archived").and include("$6,000.00")
+    expect(page.css(".goal-allocation")).to be_empty
+  end
+
+  it "renames a savings goal whose account was archived later" do
+    goal = create(:goal, :savings, business: book, account: savings, target: "6,000")
+    savings.update!(archived_at: Time.current)
+    sign_in_as user_with_role("editor", book)
+    get edit_business_goal_path(book, goal)
+    expect(Nokogiri::HTML(response.body).css("select#goal_account_id option").map { _1["value"] }).to include(savings.id.to_s)
+    patch business_goal_path(book, goal), params: { goal: { name: "Renamed", account_id: savings.id } }
+    expect(response).to redirect_to(business_goals_path(book))
+    expect(goal.reload.name).to eq("Renamed")
   end
 end
