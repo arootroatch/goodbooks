@@ -50,6 +50,7 @@ class DemoSeeder
     seed_sales_tax(sound_roots)
     seed_plaid(household, alex)
     seed_taxes(household, sound_roots, alex_person, whitney_person)
+    seed_goals(household)
   end
 
   # Sound Roots Productions collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
@@ -236,6 +237,20 @@ class DemoSeeder
       add.(month + 20, "AMAZON REFUND", 2_500 + @random.rand(3_000), "Refunds and reimbursements")
     end
     add.(@today - 40, "TRANSFER FROM SAVINGS", 200_000, nil, transfer: true, categorized_by: "user")
+    8.downto(1) { |months_ago| add.((@today << months_ago).beginning_of_month + 2, "ZELLE TO TONY RUSSO", -150_000, nil, transfer: true, categorized_by: "user") }
+  end
+
+  # Paying Uncle Tony back from Joint Checking, and a nest egg ahead of a truck fund in one savings account.
+  def seed_goals(household)
+    book = household.personal_book
+    savings = book.accounts.create!(name: "Savings", source: "manual", kind: "savings",
+                                    opening_balance: "10,000.00", opening_balance_on: @today - 120)
+    savings.transactions.create!(posted_on: @today - 40, payee: "TRANSFER TO CHECKING", amount_cents: -200_000, transfer: true,
+                                 categorized_by: "user")
+    book.goals.create!(name: "Pay back Uncle Tony", kind: "payments", target: "30,000", target_date: @today.next_year.end_of_year,
+                       match_field: "payee", match_operator: "contains", match_value: "tony")
+    book.goals.create!(name: "Nest egg", kind: "savings", target: "6,000", account: savings)
+    book.goals.create!(name: "Truck", kind: "savings", target: "10,000", account: savings)
   end
 
   # A fake "Demo Bank" connection: a new operating account and card for Sound Roots Productions, and the personal Joint Checking
