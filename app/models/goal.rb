@@ -4,11 +4,14 @@ class Goal < ApplicationRecord
   include MoneyAttribute
 
   KINDS = %w[payments savings].freeze
+  MATCH_COLUMNS = %w[match_field match_operator match_value match_amount_min_cents match_amount_max_cents archived_at].freeze
   MatcherRule = Data.define(:field, :operator, :value, :amount_min_cents, :amount_max_cents)
 
   money_attribute :target
   money_attribute :match_amount_min, allow_blank: true
   money_attribute :match_amount_max, allow_blank: true
+
+  attr_reader :rematched_count
 
   belongs_to :business
   belongs_to :account, optional: true
@@ -33,6 +36,9 @@ class Goal < ApplicationRecord
 
   before_validation :clear_other_kind_fields
   before_create { self.position = (business.goals.maximum(:position) || 0) + 1 }
+  before_save { @rematched_count = nil }
+  after_save :rematch_after_save, if: :rematch_needed?
+  before_destroy :release_transactions
 
   def payments? = kind == "payments"
   def savings? = kind == "savings"
@@ -52,7 +58,28 @@ class Goal < ApplicationRecord
     [ "#{match_field} #{match_operator.to_s.humanize(capitalize: false)} \"#{match_value}\"", *amounts ].join(" · ")
   end
 
+  def move_to!(new_position)
+    ApplicationRecord.transaction do
+      ids = business.goals.ordered.where.not(id: id).pluck(:id)
+      ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
+      ids.each.with_index(1) { |goal_id, position| Goal.where(id: goal_id).update_all(position: position) }
+      GoalMatcher.new(business).rematch if payments?
+    end
+    reload
+  end
+
   private
+
+  def rematch_needed? = payments? && (previously_new_record? || saved_changes.keys.intersect?(MATCH_COLUMNS))
+
+  def rematch_after_save
+    @rematched_count = GoalMatcher.new(business).rematch
+  end
+
+  def release_transactions
+    transactions.where(goal_linked_by: "matcher").update_all(goal_id: nil, goal_linked_by: nil, updated_at: Time.current)
+    transactions.update_all(goal_id: nil, updated_at: Time.current)
+  end
 
   def clear_other_kind_fields
     if savings?

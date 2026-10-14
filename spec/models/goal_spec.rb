@@ -73,4 +73,57 @@ RSpec.describe Goal do
     expect(goal.matcher_description).to eq("payee contains \"Tony\" · ≤ $2,000.00")
     expect(build(:goal, business: book, match_field: nil, match_operator: nil, match_value: nil)).not_to be_matcher
   end
+
+  describe "matching on save" do
+    let(:account) { create(:account, business: book) }
+
+    it "backfills existing transactions when created and reports the count" do
+      create(:transaction, account: account, payee: "ZELLE TONY", amount_cents: -500_00)
+      goal = create(:goal, business: book)
+      expect(goal.rematched_count).to eq(1)
+      expect(goal.transactions.count).to eq(1)
+    end
+
+    it "relinks when the matcher changes but not on a rename" do
+      tony = create(:transaction, account: account, payee: "ZELLE TONY", amount_cents: -500_00)
+      ann = create(:transaction, account: account, payee: "ZELLE ANN", amount_cents: -500_00)
+      goal = create(:goal, business: book)
+      goal.update!(name: "Renamed")
+      expect(goal.rematched_count).to be_nil
+      goal.update!(match_value: "ann")
+      expect([ tony, ann ].map { _1.reload.goal_id }).to eq([ nil, goal.id ])
+    end
+
+    it "keeps links when archived and relinks once when unarchived" do
+      row = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00)
+      goal = create(:goal, business: book)
+      goal.update!(archived_at: Time.current)
+      expect(row.reload.goal).to eq(goal)
+      goal.update!(archived_at: nil)
+      expect(row.reload.goal).to eq(goal)
+      expect(Transaction.where(goal: goal).count).to eq(1)
+    end
+
+    it "gives matcher links to the new top goal after a reorder, leaving hand links alone" do
+      first = create(:goal, business: book, match_value: "tony")
+      second = create(:goal, business: book, match_value: "tony")
+      auto = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00)
+      GoalMatcher.new(book).rematch
+      hand = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00, goal: first, goal_linked_by: "user")
+      expect(auto.reload.goal).to eq(first)
+      second.move_to!(1)
+      expect(book.goals.ordered).to eq([ second, first ])
+      expect([ auto, hand ].map { _1.reload.goal }).to eq([ second, first ])
+    end
+
+    it "frees matcher links and turns hand links into hand unlinks when deleted" do
+      goal = create(:goal, business: book)
+      auto = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00)
+      GoalMatcher.new(book).rematch
+      hand = create(:transaction, account: account, payee: "X", amount_cents: -500_00, goal: goal, goal_linked_by: "user")
+      goal.destroy!
+      expect(auto.reload.attributes.values_at("goal_id", "goal_linked_by")).to eq([ nil, nil ])
+      expect(hand.reload.attributes.values_at("goal_id", "goal_linked_by")).to eq([ nil, "user" ])
+    end
+  end
 end
