@@ -51,6 +51,10 @@
             { include_blank: "Default", selected: transaction.sales_tax_period_starts_on&.iso8601 } %>
     </p>
   <% end %>
+  <% goals = @business.goals.payments.active.or(@business.goals.where(id: transaction.goal_id)).ordered %>
+  <% if goals.any? %>
+    <p><%= f.label :goal_id, "Goal" %> <%= f.collection_select :goal_id, goals, :id, :name, include_blank: "None" %></p>
+  <% end %>
   <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
   <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
   <%= f.submit %>

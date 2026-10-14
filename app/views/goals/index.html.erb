@@ -15,7 +15,7 @@
         <tr id="<%= dom_id(goal) %>" data-sortable-url="<%= move_business_goal_path(@business, goal) %>">
           <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
           <td>
-            <strong><%= goal.name %></strong>
+            <strong><%= link_to goal.name, business_goal_path(@business, goal) %></strong>
             <small class="muted">
               <% if goal.savings? %>Savings · <%= goal.account.name %><% else %>Payments · <%= goal.matcher? ? goal.matcher_description : "Linked by hand" %><% end %>
               <% if goal.target_date %> · by <%= l(goal.target_date, format: :long) %><% end %>

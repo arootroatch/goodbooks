@@ -1,0 +1,80 @@
+<% content_for :title, @goal.name %>
+<header class="page-header">
+  <div>
+    <h1><%= @goal.name %><%= " (archived)" if @goal.archived? %></h1>
+    <p class="subtitle">
+      Target <%= money(@goal.target_cents) %><% if @goal.target_date %> by <%= l(@goal.target_date, format: :long) %><% end %>
+      · <% if @goal.savings? %>Savings in <%= @goal.account.name %><% else %><%= @goal.matcher? ? "Linked when #{@goal.matcher_description}" : "Linked by hand" %><% end %>
+    </p>
+  </div>
+  <% if current_membership.can_edit? %>
+    <div class="button-group">
+      <%= link_to "Edit", edit_business_goal_path(@business, @goal), class: "button" %>
+      <%= archive_button [ @business, @goal ] %>
+    </div>
+  <% end %>
+</header>
+
+<section class="card"><%= render "goals/bar", row: @row %></section>
+
+<% if @goal.payments? %>
+  <section class="card">
+    <h2 class="card-title">Payments</h2>
+    <% if @linked.any? %>
+      <table class="goal-transactions">
+        <thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="num">Amount</th><th class="num">Total</th><th></th></tr></thead>
+        <tbody>
+          <% total = 0 %>
+          <% @linked.each do |txn| %>
+            <% total -= txn.amount_cents %>
+            <tr id="<%= dom_id(txn) %>">
+              <td><%= txn.posted_on %></td>
+              <td><%= txn.payee %></td>
+              <td><%= txn.account.name %></td>
+              <td class="num"><%= money(-txn.amount_cents) %></td>
+              <td class="num"><%= money(total) %></td>
+              <td><%= confirm_button "Unlink", business_goal_link_path(@business, @goal, txn), method: :delete, confirm: "Unlink this payment from the goal?" if current_membership.can_edit? %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="empty"><strong>No payments yet</strong>Matching payments link here automatically, or link one from its transaction.</div>
+    <% end %>
+  </section>
+<% else %>
+  <section class="card">
+    <h2 class="card-title"><%= @goal.account.name %> · <%= money(@goal.account.balance_cents) %></h2>
+    <table class="goal-allocation">
+      <tbody>
+        <% @allocation.each do |row| %>
+          <tr class="<%= "current" if row.goal == @goal %>">
+            <td><%= link_to row.goal.name, business_goal_path(@business, row.goal) %></td>
+            <td><%= render "goals/bar", row: row %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+  <section class="card">
+    <h2 class="card-title">Deposits and withdrawals</h2>
+    <% if @history.any? %>
+      <table class="goal-history">
+        <thead><tr><th>Date</th><th>Payee</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead>
+        <tbody>
+          <% @history.each do |entry| %>
+            <tr>
+              <td><%= entry.txn.posted_on %></td>
+              <td><%= entry.txn.payee %></td>
+              <td class="num"><%= money(entry.txn.amount_cents) %></td>
+              <td class="num"><%= money(entry.balance_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="empty"><strong>No history</strong>
+        <%= @goal.account.balance_known? ? "No transactions since the balance date." : "This account's balance isn't known yet." %></div>
+    <% end %>
+  </section>
+<% end %>

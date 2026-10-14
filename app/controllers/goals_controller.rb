@@ -4,12 +4,22 @@ class GoalsController < ApplicationController
 
   FIELDS = %i[name target target_date account_id match_field match_operator match_value match_amount_min match_amount_max].freeze
 
-  before_action :require_editor!, except: :index
-  before_action :set_goal, only: %i[edit update destroy move archive unarchive]
+  before_action :require_editor!, except: %i[index show]
+  before_action :set_goal, only: %i[show edit update destroy move archive unarchive]
 
   def index
     @rows = Goals::Progress.for_book(@business)
     @completed = @business.goals.where.not(archived_at: nil).order(archived_at: :desc)
+  end
+
+  def show
+    @row = Goals::Progress.for_book(@business).find { _1.goal == @goal } || Goals::Progress.for_goals([ @goal ]).sole
+    if @goal.payments?
+      @linked = @goal.transactions.where(excluded: false).includes(:account).order(:posted_on, :id)
+    else
+      @allocation = Goals::Progress.for_book(@business).select { _1.goal.account_id == @goal.account_id }
+      @history = Goals::BalanceHistory.for(@goal.account)
+    end
   end
 
   def new

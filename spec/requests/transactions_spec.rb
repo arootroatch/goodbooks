@@ -35,6 +35,34 @@ RSpec.describe "Transactions" do
                                                                        amount: "1,500.00", direction: "out" } }
       expect(account.transactions.sole).to have_attributes(goal_id: goal.id, goal_linked_by: "matcher")
     end
+
+    it "links and unlinks by hand from the edit form" do
+      goal = create(:goal, business: book, match_value: "nobody")
+      txn = create(:transaction, account: account, payee: "Tony", amount_cents: -100_00, external_id: "x1")
+      sign_in_as user_with_role("editor", book)
+      get edit_business_transaction_path(book, txn)
+      expect(response.body).to include("transaction[goal_id]")
+      patch business_transaction_path(book, txn), params: { transaction: { goal_id: goal.id, memo: "" } }
+      expect(txn.reload).to have_attributes(goal_id: goal.id, goal_linked_by: "user")
+      patch business_transaction_path(book, txn), params: { transaction: { goal_id: "", memo: "" } }
+      expect(txn.reload).to have_attributes(goal_id: nil, goal_linked_by: "user")
+    end
+
+    it "rejects another book's goal" do
+      txn = create(:transaction, account: account, amount_cents: -100_00)
+      sign_in_as user_with_role("editor", book)
+      patch business_transaction_path(book, txn), params: { transaction: { goal_id: create(:goal).id } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(txn.reload.goal_id).to be_nil
+    end
+
+    it "tags linked rows in the list" do
+      goal = create(:goal, business: book, name: "Pay back Tony")
+      create(:transaction, account: account, payee: "Tony", amount_cents: -100_00, goal: goal, goal_linked_by: "user")
+      sign_in_as user_with_role("viewer", book)
+      get business_transactions_path(book)
+      expect(Nokogiri::HTML(response.body).at_css(".goal-tag").text).to eq("Pay back Tony")
+    end
   end
 
   it "re-renders on a bad amount" do

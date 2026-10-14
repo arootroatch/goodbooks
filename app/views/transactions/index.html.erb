@@ -23,7 +23,7 @@
         <tr id="<%= dom_id(txn) %>">
           <td><%= txn.posted_on %></td>
           <td><%= txn.account.name %></td>
-          <td><%= txn.payee %></td>
+          <td><%= txn.payee %><% if txn.goal %> <span class="badge goal-tag"><%= txn.goal.name %></span><% end %></td>
           <td><%= txn.memo %></td>
           <td><%= txn.transfer? ? "Transfer" : txn.excluded? ? "Excluded" : txn.category&.name || "Inbox" %></td>
           <td class="num"><%= money(txn.amount_cents) %></td>
