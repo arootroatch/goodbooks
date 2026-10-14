@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -25,6 +25,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000002) do
     t.string "plaid_mask"
     t.string "plaid_name"
     t.date "plaid_sync_from"
+    t.integer "opening_balance_cents"
+    t.date "opening_balance_on"
+    t.integer "reported_balance_cents"
+    t.datetime "balance_reported_at"
     t.index ["business_id"], name: "index_accounts_on_business_id"
     t.index ["plaid_account_id"], name: "index_accounts_on_plaid_account_id", unique: true, where: "plaid_account_id IS NOT NULL"
     t.index ["plaid_item_id"], name: "index_accounts_on_plaid_item_id"
