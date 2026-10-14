@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -131,6 +131,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
     t.datetime "updated_at", null: false
     t.index ["debit_id"], name: "index_estimated_payments_on_debit_id", unique: true
     t.index ["tax_year_id"], name: "index_estimated_payments_on_tax_year_id"
+  end
+
+  create_table "goals", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.integer "account_id"
+    t.string "name", null: false
+    t.string "kind", null: false
+    t.integer "target_cents", null: false
+    t.integer "position", null: false
+    t.date "target_date"
+    t.datetime "archived_at"
+    t.string "match_field"
+    t.string "match_operator"
+    t.string "match_value"
+    t.integer "match_amount_min_cents"
+    t.integer "match_amount_max_cents"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_goals_on_account_id"
+    t.index ["business_id"], name: "index_goals_on_business_id"
   end
 
   create_table "home_offices", force: :cascade do |t|
@@ -382,10 +402,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
     t.date "sales_tax_period_starts_on"
     t.string "plaid_transaction_id"
     t.string "review_reason"
+    t.integer "goal_id"
+    t.string "goal_linked_by"
     t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
     t.index ["account_id", "plaid_transaction_id"], name: "index_transactions_on_account_id_and_plaid_transaction_id", unique: true, where: "plaid_transaction_id IS NOT NULL"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["goal_id"], name: "index_transactions_on_goal_id"
     t.index ["posted_on"], name: "index_transactions_on_posted_on"
     t.index ["review_reason"], name: "index_transactions_on_review_reason", where: "review_reason IS NOT NULL"
     t.index ["rule_id"], name: "index_transactions_on_rule_id"
@@ -416,6 +439,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
   add_foreign_key "csv_imports", "accounts"
   add_foreign_key "estimated_payments", "tax_years"
   add_foreign_key "estimated_payments", "transactions", column: "debit_id", on_delete: :nullify
+  add_foreign_key "goals", "accounts"
+  add_foreign_key "goals", "businesses"
   add_foreign_key "home_offices", "businesses"
   add_foreign_key "invite_grants", "businesses"
   add_foreign_key "invite_grants", "invites"
@@ -441,5 +466,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000001) do
   add_foreign_key "tax_years", "households"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
+  add_foreign_key "transactions", "goals"
   add_foreign_key "transactions", "rules", on_delete: :nullify
 end

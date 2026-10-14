@@ -4,6 +4,7 @@ class Account < ApplicationRecord
   belongs_to :business
   has_many :transactions, dependent: :restrict_with_error
   has_many :csv_imports, dependent: :destroy
+  has_many :goals, dependent: :restrict_with_error
   belongs_to :plaid_item, optional: true
 
   CSV_IMPORTABLE_SOURCES = %w[csv plaid].freeze

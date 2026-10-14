@@ -6,6 +6,7 @@ class Business < ApplicationRecord
   has_many :accounts, dependent: :destroy
   has_many :rules, dependent: :destroy
   has_many :categories, dependent: :destroy
+  has_many :goals, dependent: :destroy
   has_many :mileage_entries, dependent: :destroy
   has_many :clients, dependent: :restrict_with_error
   has_many :invoices, dependent: :restrict_with_error
