@@ -68,6 +68,6 @@ end
 
 group :test do
   gem "capybara", "~> 3.40"
-  gem "webmock", "~> 3.24"
+  gem "webmock", "~> 3.29"
   gem "selenium-webdriver", "~> 4.27"
 end
