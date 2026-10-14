@@ -18,6 +18,19 @@ RSpec.describe "Goal reports" do
     expect(response.body).not_to include("Unlink")
   end
 
+  it "still lists an archived payment goal's linked transactions" do
+    goal = create(:goal, business: book, target: "30,000")
+    create(:transaction, account: checking, posted_on: Date.new(2026, 2, 1), payee: "ZELLE TONY", amount_cents: -1_500_00, goal: goal, goal_linked_by: "user")
+    create(:transaction, account: checking, posted_on: Date.new(2026, 3, 1), payee: "ZELLE TONY", amount_cents: -2_000_00, goal: goal, goal_linked_by: "user")
+    goal.update!(archived_at: Time.current)
+    sign_in_as user_with_role("viewer", book)
+    get business_goal_path(book, goal)
+    expect(response).to have_http_status(:ok)
+    rows = Nokogiri::HTML(response.body).css(".goal-transactions tbody tr").map { _1.css("td").map { |td| td.text.squish } }
+    expect(rows.map(&:first)).to eq([ "2026-02-01", "2026-03-01" ])
+    expect(rows.map { _1[4] }).to eq([ "$1,500.00", "$3,500.00" ])
+  end
+
   it "shows a savings goal's allocation and the account's running balance" do
     savings = create(:account, business: book, kind: "savings", opening_balance: "8,000", opening_balance_on: Date.new(2026, 1, 1))
     nest = create(:goal, :savings, business: book, account: savings, name: "Nest egg", target: "6,000")
@@ -53,5 +66,15 @@ RSpec.describe "Goal reports" do
     delete business_goal_link_path(book, goal, create(:transaction, payee: "TONY"))
     expect(response).to have_http_status(:not_found)
     expect(txn.reload.goal).to eq(goal)
+  end
+
+  it "404s unlinking through another book's goal and leaves the transaction alone" do
+    goal = create(:goal, business: book)
+    txn = create(:transaction, account: checking, payee: "ZELLE TONY", amount_cents: -100_00)
+    GoalMatcher.new(book).rematch
+    sign_in_as user_with_role("editor", book)
+    delete business_goal_link_path(book, create(:goal), txn)
+    expect(response).to have_http_status(:not_found)
+    expect(txn.reload.attributes.values_at("goal_id", "goal_linked_by")).to eq([ goal.id, "matcher" ])
   end
 end

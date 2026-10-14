@@ -48,6 +48,16 @@ RSpec.describe "Transactions" do
       expect(txn.reload).to have_attributes(goal_id: nil, goal_linked_by: "user")
     end
 
+    it "rejects a savings goal on create" do
+      savings = create(:goal, :savings, business: book)
+      sign_in_as user_with_role("editor", book)
+      expect {
+        post business_transactions_path(book), params: { transaction: { account_id: account.id, posted_on: "2026-10-01", payee: "Tony",
+                                                                         amount: "10.00", direction: "out", goal_id: savings.id } }
+      }.not_to change(Transaction, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
     it "rejects another book's goal" do
       txn = create(:transaction, account: account, amount_cents: -100_00)
       sign_in_as user_with_role("editor", book)
