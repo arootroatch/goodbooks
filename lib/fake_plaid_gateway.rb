@@ -28,6 +28,7 @@ class FakePlaidGateway
     @pages = Hash.new { |hash, token| hash[token] = [] }
     @failures = Hash.new { |hash, name| hash[name] = [] }
     @calls = []
+    @balances = {}
     @key = OpenSSL::PKey::EC.generate("prime256v1")
     @key_expired_at = nil
   end
@@ -36,6 +37,10 @@ class FakePlaidGateway
 
   def add_page(access_token, added: [], modified: [], removed: [])
     @pages[access_token] << { added: added, modified: modified, removed: removed }
+  end
+
+  def set_balance(account_id, cents)
+    @balances[account_id] = cents
   end
 
   def fail_next(method_name, error)
@@ -71,10 +76,11 @@ class FakePlaidGateway
     record(:transactions_sync) do
       pages = @pages[access_token]
       index = cursor.to_s.delete_prefix("page-").to_i
+      balances = @balances.map { |account_id, cents| { account_id: account_id, current_cents: cents } }
       if index < pages.size
-        pages[index].merge(next_cursor: "page-#{index + 1}", has_more: index + 1 < pages.size)
+        pages[index].merge(accounts: balances, next_cursor: "page-#{index + 1}", has_more: index + 1 < pages.size)
       else
-        EMPTY_PAGE.merge(next_cursor: cursor.presence || "page-0", has_more: false)
+        EMPTY_PAGE.merge(accounts: balances, next_cursor: cursor.presence || "page-0", has_more: false)
       end
     end
   end

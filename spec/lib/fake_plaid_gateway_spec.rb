@@ -31,11 +31,16 @@ RSpec.describe FakePlaidGateway do
     fake.add_page("access", added: [ txn ])
     fake.add_page("access", removed: [ { transaction_id: "t0", account_id: "fake-checking" } ])
     first = fake.transactions_sync("access", nil)
-    expect(first).to eq(added: [ txn ], modified: [], removed: [], next_cursor: "page-1", has_more: true)
+    expect(first).to eq(added: [ txn ], modified: [], removed: [], accounts: [], next_cursor: "page-1", has_more: true)
     second = fake.transactions_sync("access", "page-1")
     expect(second.slice(:next_cursor, :has_more)).to eq(next_cursor: "page-2", has_more: false)
-    expect(fake.transactions_sync("access", "page-2")).to eq(added: [], modified: [], removed: [], next_cursor: "page-2", has_more: false)
-    expect(fake.transactions_sync("other", nil)).to eq(added: [], modified: [], removed: [], next_cursor: "page-0", has_more: false)
+    expect(fake.transactions_sync("access", "page-2")).to eq(added: [], modified: [], removed: [], accounts: [], next_cursor: "page-2", has_more: false)
+    expect(fake.transactions_sync("other", nil)).to eq(added: [], modified: [], removed: [], accounts: [], next_cursor: "page-0", has_more: false)
+  end
+
+  it "reports balances set for accounts on every page" do
+    fake.set_balance("fake-savings", 8_000_00)
+    expect(fake.transactions_sync("access", nil)[:accounts]).to eq([ { account_id: "fake-savings", current_cents: 8_000_00 } ])
   end
 
   it "raises scripted failures once, in order" do

@@ -16,13 +16,14 @@ module PlaidFeed
     end
 
     def call
-      added, modified, removed, cursor = fetch
+      added, modified, removed, cursor, balances = fetch
       ApplicationRecord.transaction do
         # Archived accounts are skipped like unassigned ones: bank changes made meanwhile are not applied later.
         accounts = @item.accounts.active.includes(:business).where.not(plaid_account_id: nil).index_by(&:plaid_account_id)
         inserted = apply_added(added, accounts)
         modified.each { apply_modified(_1, accounts) }
         removed.each { apply_removed(_1, accounts) }
+        store_balances(balances, accounts) if balances
         fresh = Transaction.where(id: inserted.map(&:id)).includes(account: :business)
         fresh.group_by { _1.account.business }.each { |book, rows| RuleApplier.new(book).apply(rows) }
         @item.update!(cursor: cursor, last_synced_at: Time.current, status: "ok", last_error: nil)
@@ -35,22 +36,30 @@ module PlaidFeed
     def fetch
       restarts = 0
       begin
-        added, modified, removed = [], [], []
+        added, modified, removed, balances = [], [], [], nil
         cursor = @item.cursor
         loop do
           page = @gateway.transactions_sync(@item.access_token, cursor)
           added.concat(page[:added])
           modified.concat(page[:modified])
           removed.concat(page[:removed])
+          balances = page[:accounts] if page.key?(:accounts)
           cursor = page[:next_cursor]
           break unless page[:has_more]
         end
-        [ added, modified, removed, cursor ]
+        [ added, modified, removed, cursor, balances ]
       rescue PlaidGateway::MutationDuringPagination
         restarts += 1
         raise PlaidGateway::TransientError, "Plaid's data changed during the sync; it will be retried" if restarts > MAX_RESTARTS
 
         retry
+      end
+    end
+
+    def store_balances(balances, accounts)
+      balances.each do |balance|
+        account = accounts[balance[:account_id]]
+        account&.update!(reported_balance_cents: balance[:current_cents], balance_reported_at: Time.current)
       end
     end
 

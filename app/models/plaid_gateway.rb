@@ -104,6 +104,7 @@ class PlaidGateway
       added: response.added.map { transaction_hash(_1) },
       modified: response.modified.map { transaction_hash(_1) },
       removed: response.removed.map { { transaction_id: _1.transaction_id, account_id: _1.account_id } },
+      accounts: Array(response.accounts).map { { account_id: _1.account_id, current_cents: balance_cents(_1.balances&.current) } },
       next_cursor: response.next_cursor,
       has_more: response.has_more
     }
@@ -120,6 +121,8 @@ class PlaidGateway
   end
 
   private
+
+  def balance_cents(value) = value.nil? ? nil : (BigDecimal(value.to_s) * 100).round.to_i
 
   def transaction_hash(txn)
     { transaction_id: txn.transaction_id, account_id: txn.account_id, amount: txn.amount, date: txn.date,

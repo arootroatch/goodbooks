@@ -217,4 +217,24 @@ RSpec.describe PlaidFeed::Sync do
     expect(Transaction.count).to eq(0)
     expect(item.reload.cursor).to be_nil
   end
+  describe "balances" do
+    it "stores the balances from the last page for assigned, active accounts" do
+      archived = create(:account, :plaid, business: book, plaid_item: item, plaid_account_id: "acc-old", archived_at: Time.current)
+      plaid_gateway.add_page("access-1", added: [])
+      plaid_gateway.add_page("access-1", added: [])
+      plaid_gateway.set_balance("acc-checking", 9_876_54)
+      plaid_gateway.set_balance("acc-old", 1_00)
+      plaid_gateway.set_balance("acc-unassigned", 2_00)
+      sync
+      expect(checking.reload).to have_attributes(reported_balance_cents: 9_876_54, balance_reported_at: be_present)
+      expect(archived.reload.reported_balance_cents).to be_nil
+    end
+
+    it "leaves balances alone when a page has no accounts key" do
+      checking.update!(reported_balance_cents: 5_00, balance_reported_at: 1.day.ago)
+      allow(plaid_gateway).to receive(:transactions_sync).and_return({ added: [], modified: [], removed: [], next_cursor: "c", has_more: false })
+      sync
+      expect(checking.reload.reported_balance_cents).to eq(5_00)
+    end
+  end
 end
