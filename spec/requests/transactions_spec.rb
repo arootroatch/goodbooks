@@ -24,6 +24,19 @@ RSpec.describe "Transactions" do
     expect(txn.categorized_by).to eq("user")
   end
 
+  describe "goals on manual entry" do
+    let!(:book) { create(:business) }
+    let!(:account) { create(:account, business: book) }
+
+    it "links a new manual outflow by the goal's matcher" do
+      goal = create(:goal, business: book)
+      sign_in_as user_with_role("editor", book)
+      post business_transactions_path(book), params: { transaction: { account_id: account.id, posted_on: "2026-10-01", payee: "Tony Russo",
+                                                                       amount: "1,500.00", direction: "out" } }
+      expect(account.transactions.sole).to have_attributes(goal_id: goal.id, goal_linked_by: "matcher")
+    end
+  end
+
   it "re-renders on a bad amount" do
     sign_in_as user_with_role("editor", business)
     post business_transactions_path(business), params: { transaction: {

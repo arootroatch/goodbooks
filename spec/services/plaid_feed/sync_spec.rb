@@ -34,6 +34,13 @@ RSpec.describe PlaidFeed::Sync do
     expect(checking.transactions.pluck(:plaid_transaction_id)).to eq([ "new" ])
   end
 
+  it "links inserted rows to matching payment goals" do
+    goal = create(:goal, business: book, match_value: "tony")
+    page(added: [ plaid("t1", amount: 1500.0, date: "2026-10-01", name: "ZELLE TONY RUSSO") ])
+    sync
+    expect(checking.transactions.sole.goal).to eq(goal)
+  end
+
   it "ignores Plaid accounts that aren't assigned" do
     page(added: [ plaid("t1", amount: 1.0, date: "2026-10-01", account_id: "acc-unassigned") ])
     expect(sync.inserted).to eq(0)

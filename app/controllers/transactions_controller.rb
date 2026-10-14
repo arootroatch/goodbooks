@@ -26,6 +26,7 @@ class TransactionsController < ApplicationController
     @transaction.categorized_by = "user" if @transaction.category_id.present?
     apply_inclusive_tax
     if @transaction.save
+      GoalMatcher.new(@business).apply([ @transaction ])
       redirect_after_save("Transaction added.")
     else
       render :new, status: :unprocessable_content

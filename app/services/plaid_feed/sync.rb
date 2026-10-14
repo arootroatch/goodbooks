@@ -25,7 +25,10 @@ module PlaidFeed
         removed.each { apply_removed(_1, accounts) }
         store_balances(balances, accounts) if balances
         fresh = Transaction.where(id: inserted.map(&:id)).includes(account: :business)
-        fresh.group_by { _1.account.business }.each { |book, rows| RuleApplier.new(book).apply(rows) }
+        fresh.group_by { _1.account.business }.each do |book, rows|
+          RuleApplier.new(book).apply(rows)
+          GoalMatcher.new(book).apply(rows)
+        end
         @item.update!(cursor: cursor, last_synced_at: Time.current, status: "ok", last_error: nil)
       end
       Result.new(**Result.members.index_with { @counts[_1] })
