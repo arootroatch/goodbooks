@@ -84,6 +84,7 @@ class Goal < ApplicationRecord
     return errors.add(:account, "can't be blank") if account.nil?
 
     if account.business_id != business_id then errors.add(:account, "must belong to this book")
+    elsif !(new_record? || will_save_change_to_account_id?) then nil
     elsif account.archived? then errors.add(:account, "is archived")
     elsif account.kind_credit? then errors.add(:account, "can't be a credit account")
     end

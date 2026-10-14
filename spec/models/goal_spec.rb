@@ -26,6 +26,25 @@ RSpec.describe Goal do
     expect(build(:goal, :savings, business: book, account: create(:account, business: book, archived_at: Time.current))).not_to be_valid
   end
 
+  it "lets a savings goal be updated after its account is archived" do
+    goal = create(:goal, :savings, business: book)
+    goal.account.update!(archived_at: Time.current)
+    expect(goal.reload.update(name: "Renamed")).to be(true)
+    expect(goal.update(archived_at: Time.current)).to be(true)
+  end
+
+  it "rejects retargeting a savings goal to an archived or credit account" do
+    goal = create(:goal, :savings, business: book)
+    expect(goal.update(account: create(:account, business: book, archived_at: Time.current))).to be(false)
+    expect(goal.update(account: create(:account, business: book, kind: "credit"))).to be(false)
+  end
+
+  it "is removed when its book is destroyed" do
+    create(:goal, :savings, business: book)
+    expect { book.destroy }.to change(described_class, :count).by(-1)
+    expect(Business.exists?(book.id)).to be(false)
+  end
+
   it "clears fields that don't belong to its kind" do
     savings = create(:goal, :savings, business: book, match_value: "tony", match_field: "payee", match_operator: "contains")
     expect(savings.attributes.values_at("match_field", "match_operator", "match_value")).to all(be_nil)
