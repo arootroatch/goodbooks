@@ -1,0 +1,50 @@
+<% content_for :title, "Goals" %>
+<header class="page-header">
+  <h1>Goals</h1>
+  <%= primary_action "New goal", new_business_goal_path(@business) if current_membership.can_edit? %>
+</header>
+<p>Payment goals add up the payments linked to them. Savings goals share their account's balance, top of the list first.<%= " Drag ≡ to reorder." if current_membership.can_edit? %></p>
+<% if @rows.empty? %>
+  <div class="empty"><strong>No goals yet</strong>Track paying something off, or saving toward a target.</div>
+<% else %>
+  <table class="goal-list">
+    <thead><tr><th></th><th>Goal</th><th>Progress</th><th></th></tr></thead>
+    <tbody <%= tag.attributes(data: { controller: "sortable" }) if current_membership.can_edit? %>>
+      <% @rows.each do |row| %>
+        <% goal = row.goal %>
+        <tr id="<%= dom_id(goal) %>" data-sortable-url="<%= move_business_goal_path(@business, goal) %>">
+          <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
+          <td>
+            <strong><%= goal.name %></strong>
+            <small class="muted">
+              <% if goal.savings? %>Savings · <%= goal.account.name %><% else %>Payments · <%= goal.matcher? ? goal.matcher_description : "Linked by hand" %><% end %>
+              <% if goal.target_date %> · by <%= l(goal.target_date, format: :long) %><% end %>
+            </small>
+          </td>
+          <td><%= render "goals/bar", row: row %></td>
+          <td>
+            <% if current_membership.can_edit? %>
+              <div class="button-group">
+                <%= link_to "Edit", edit_business_goal_path(@business, goal) %>
+                <%= archive_button [ @business, goal ] %>
+              </div>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+<% if @completed.any? %>
+  <details class="goal-completed">
+    <summary>Completed (<%= @completed.size %>)</summary>
+    <ul class="plain-list">
+      <% @completed.each do |goal| %>
+        <li id="<%= dom_id(goal) %>">
+          <%= goal.name %> <span class="muted">· target <%= money(goal.target_cents) %></span>
+          <%= archive_button [ @business, goal ] if current_membership.can_edit? %>
+        </li>
+      <% end %>
+    </ul>
+  </details>
+<% end %>

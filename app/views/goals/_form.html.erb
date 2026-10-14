@@ -1,0 +1,36 @@
+<%= form_with model: [ @business, goal ], data: { controller: "goal-kind" } do |f| %>
+  <%= render "shared/errors", record: goal %>
+  <p><%= f.label :name %> <%= f.text_field :name, required: true, maxlength: 100 %></p>
+  <% if goal.new_record? %>
+    <p>
+      <label><%= f.radio_button :kind, "payments", data: { action: "goal-kind#toggle" } %> Payments: count payments toward a total</label>
+      <label><%= f.radio_button :kind, "savings", data: { action: "goal-kind#toggle" } %> Savings: fill from an account's balance</label>
+    </p>
+  <% end %>
+  <p>
+    <%= f.label :target %> <%= f.text_field :target, size: 12, inputmode: "decimal", required: true %>
+    <%= f.label :target_date, "by (optional)" %> <%= f.date_field :target_date %>
+  </p>
+  <fieldset data-goal-kind-target="payments" <%= "hidden" if goal.savings? %>>
+    <legend>Link payments automatically (optional)</legend>
+    <p>
+      When
+      <%= f.select :match_field, Rule::FIELDS.map { [ _1.humanize, _1 ] } %>
+      <%= f.select :match_operator, Rule::OPERATORS.map { [ _1.humanize(capitalize: false), _1 ] } %>
+      <%= f.text_field :match_value, maxlength: 100, placeholder: "e.g. tony" %>
+    </p>
+    <p>
+      and amount between <%= f.text_field :match_amount_min, size: 8, placeholder: "any" %>
+      and <%= f.text_field :match_amount_max, size: 8, placeholder: "any" %>
+    </p>
+    <p><small>Only money going out is linked. Leave the text blank to link payments by hand from each transaction.</small></p>
+  </fieldset>
+  <fieldset data-goal-kind-target="savings" <%= "hidden" unless goal.savings? %>>
+    <legend>Account</legend>
+    <p>
+      <%= f.collection_select :account_id, @business.accounts.active.where.not(kind: "credit").order(:name), :id, :name,
+            include_blank: "Choose an account" %>
+    </p>
+  </fieldset>
+  <%= f.submit "Save goal" %>
+<% end %>
