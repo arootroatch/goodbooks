@@ -2122,7 +2122,9 @@ RSpec.describe "Goals" do
     click_on "Edit"
     fill_in "goal[match_value]", with: "zelle"
     click_on "Save goal"
-    expect(page).to have_content("Goal saved. 0 existing transactions linked.")
+    # The hand-unlinked $1,500 row stays out; the $2,000 matcher row is cleared and relinked by the new matcher.
+    expect(page).to have_content("Goal saved. 1 existing transaction linked.")
+    expect(page).to have_content("$2,000.00 of $30,000.00")
   end
 
   it "waterfalls two savings goals and flips the allocation on reorder", js: true do
