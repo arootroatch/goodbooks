@@ -39,6 +39,7 @@ class Goal < ApplicationRecord
   before_save { @rematched_count = nil }
   after_save :rematch_after_save, if: :rematch_needed?
   before_destroy :release_transactions
+  after_destroy { GoalMatcher.new(business).rematch if payments? }
 
   def payments? = kind == "payments"
   def savings? = kind == "savings"
@@ -73,7 +74,8 @@ class Goal < ApplicationRecord
   def rematch_needed? = payments? && (previously_new_record? || saved_changes.keys.intersect?(MATCH_COLUMNS))
 
   def rematch_after_save
-    @rematched_count = GoalMatcher.new(business).rematch
+    GoalMatcher.new(business).rematch
+    @rematched_count = transactions.where(goal_linked_by: "matcher").count
   end
 
   def release_transactions

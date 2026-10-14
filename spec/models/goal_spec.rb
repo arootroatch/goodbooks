@@ -98,10 +98,33 @@ RSpec.describe Goal do
       row = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00)
       goal = create(:goal, business: book)
       goal.update!(archived_at: Time.current)
+      later = create(:transaction, account: account, payee: "TONY AGAIN", amount_cents: -700_00)
       expect(row.reload.goal).to eq(goal)
+      expect(later.reload.goal).to be_nil
       goal.update!(archived_at: nil)
       expect(row.reload.goal).to eq(goal)
-      expect(Transaction.where(goal: goal).count).to eq(1)
+      expect(later.reload.goal).to eq(goal)
+      expect(Transaction.where(goal: goal).count).to eq(2)
+    end
+
+    it "reports only its own matcher links as rematched_count" do
+      create(:transaction, account: account, payee: "TONY ONE", amount_cents: -500_00)
+      create(:transaction, account: account, payee: "TONY TWO", amount_cents: -500_00)
+      a = create(:goal, business: book)
+      expect(a.rematched_count).to eq(2)
+      b = create(:goal, business: book, match_value: "nomatch")
+      expect(b.rematched_count).to eq(0)
+      expect(a.transactions.count).to eq(2)
+    end
+
+    it "moves a deleted goal's matcher rows to another active goal" do
+      first = create(:goal, business: book, match_value: "tony")
+      second = create(:goal, business: book, match_value: "tony")
+      row = create(:transaction, account: account, payee: "TONY", amount_cents: -500_00)
+      GoalMatcher.new(book).rematch
+      expect(row.reload.goal).to eq(first)
+      first.destroy!
+      expect(row.reload.attributes.values_at("goal_id", "goal_linked_by")).to eq([ second.id, "matcher" ])
     end
 
     it "gives matcher links to the new top goal after a reorder, leaving hand links alone" do
