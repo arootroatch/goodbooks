@@ -3,7 +3,7 @@
 class HouseholdDashboard
   BusinessRow = Data.define(:business, :report, :overdue_cents, :outstanding_cents, :inbox_count, :sales_tax)
 
-  attr_reader :range, :businesses, :open_invoices, :book, :personal, :tithe, :inbox_count
+  attr_reader :range, :businesses, :open_invoices, :book, :personal, :tithe, :goals, :inbox_count
 
   def initialize(user:, today: Date.current)
     @range = today.beginning_of_year..today
@@ -16,10 +16,12 @@ class HouseholdDashboard
     @inbox_count = inbox.values.sum
     totals = Reports::CategoryTotals.load(business_ids: ids, range:).group_by(&:business_id)
     @businesses = list.map { business_row(_1, totals.fetch(_1.id, []), inbox.fetch(_1.id, 0)) }
+    @goals = []
     return unless @book
 
     @personal = profit_and_loss(Reports::CategoryTotals.load(business_ids: [ @book.id ], range:), 0)
     @tithe = Tithe.ledger_for(@book, today:)
+    @goals = Goals::Progress.for_book(@book)
   end
 
   def business_net_cents = businesses.sum { _1.report.net_profit_cents }
