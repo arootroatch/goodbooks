@@ -27,7 +27,7 @@ implementation plan, or blank before one exists.
 | 5 | **Plaid** | Link + token exchange, account assignment to any owned book (new or attach to existing), CSV ↔ Plaid dedup by claiming, needs-review flags, `transactions/sync`, daily / webhook / manual sync job, re-link on `ITEM_LOGIN_REQUIRED`, verified webhooks, fake client | [own spec](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | GB-5 | 17 | Merged |
 | 6 | **Tax engine** | federal MFJ quarterly estimates (SE tax, QBI, brackets, safe harbor vs annualized), home office, per-person adjustments, Schedule C line 30 | [own spec](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | GB-6 | 15 | In review (PR #13) |
 | 7 | **Sharing polish** | SMTP invite delivery, session management, audit log | [§10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | GB-7 | | Not started |
-| 8 | **Goals** | payment goals (progress toward a target from payments matched to the goal, e.g. paying back a loan) and savings goals (target amounts filled in priority order from one account's balance), dashboard progress widget, per-goal report of contributing transactions; account balances as groundwork | [own spec](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | GB-11 | | Specced |
+| 8 | **Goals** | payment goals (progress toward a target from payments matched to the goal, e.g. paying back a loan) and savings goals (target amounts filled in priority order from one account's balance), dashboard progress widget, per-goal report of contributing transactions; account balances as groundwork | [own spec](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | GB-11 | 10 | Planned |
 
 ### Notes on the mapping
 
@@ -153,4 +153,4 @@ the lines. Move the Kaneo task in the same change.
 | 5 Plaid | [design](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | [Plaid](superpowers/plans/2026-10-08-goodbooks-plaid.md) |
 | 6 Tax engine | [design](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | [Tax engine](superpowers/plans/2026-10-12-goodbooks-tax-engine.md) |
 | 7 Sharing polish | [design §10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | — |
-| 8 Goals | [design](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | — |
+| 8 Goals | [design](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | [Goals](superpowers/plans/2026-10-14-goodbooks-goals.md) |
