@@ -58,6 +58,8 @@ module PlaidFeed
 
     def store_balances(balances, accounts)
       balances.each do |balance|
+        next if balance[:current_cents].nil?
+
         account = accounts[balance[:account_id]]
         account&.update!(reported_balance_cents: balance[:current_cents], balance_reported_at: Time.current)
       end

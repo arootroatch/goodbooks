@@ -217,6 +217,7 @@ RSpec.describe PlaidFeed::Sync do
     expect(Transaction.count).to eq(0)
     expect(item.reload.cursor).to be_nil
   end
+
   describe "balances" do
     it "stores the balances from the last page for assigned, active accounts" do
       archived = create(:account, :plaid, business: book, plaid_item: item, plaid_account_id: "acc-old", archived_at: Time.current)
@@ -235,6 +236,25 @@ RSpec.describe PlaidFeed::Sync do
       allow(plaid_gateway).to receive(:transactions_sync).and_return({ added: [], modified: [], removed: [], next_cursor: "c", has_more: false })
       sync
       expect(checking.reload.reported_balance_cents).to eq(5_00)
+    end
+
+    it "keeps the last page's balances when the sync spans several pages" do
+      empty = { added: [], modified: [], removed: [] }
+      page1 = empty.merge(next_cursor: "c1", has_more: true, accounts: [ { account_id: "acc-checking", current_cents: 1_00 } ])
+      page2 = empty.merge(next_cursor: "c2", has_more: false, accounts: [ { account_id: "acc-checking", current_cents: 2_00 } ])
+      allow(plaid_gateway).to receive(:transactions_sync).and_return(page1, page2)
+      sync
+      expect(checking.reload.reported_balance_cents).to eq(2_00)
+    end
+
+    it "leaves the stored balance alone when Plaid reports no current balance" do
+      reported_at = 1.day.ago.change(usec: 0)
+      checking.update!(reported_balance_cents: 5_00, balance_reported_at: reported_at)
+      allow(plaid_gateway).to receive(:transactions_sync).and_return(
+        { added: [], modified: [], removed: [], next_cursor: "c", has_more: false,
+          accounts: [ { account_id: "acc-checking", current_cents: nil } ] })
+      sync
+      expect(checking.reload).to have_attributes(reported_balance_cents: 5_00, balance_reported_at: reported_at)
     end
   end
 end
