@@ -27,7 +27,7 @@ implementation plan, or blank before one exists.
 | 5 | **Plaid** | Link + token exchange, account assignment to any owned book (new or attach to existing), CSV ↔ Plaid dedup by claiming, needs-review flags, `transactions/sync`, daily / webhook / manual sync job, re-link on `ITEM_LOGIN_REQUIRED`, verified webhooks, fake client | [own spec](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | GB-5 | 17 | Merged |
 | 6 | **Tax engine** | federal MFJ quarterly estimates (SE tax, QBI, brackets, safe harbor vs annualized), home office, per-person adjustments, Schedule C line 30 | [own spec](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | GB-6 | 15 | In review (PR #13) |
 | 7 | **Sharing polish** | SMTP invite delivery, session management, audit log | [§10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | GB-7 | | Not started |
-| 8 | **Goals** | payment goals (progress toward a target from payments matched to the goal, e.g. paying back a loan) and savings goals (target amounts filled in priority order from one account's balance), dashboard progress widget, per-goal report of contributing transactions; account balances as groundwork | [notes below](#goals-sub-project-8) | GB-11 | | Not started |
+| 8 | **Goals** | payment goals (progress toward a target from payments matched to the goal, e.g. paying back a loan) and savings goals (target amounts filled in priority order from one account's balance), dashboard progress widget, per-goal report of contributing transactions; account balances as groundwork | [own spec](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | GB-11 | | Specced |
 
 ### Notes on the mapping
 
@@ -44,7 +44,7 @@ implementation plan, or blank before one exists.
   adds the RSpec job and fixes the Brakeman warning on `TransactionsController#filter_params`
   that keeps `main`'s `scan_ruby` red until PR #6 merges.
 - **Goals (8) was added on 2026-10-12, after the first pass.** It sits off the critical path.
-  Its requirements are captured [below](#goals-sub-project-8) until it gets its own spec.
+  Its requirements, first captured in the roadmap, now live in [its own spec](superpowers/specs/2026-10-14-goodbooks-goals-design.md).
 - **Core's follow-ups (GB-8)** were a review-fix pass on `main` after Core landed, not a
   sub-project of their own.
 
@@ -82,7 +82,7 @@ Read it as:
 
 - **Goals needs Personal book** because its main users are household goals in the personal
   book. It needs Plaid for bank-reported balances, which savings goals read (manual and CSV
-  accounts need a balance of their own; see the open questions below).
+  accounts get an opening balance of their own).
 
 **Critical path:** `1 → 2 → 3 → 4 → 6 → 7`. Plaid and Goals are off it: once 3 merged, 4 and 5
 could run side by side.
@@ -122,54 +122,8 @@ the plan that found them.
 
 ## Goals (sub-project 8)
 
-Requirements as captured on 2026-10-12, before a spec exists. It's aimed at the personal book,
-but it's built for every book because that's no harder.
-
-**Use case A — a payment goal.** "We agreed to pay Uncle Tony $30,000." The goal has a target
-amount. Payments to Tony are matched to it automatically, and the dashboard widget shows a
-progress bar (e.g. $12,000 of $30,000). Clicking the widget opens a report listing every
-transaction linked to the goal, with a running total.
-
-**Use case B — savings goals that share one account, filled in priority order.** "Keep a $6,000
-nest egg, and save $10,000 for a truck. Both live in the same savings account, and the nest egg
-comes first." With $8,000 in the account, the widget shows the nest egg **met** ($6,000 of
-$6,000) and the truck at $2,000 of $10,000. The balance fills the goals in order, like a
-waterfall.
-
-**Shape it suggests** (to confirm in the spec):
-
-- A `Goal` belongs to a book and has a name, a target in cents, a kind (`payments` or
-  `savings`), a position for priority, and optionally a target date and an archived/completed
-  state.
-- **Payment goals** sum the transactions linked to them. Links are set automatically by a
-  matcher on the goal (payee contains "Tony", optionally limited to a category or an amount
-  range, reusing the `Rule` field/operator vocabulary) and can be added or removed by hand from
-  a transaction. The report is the list of linked transactions.
-- **Savings goals** point at an account and read its balance. Goals on the same account are
-  allocated by position: each takes `min(target, what's left)`. The report shows the
-  account's deposits and withdrawals over time, alongside the allocation.
-- A dashboard widget per book (the personal section for household members), plus a Goals page
-  in the book's nav.
-
-**Open questions for the spec:**
-
-1. **Account balances don't exist yet.** `accounts` has no balance column, and a transaction
-   sum alone is wrong without a starting point. Options: store the Plaid-reported balance on
-   sync (`accounts/balance/get`, or the balances that come back with `transactions/sync`
-   accounts), and give manual and CSV accounts an opening balance + date so the balance is
-   opening + sum of later transactions. Probably both.
-2. **Does a payment to Tony also count as an expense?** Repaying a loan is usually a transfer
-   or a liability payment, not spending. Decide whether goal payments keep their category,
-   or whether a "Loan repayment" category is needed. Either way the goal link should be
-   independent of the category.
-3. **Can one transaction count toward more than one payment goal?** Probably not. One link per
-   transaction keeps the totals honest.
-4. **Savings goals, money set aside vs. account balance.** The waterfall uses the live balance,
-   so a withdrawal shrinks the lowest-priority goal first. Confirm that's the intended
-   behavior, rather than "earmarked" contributions per goal.
-5. **What happens when a goal is met?** Show it as met and keep it on the widget, or move it to
-   a completed list. For savings, a met goal can become unmet again if the balance drops.
-6. **Who sees goals?** Same rules as the book they belong to; viewers can see, editors can edit.
+Specced on 2026-10-14 in [its own spec](superpowers/specs/2026-10-14-goodbooks-goals-design.md),
+which resolves the open questions first captured here (§12 there).
 
 ---
 
@@ -199,4 +153,4 @@ the lines. Move the Kaneo task in the same change.
 | 5 Plaid | [design](superpowers/specs/2026-10-08-goodbooks-plaid-design.md) | [Plaid](superpowers/plans/2026-10-08-goodbooks-plaid.md) |
 | 6 Tax engine | [design](superpowers/specs/2026-10-12-goodbooks-tax-engine-design.md) | [Tax engine](superpowers/plans/2026-10-12-goodbooks-tax-engine.md) |
 | 7 Sharing polish | [design §10](superpowers/specs/2026-10-05-goodbooks-design.md#10-sub-project-7-sharing-polish) | — |
-| 8 Goals | [notes](#goals-sub-project-8) (needs a spec) | — |
+| 8 Goals | [design](superpowers/specs/2026-10-14-goodbooks-goals-design.md) | — |
