@@ -5,5 +5,15 @@
     <p><%= f.label :source %> <%= f.select :source, [["Manual entry", "manual"], ["CSV import", "csv"]] %></p>
   <% end %>
   <p><%= f.label :kind %> <%= f.select :kind, Account.kinds.keys.map { [_1.humanize, _1] } %></p>
+  <% if account.plaid? %>
+    <p>Balance <%= money(account.balance_cents) %>
+      <% if account.balance_reported_at %><span class="muted">· reported <%= time_ago_in_words(account.balance_reported_at) %> ago</span><% end %></p>
+  <% else %>
+    <p>
+      <%= f.label :opening_balance %> <%= f.text_field :opening_balance, size: 12, inputmode: "decimal", placeholder: "optional" %>
+      <%= f.label :opening_balance_on, "as of" %> <%= f.date_field :opening_balance_on %>
+      <small>the balance at the end of that day; later transactions are added to it</small>
+    </p>
+  <% end %>
   <%= f.submit %>
 <% end %>

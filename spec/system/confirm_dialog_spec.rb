@@ -20,4 +20,19 @@ RSpec.describe "Confirm dialog", js: true do
     expect(page).to have_text("Client archived.")
     expect(client.reload).to be_archived
   end
+
+  it "confirms an edit form's Delete button, which submits a separate form" do
+    business = create(:business)
+    entry = create(:mileage_entry, business:)
+    system_sign_in_as user_with_role("editor", business)
+    visit edit_business_mileage_entry_path(business, entry)
+
+    click_on "Delete"
+    within("dialog.confirm-dialog[open]") do
+      expect(page).to have_text("Delete this trip?")
+      click_on "Delete"
+    end
+    expect(page).to have_no_css("dialog[open]")
+    expect(MileageEntry.exists?(entry.id)).to be(false)
+  end
 end

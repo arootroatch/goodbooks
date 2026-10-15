@@ -2,8 +2,8 @@ class TransactionsController < ApplicationController
   include BusinessScoped
   include ScalarParams
 
-  IMPORTED_EDITABLE = %i[memo category_id transfer excluded].freeze
-  MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded].freeze
+  IMPORTED_EDITABLE = %i[memo category_id transfer excluded goal_id].freeze
+  MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded goal_id].freeze
 
   SALES_TAX_EDITABLE = %i[processor_fee sales_tax sales_tax_period_starts_on].freeze
 
@@ -11,7 +11,7 @@ class TransactionsController < ApplicationController
   before_action :set_transaction, only: %i[edit update destroy]
 
   def index
-    @filter = TransactionFilter.new(Transaction.for_businesses(@business.id).includes(:account, :category), filter_params)
+    @filter = TransactionFilter.new(Transaction.for_businesses(@business.id).includes(:account, :category, :goal), filter_params)
     @transactions = @filter.results
   end
 
@@ -24,8 +24,10 @@ class TransactionsController < ApplicationController
     account = @business.accounts.manual.find(attrs.delete(:account_id))
     @transaction = account.transactions.new(attrs)
     @transaction.categorized_by = "user" if @transaction.category_id.present?
+    @transaction.goal_linked_by = "user" if @transaction.goal_id.present?
     apply_inclusive_tax
     if @transaction.save
+      GoalMatcher.new(@business).apply([ @transaction ])
       redirect_after_save("Transaction added.")
     else
       render :new, status: :unprocessable_content
@@ -42,6 +44,7 @@ class TransactionsController < ApplicationController
     attrs = params.expect(transaction: permitted)
     @transaction.assign_attributes(attrs)
     @transaction.categorized_by = "user" if @transaction.category_id_changed? || @transaction.transfer_changed?
+    @transaction.goal_linked_by = "user" if @transaction.goal_id_changed?
     apply_inclusive_tax
     if !@transaction.save
       render :edit, status: :unprocessable_content

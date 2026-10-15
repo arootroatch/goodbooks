@@ -1,0 +1,15 @@
+<%# One goal's progress: bar and "$x of $y". The Met badge goes beside the name (goal_met_badge). %>
+<% goal = row.goal %>
+<div class="goal-bar">
+  <% if row.balance_unknown? %>
+    <span class="muted">
+      <% if goal.account.plaid? %>Waiting for the bank's balance
+      <% elsif respond_to?(:current_membership) && current_membership&.owner? %>Set an opening balance on <%= link_to goal.account.name, edit_business_account_path(goal.business, goal.account) %>
+      <% else %>Set an opening balance on <%= goal.account.name %>
+      <% end %>
+    </span>
+  <% else %>
+    <span class="goal-track"><span class="goal-fill<%= " met" if row.met? %>" style="width: <%= row.percent %>%"></span></span>
+    <span class="goal-amounts num"><%= money(row.saved_cents) %> of <%= money(row.target_cents) %></span>
+  <% end %>
+</div>

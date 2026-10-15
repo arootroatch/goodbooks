@@ -6,8 +6,9 @@
   <p><%= f.label :to_location, "To" %> <%= f.text_field :to_location %></p>
   <p><%= f.label :miles, "Miles (one way)" %> <%= f.text_field :miles, size: 8, required: true %></p>
   <p><%= f.label :round_trip %> <%= f.check_box :round_trip %></p>
-  <%= f.submit %>
+  <div class="actions">
+    <%= f.submit %>
+    <%= delete_button "Delete", entry if entry.persisted? %>
+  </div>
 <% end %>
-<% if entry.persisted? %>
-  <%= confirm_button "Delete", business_mileage_entry_path(@business, entry), method: :delete, confirm: "Delete this trip?" %>
-<% end %>
+<%= delete_form entry, business_mileage_entry_path(@business, entry), confirm: "Delete this trip?" if entry.persisted? %>

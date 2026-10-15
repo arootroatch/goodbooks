@@ -59,4 +59,12 @@ RSpec.describe HouseholdDashboard do
     expect(dashboard.personal).to be_nil
     expect(dashboard.tithe).to be_nil
   end
+
+  it "exposes the personal book's goal progress, and none without a personal book" do
+    create(:goal, business: book, name: "Truck fund", match_field: nil, match_operator: nil, match_value: nil)
+    create(:goal, business: studio, name: "Business loan")
+    expect(described_class.new(user: owner, today:).goals.map { _1.goal.name }).to eq([ "Truck fund" ])
+    book.destroy!
+    expect(described_class.new(user: owner, today:).goals).to eq([])
+  end
 end

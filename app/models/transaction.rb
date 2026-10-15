@@ -2,6 +2,7 @@ class Transaction < ApplicationRecord
   include MoneyAttribute
 
   CATEGORIZED_BY = %w[rule user].freeze
+  GOAL_LINKED_BY = %w[matcher user].freeze
   REVIEW_REASONS = {
     "removed_by_bank" => "Removed by the bank",
     "changed_by_bank" => "The bank changed this transaction; your version was kept"
@@ -20,6 +21,7 @@ class Transaction < ApplicationRecord
   belongs_to :account
   belongs_to :category, optional: true
   belongs_to :rule, optional: true
+  belongs_to :goal, optional: true
   has_many :invoice_payments, foreign_key: :deposit_id, inverse_of: :deposit, dependent: :restrict_with_error
   has_one :estimated_payment, foreign_key: :debit_id, inverse_of: :debit, dependent: :nullify
 
@@ -42,7 +44,9 @@ class Transaction < ApplicationRecord
   validates :amount_cents, presence: true, numericality: { only_integer: true }, if: -> { errors[:amount].empty? }
   validates :categorized_by, inclusion: { in: CATEGORIZED_BY }, allow_nil: true
   validates :review_reason, inclusion: { in: REVIEW_REASONS.keys }, allow_nil: true
+  validates :goal_linked_by, inclusion: { in: GOAL_LINKED_BY }, allow_nil: true
   validate :category_in_business
+  validate :goal_in_book
   validate :linked_deposit_stays_payable, on: :update
   validate :processor_fee_allowed
   validate :sales_tax_allowed
@@ -165,5 +169,11 @@ class Transaction < ApplicationRecord
     return if category.nil? || account.nil?
 
     errors.add(:category, "must belong to this business") if category.business_id != account.business_id
+  end
+
+  def goal_in_book
+    return if goal.nil? || account.nil?
+
+    errors.add(:goal, "must be a payment goal in this book") unless goal.payments? && goal.business_id == account.business_id
   end
 end

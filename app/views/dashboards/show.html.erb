@@ -93,6 +93,7 @@
       <div class="card kpi"><small>Net</small><b class="<%= "pos" if net.positive? %>"><%= money(net) %></b></div>
     </div>
     <%= render "tithes/summary", ledger: @dashboard.tithe, details_path: business_tithe_path(book) if @dashboard.tithe %>
+    <%= render "goals/widget", rows: @dashboard.goals, business: book %>
   </section>
 <% elsif Current.user.household_owner? %>
   <section class="card">

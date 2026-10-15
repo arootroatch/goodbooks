@@ -1,0 +1,14 @@
+<%# Active goals at a glance; each row opens the goal's report. Renders nothing when there are none. %>
+<% if rows.any? %>
+  <section class="card summary-card goal-widget">
+    <header class="summary-card-header">
+      <h2>Goals</h2>
+      <span><%= link_to "All goals", business_goals_path(business) %> →</span>
+    </header>
+    <ul>
+      <% rows.each do |row| %>
+        <li><span class="goal-name"><%= link_to row.goal.name, business_goal_path(business, row.goal) %><%= goal_met_badge(row) %></span><%= render "goals/bar", row: row %></li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

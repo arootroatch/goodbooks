@@ -34,6 +34,13 @@ RSpec.describe PlaidFeed::Sync do
     expect(checking.transactions.pluck(:plaid_transaction_id)).to eq([ "new" ])
   end
 
+  it "links inserted rows to matching payment goals" do
+    goal = create(:goal, business: book, match_value: "tony")
+    page(added: [ plaid("t1", amount: 1500.0, date: "2026-10-01", name: "ZELLE TONY RUSSO") ])
+    sync
+    expect(checking.transactions.sole.goal).to eq(goal)
+  end
+
   it "ignores Plaid accounts that aren't assigned" do
     page(added: [ plaid("t1", amount: 1.0, date: "2026-10-01", account_id: "acc-unassigned") ])
     expect(sync.inserted).to eq(0)
@@ -216,5 +223,45 @@ RSpec.describe PlaidFeed::Sync do
     expect { sync }.to raise_error(ArgumentError)
     expect(Transaction.count).to eq(0)
     expect(item.reload.cursor).to be_nil
+  end
+
+  describe "balances" do
+    it "stores the balances from the last page for assigned, active accounts" do
+      archived = create(:account, :plaid, business: book, plaid_item: item, plaid_account_id: "acc-old", archived_at: Time.current)
+      plaid_gateway.add_page("access-1", added: [])
+      plaid_gateway.add_page("access-1", added: [])
+      plaid_gateway.set_balance("acc-checking", 9_876_54)
+      plaid_gateway.set_balance("acc-old", 1_00)
+      plaid_gateway.set_balance("acc-unassigned", 2_00)
+      sync
+      expect(checking.reload).to have_attributes(reported_balance_cents: 9_876_54, balance_reported_at: be_present)
+      expect(archived.reload.reported_balance_cents).to be_nil
+    end
+
+    it "leaves balances alone when a page has no accounts key" do
+      checking.update!(reported_balance_cents: 5_00, balance_reported_at: 1.day.ago)
+      allow(plaid_gateway).to receive(:transactions_sync).and_return({ added: [], modified: [], removed: [], next_cursor: "c", has_more: false })
+      sync
+      expect(checking.reload.reported_balance_cents).to eq(5_00)
+    end
+
+    it "keeps the last page's balances when the sync spans several pages" do
+      empty = { added: [], modified: [], removed: [] }
+      page1 = empty.merge(next_cursor: "c1", has_more: true, accounts: [ { account_id: "acc-checking", current_cents: 1_00 } ])
+      page2 = empty.merge(next_cursor: "c2", has_more: false, accounts: [ { account_id: "acc-checking", current_cents: 2_00 } ])
+      allow(plaid_gateway).to receive(:transactions_sync).and_return(page1, page2)
+      sync
+      expect(checking.reload.reported_balance_cents).to eq(2_00)
+    end
+
+    it "leaves the stored balance alone when Plaid reports no current balance" do
+      reported_at = 1.day.ago.change(usec: 0)
+      checking.update!(reported_balance_cents: 5_00, balance_reported_at: reported_at)
+      allow(plaid_gateway).to receive(:transactions_sync).and_return(
+        { added: [], modified: [], removed: [], next_cursor: "c", has_more: false,
+          accounts: [ { account_id: "acc-checking", current_cents: nil } ] })
+      sync
+      expect(checking.reload).to have_attributes(reported_balance_cents: 5_00, balance_reported_at: reported_at)
+    end
   end
 end

@@ -6,6 +6,14 @@ module ApplicationHelper
     button_to label, path, **options, form: { data: { turbo_confirm: confirm } }
   end
 
+  # Forms can't nest, so an edit form's Delete button (delete_button, beside Save) submits this
+  # empty form, rendered after the edit form, through its `form` attribute.
+  def delete_form(record, path, confirm:)
+    form_with(url: path, method: :delete, id: dom_id(record, :delete), data: { turbo_confirm: confirm }) { }
+  end
+
+  def delete_button(label, record) = button_tag(label, form: dom_id(record, :delete))
+
   def archive_button(target)
     record = target.last
     if record.archived?

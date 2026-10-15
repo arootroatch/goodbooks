@@ -3,6 +3,7 @@ class AccountsController < ApplicationController
   include Archiving
 
   CREATABLE_SOURCES = %w[manual csv].freeze
+  BALANCE_FIELDS = %i[opening_balance opening_balance_on].freeze
 
   before_action :require_owner!, except: :index
   before_action :set_account, only: %i[edit update archive unarchive]
@@ -18,7 +19,7 @@ class AccountsController < ApplicationController
   end
 
   def create
-    @account = @business.accounts.new(params.expect(account: %i[name source kind]))
+    @account = @business.accounts.new(params.expect(account: %i[name source kind] + BALANCE_FIELDS))
     unless CREATABLE_SOURCES.include?(@account.source)
       @account.errors.add(:source, "must be manual or CSV")
       return render :new, status: :unprocessable_content
@@ -35,7 +36,8 @@ class AccountsController < ApplicationController
   end
 
   def update
-    if @account.update(params.expect(account: %i[name kind]))
+    fields = @account.plaid? ? %i[name kind] : %i[name kind] + BALANCE_FIELDS
+    if @account.update(params.expect(account: fields))
       redirect_to business_accounts_path(@business), notice: "Account updated."
     else
       render :edit, status: :unprocessable_content

@@ -55,6 +55,10 @@ Rails.application.routes.draw do
       patch :move, on: :member
       post :apply, on: :collection
     end
+    resources :goals, concerns: :archivable do
+      patch :move, on: :member
+      resources :links, only: :destroy, controller: "goal_links"
+    end
     resources :mileage_entries, except: :show
     resources :home_offices, only: %i[edit update], param: :year
     resources :memberships, only: %i[index update destroy]

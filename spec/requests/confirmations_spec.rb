@@ -17,7 +17,9 @@ RSpec.describe "Confirming destructive buttons" do
   end
 
   def confirm_for(label)
-    form = Capybara.string(response.body).first(:button, label).ancestor("form")
+    page = Capybara.string(response.body)
+    button = page.first(:button, label)
+    form = button[:form] ? page.find("form##{button[:form]}", visible: :all) : button.ancestor("form")
     form["data-turbo-confirm"]
   end
 

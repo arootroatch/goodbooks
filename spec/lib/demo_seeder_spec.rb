@@ -23,6 +23,12 @@ RSpec.describe DemoSeeder do
     expect(Transaction.maximum(:posted_on)).to be <= today
   end
 
+  it "seeds personal goals with progress" do
+    run
+    rows = Goals::Progress.for_book(Household.instance.personal_book).map { [ _1.goal.name, _1.saved_cents ] }
+    expect(rows).to eq([ [ "Pay back Uncle Tony", 12_000_00 ], [ "Nest egg", 6_000_00 ], [ "Truck", 2_000_00 ] ])
+  end
+
   it "seeds a sales tax business with paid, due, and open periods" do
     run
     business = Business.find_by!(name: "Sound Roots Productions")

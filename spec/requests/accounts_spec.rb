@@ -60,4 +60,29 @@ RSpec.describe "Accounts" do
     expect(response.body).to include("Checking")
     expect(response.body).to include("Savings")
   end
+
+  describe "balances" do
+    let!(:book) { create(:business) }
+
+    it "lets the owner set an opening balance on a manual account and shows the balance" do
+      account = create(:account, business: book, name: "Savings", kind: "savings")
+      sign_in_as user_with_role("owner", book)
+      patch business_account_path(book, account), params: { account: { name: "Savings", kind: "savings",
+                                                                        opening_balance: "8,000.00", opening_balance_on: "2026-01-01" } }
+      expect(account.reload).to have_attributes(opening_balance_cents: 8_000_00, opening_balance_on: Date.new(2026, 1, 1))
+      get business_accounts_path(book)
+      expect(Nokogiri::HTML(response.body).at_css("##{ActionView::RecordIdentifier.dom_id(account)} td.balance").text).to include("$8,000.00")
+    end
+
+    it "does not accept an opening balance for a Plaid account and shows its reported balance read-only" do
+      account = create(:account, :plaid, business: book, reported_balance_cents: 12_34, balance_reported_at: 1.hour.ago)
+      sign_in_as user_with_role("owner", book)
+      patch business_account_path(book, account), params: { account: { name: account.name, kind: "checking",
+                                                                        opening_balance: "5", opening_balance_on: "2026-01-01" } }
+      expect(account.reload.opening_balance_cents).to be_nil
+      get edit_business_account_path(book, account)
+      expect(response.body).to include("$12.34").and include("reported about 1 hour ago")
+      expect(response.body).not_to include("account[opening_balance]")
+    end
+  end
 end

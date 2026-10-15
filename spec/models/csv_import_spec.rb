@@ -45,6 +45,12 @@ RSpec.describe CsvImport do
     expect([ import.row_count, import.new_count, import.duplicate_count, import.error_count ]).to eq([ 4, 4, 0, 0 ])
   end
 
+  it "links committed rows to matching payment goals" do
+    goal = create(:goal, business: business, match_value: "adobe")
+    upload.commit!
+    expect(account.transactions.find_by!(payee: "ADOBE CREATIVE CLOUD")).to have_attributes(goal_id: goal.id, goal_linked_by: "matcher")
+  end
+
   it "imports nothing new the second time" do
     upload.commit!
     second = upload

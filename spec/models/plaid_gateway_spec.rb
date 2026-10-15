@@ -51,12 +51,15 @@ RSpec.describe PlaidGateway do
     stub_plaid("/transactions/sync", {
       added: [ { transaction_id: "t1", account_id: "a1", amount: 12.34, date: "2026-10-01", name: "SQ *JOES", merchant_name: "Joes",
                  pending: false } ],
-      modified: [], removed: [ { transaction_id: "t0", account_id: "a1" } ], next_cursor: "c2", has_more: true, request_id: "r"
+      modified: [], removed: [ { transaction_id: "t0", account_id: "a1" } ],
+      accounts: [ { account_id: "a1", balances: { current: 1234.56, available: nil } }, { account_id: "a2", balances: { current: nil } } ],
+      next_cursor: "c2", has_more: true, request_id: "r"
     })
     page = gateway.transactions_sync("access-1", "c1")
     expect(page[:added]).to eq([ { transaction_id: "t1", account_id: "a1", amount: 12.34, date: Date.new(2026, 10, 1), name: "SQ *JOES",
                                    merchant_name: "Joes", pending: false } ])
     expect(page[:removed]).to eq([ { transaction_id: "t0", account_id: "a1" } ])
+    expect(page[:accounts]).to eq([ { account_id: "a1", current_cents: 1_234_56 }, { account_id: "a2", current_cents: nil } ])
     expect(page.slice(:modified, :next_cursor, :has_more)).to eq(modified: [], next_cursor: "c2", has_more: true)
     expect(WebMock).to have_requested(:post, "#{base}/transactions/sync").with { |req|
       JSON.parse(req.body).slice("access_token", "cursor", "count") == { "access_token" => "access-1", "cursor" => "c1", "count" => 500 }
