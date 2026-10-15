@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_000004) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -136,6 +136,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_000003) do
     t.json "mapping"
     t.integer "synced_count", default: 0, null: false
     t.index ["account_id"], name: "index_csv_imports_on_account_id"
+  end
+
+  create_table "error_events", force: :cascade do |t|
+    t.string "fingerprint", null: false
+    t.string "error_class", null: false
+    t.text "message", null: false
+    t.text "backtrace", null: false
+    t.string "source"
+    t.integer "occurrences", default: 1, null: false
+    t.datetime "first_seen_at", null: false
+    t.datetime "last_seen_at", null: false
+    t.integer "last_user_id"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fingerprint"], name: "index_error_events_on_fingerprint", unique: true
   end
 
   create_table "estimated_payments", force: :cascade do |t|
