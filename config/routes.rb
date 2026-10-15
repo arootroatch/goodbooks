@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
   resource :session, only: %i[new create destroy]
+  resources :sessions, only: %i[index destroy], controller: "sessions_list", as: :session_records do
+    delete :others, on: :collection
+  end
   resource :theme, only: :update
   resource :two_factor, only: %i[new create]
   resource :two_factor_setup, only: %i[new create]
