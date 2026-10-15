@@ -11,7 +11,8 @@ module NavigationHelper
       (nav_link "Tax parameters", tax_parameters_path if user.household_owner?),
       (nav_link "Invites", invites_path if user.household_owner? || user.memberships.owner.exists?),
       (nav_link "Banks", plaid_items_path if show_bank_connections?),
-      (nav_link "People", people_path if user.household_owner?)
+      (nav_link "People", people_path if user.household_owner?),
+      (nav_link "Audit log", audit_events_path if user.household_owner?)
     ].compact
   end
 

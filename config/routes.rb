@@ -73,6 +73,7 @@ Rails.application.routes.draw do
 
   resources :tax_parameters, only: %i[index new create edit update]
   resource :household, only: %i[edit update]
+  get "audit", to: "audit_events#index", as: :audit_events
   resources :tax_years, path: "taxes", param: :year, only: %i[index show edit update] do
     resources :estimated_payments, path: "payments", only: %i[new create edit update destroy]
   end
