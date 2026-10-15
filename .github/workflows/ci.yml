@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [ main ]
+  workflow_call: # release.yml runs the full suite before publishing
 
 jobs:
   scan_ruby:

@@ -1,5 +1,6 @@
 require "active_support/core_ext/integer/time"
 require_relative "../../lib/app_host"
+require_relative "../../lib/encryption_keys"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -82,7 +83,11 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   config.hosts = [ AppHost.fetch! ]
+
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Encryption keys from .env (see README). Rails reads SECRET_KEY_BASE from the environment itself.
+  config.active_record.encryption.merge!(EncryptionKeys.fetch!)
 end

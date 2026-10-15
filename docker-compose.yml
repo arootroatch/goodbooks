@@ -1,20 +1,30 @@
+# goodbooks on a home server. Copy this file to your server and fill in the blanks (see README).
+# It holds your secrets: keep it private and back it up offsite.
 services:
   app:
-    build: .
-    image: goodbooks:latest
+    image: ghcr.io/arootroatch/goodbooks:latest # or pin a release, e.g. :1.4.0
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     ports:
       - "127.0.0.1:3000:80"
     environment:
-      APP_HOST: "" # Set before deploying. See README.
-      SOLID_QUEUE_IN_PUMA: "true"
+      APP_HOST: "" # The hostname people type, e.g. books.example.com. Use localhost for first-run setup.
       TIME_ZONE: "Central Time (US & Canada)" # Rails zone name; "today" rolls over at local midnight.
+      SOLID_QUEUE_IN_PUMA: "true"
+      # Generate once (README, step 2) and never change: the encryption keys unlock stored 2FA secrets and bank tokens.
+      SECRET_KEY_BASE: ""
+      ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ""
+      ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ""
+      ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ""
       PLAID_CLIENT_ID: "" # Optional Plaid bank feeds: set all three or none. See README.
       PLAID_SECRET: ""
       PLAID_ENV: "" # sandbox or production
     volumes:
       - goodbooks_storage:/rails/storage
-      - ./config/master.key:/rails/config/master.key:ro
 
 volumes:
   goodbooks_storage:
