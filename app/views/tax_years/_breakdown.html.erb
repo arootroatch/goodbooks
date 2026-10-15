@@ -1,0 +1,39 @@
+<%# Locals: worksheet, year. %>
+<h2>Businesses</h2>
+<table>
+  <thead>
+    <tr><th>Business</th><th class="num">Profit so far</th><th class="num">Annualized</th><th class="num">Home office used</th><th class="num">Carryover</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% worksheet.business_lines.each do |line| %>
+      <tr>
+        <td><%= line.business.name %></td>
+        <td class="num"><%= money(line.ytd_cents) %></td>
+        <td class="num"><%= money(line.annualized_cents) %></td>
+        <td class="num"><%= money(line.home_office_used_cents) %></td>
+        <td class="num"><%= money(line.carryover_cents) %></td>
+        <td><%= link_to "Home office", edit_business_home_office_path(line.business.id, year) if can_edit_home_office?(line.business.id) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>Self-employment tax</h2>
+<table>
+  <thead>
+    <tr><th>Person</th><th class="num">Net profit</th><th class="num">SE earnings</th><th class="num">SE tax</th><th class="num">Health insurance</th><th class="num">Retirement</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% worksheet.person_lines.each do |line| %>
+      <tr>
+        <td><%= line.person.name %></td>
+        <td class="num"><%= money(line.net_profit_cents) %></td>
+        <td class="num"><%= money(line.se_earnings_cents) %></td>
+        <td class="num"><%= money(line.se_tax_cents) %></td>
+        <td class="num"><%= money(line.health_insurance_cents) %></td>
+        <td class="num"><%= money(line.retirement_cents) %></td>
+        <td><%= link_to "Adjustments", edit_person_adjustment_path(line.person.id, year) if can_edit_adjustments?(line.person.id) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

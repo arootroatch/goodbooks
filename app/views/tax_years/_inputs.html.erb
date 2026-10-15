@@ -1,0 +1,30 @@
+<%# Locals: businesses, people, year. Shown when there are not enough tax figures for an estimate. %>
+<section class="tax-inputs">
+  <h2>Inputs</h2>
+  <h3>Businesses</h3>
+  <% if businesses.empty? %>
+    <p class="muted">No businesses yet.</p>
+  <% else %>
+    <ul>
+      <% businesses.each do |business| %>
+        <li>
+          <%= business.name %>
+          <%= link_to "Home office", edit_business_home_office_path(business, year) if can_edit_home_office?(business.id) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+  <h3>People</h3>
+  <% if people.empty? %>
+    <p class="muted">No people yet.</p>
+  <% else %>
+    <ul>
+      <% people.each do |person| %>
+        <li>
+          <%= person.name %>
+          <%= link_to "Adjustments", edit_person_adjustment_path(person, year) if can_edit_adjustments?(person.id) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

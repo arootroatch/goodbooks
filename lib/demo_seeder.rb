@@ -49,6 +49,7 @@ class DemoSeeder
     seed_personal(household)
     seed_sales_tax(sound_roots)
     seed_plaid(household, alex)
+    seed_taxes(household, sound_roots, alex_person, whitney_person)
   end
 
   # Sound Roots Productions collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,
@@ -264,6 +265,26 @@ class DemoSeeder
     PlaidFeed::Sync.call(item.reload, gateway: gateway)
   end
 
+  # Federal estimated tax for this year: last year's figures, a home office, adjustments for both people, and every installment
+  # already due paid from Joint Checking through IRS Direct Pay, so the next one shows as due.
+  def seed_taxes(household, business, owner_person, spouse_person)
+    year = @today.year
+    tax_year = household.tax_years.create!(year: year, prior_year_total_tax_cents: 2_400_000, prior_year_agi_cents: 11_800_000)
+    business.home_offices.create!(year: year, calculation: "simplified", office_sqft: 200)
+    owner_person.person_adjustments.create!(year: year, se_health_insurance_cents: 720_000)
+    spouse_person.person_adjustments.create!(year: year, retirement_contribution_cents: 600_000, retirement_plan: "sep")
+
+    joint = household.personal_book.accounts.find_by!(name: "Joint Checking")
+    other = household.personal_book.categories.find_by!(name: "Other")
+    Tax::DueDates.for(year).each_with_index do |due_on, index|
+      next if due_on > @today
+
+      debit = joint.transactions.create!(posted_on: due_on, payee: "IRS USATAXPYMT", memo: "Federal estimated tax", amount_cents: -600_000,
+                                         category: other, categorized_by: "user", external_id: "demo-irs-#{year}-q#{index + 1}")
+      tax_year.estimated_payments.new.tap { _1.link(debit) }.save!
+    end
+  end
+
   # Plaid's sign: positive = money out.
   def demo_bank_rows
     3.downto(1).flat_map do |months_ago|
@@ -303,9 +324,8 @@ class DemoSeeder
 
       latest_params = TaxParameters.order(:year).last
       if latest_params
-        mileage_rate = latest_params.standard_mileage_rate_tenth_cents
-        TaxParameters.create!(year: year, standard_mileage_rate_tenth_cents: mileage_rate)
-        @out.puts "Demo: copied #{mileage_rate} mileage rate to #{year}"
+        TaxParameters.create!(latest_params.attributes.except("id", "year", "created_at", "updated_at").merge("year" => year))
+        @out.puts "Demo: copied #{latest_params.year} tax parameters to #{year}"
       else
         TaxParameters.create!(year: year, standard_mileage_rate_tenth_cents: default_mileage_rate)
         @out.puts "Demo: no tax parameters found; seeded #{year} with default 72.5¢ mileage rate"

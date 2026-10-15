@@ -1,0 +1,13 @@
+<%# Locals: estimate, household, show_page_link, title. Used on the taxes page and the dashboard. %>
+<section class="card tax-due">
+  <h2 class="card-title"><%= title %> <small>Q<%= estimate.quarter %> <%= estimate.year %></small></h2>
+  <p>
+    Pay at least <strong><%= money(estimate.pay_at_least_cents) %></strong>
+    by <strong><%= estimate.next_due_on.strftime("%b %-d, %Y") %></strong>
+    <small class="muted"><%= due_phrase(estimate.next_due_on) %></small>
+  </p>
+  <div class="button-group">
+    <%= irs_payment_link(household) %>
+    <%= link_to "Taxes #{estimate.year}", tax_year_path(estimate.year) if show_page_link %>
+  </div>
+</section>

@@ -1,0 +1,8 @@
+<header class="page-header"><h1>Prior-year figures for <%= @year %></h1></header>
+<p class="muted">From your <%= @year - 1 %> federal return: total tax and adjusted gross income. They set the safe harbor.</p>
+<%= form_with model: @tax_year, url: tax_year_path(@year), method: :patch do |f| %>
+  <%= render "shared/errors", record: @tax_year %>
+  <p><%= f.label :prior_year_total_tax, "#{@year - 1} total tax ($)" %> <%= f.text_field :prior_year_total_tax %></p>
+  <p><%= f.label :prior_year_agi, "#{@year - 1} adjusted gross income ($)" %> <%= f.text_field :prior_year_agi %></p>
+  <%= f.submit "Save" %>
+<% end %>

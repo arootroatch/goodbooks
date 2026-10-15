@@ -1,0 +1,6 @@
+<%= form_with model: payment, url: url, method: method do |f| %>
+  <p><%= f.label :paid_on, "Date paid" %> <%= f.date_field :paid_on, required: true %></p>
+  <p><%= f.label :amount, "Amount ($)" %> <%= f.text_field :amount, required: true %></p>
+  <p><%= f.label :quarter %> <%= f.select :quarter, (1..4).map { [ "Q#{_1}", _1 ] }, include_blank: "From the date" %></p>
+  <%= f.submit submit %>
+<% end %>

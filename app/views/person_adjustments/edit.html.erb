@@ -1,0 +1,9 @@
+<header class="page-header"><h1>Tax adjustments <%= @adjustment.year %> — <%= @person.name %></h1></header>
+<p class="muted">Expected totals for the whole year. They lower adjusted gross income in the estimate.</p>
+<%= form_with model: @adjustment, url: person_adjustment_path(@person, @adjustment.year), method: :patch do |f| %>
+  <%= render "shared/errors", record: @adjustment %>
+  <p><%= f.label :se_health_insurance, "Self-employed health insurance premiums ($)" %> <%= f.text_field :se_health_insurance %></p>
+  <p><%= f.label :retirement_contribution, "Retirement contribution ($)" %> <%= f.text_field :retirement_contribution %></p>
+  <p><%= f.label :retirement_plan, "Plan" %> <%= f.select :retirement_plan, PersonAdjustment::PLANS.invert, include_blank: "None" %></p>
+  <%= f.submit "Save" %>
+<% end %>

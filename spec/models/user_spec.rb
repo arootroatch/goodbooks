@@ -17,6 +17,45 @@ RSpec.describe User do
     end
   end
 
+  describe "#can_edit_home_office?" do
+    let(:business) { create(:business) }
+
+    it "is true for a household owner who is a member of the book" do
+      owner = create(:user, :household_owner)
+      create(:membership, user: owner, business:, role: "viewer")
+      expect(owner.can_edit_home_office?(business)).to be(true)
+    end
+
+    it "is true for the book's owner member" do
+      expect(user_with_role("owner", business).can_edit_home_office?(business)).to be(true)
+    end
+
+    it "is false for an editor or viewer member" do
+      expect(user_with_role("editor", business).can_edit_home_office?(business)).to be(false)
+      expect(user_with_role("viewer", business).can_edit_home_office?(business)).to be(false)
+    end
+
+    it "is false for a household owner with no membership in the book" do
+      expect(create(:user, :household_owner).can_edit_home_office?(business)).to be(false)
+    end
+  end
+
+  describe "#can_edit_adjustments?" do
+    let(:person) { create(:person, user: create(:user)) }
+
+    it "is true for a household owner" do
+      expect(create(:user, :household_owner).can_edit_adjustments?(person)).to be(true)
+    end
+
+    it "is true for the person's own user" do
+      expect(person.user.can_edit_adjustments?(person)).to be(true)
+    end
+
+    it "is false for another user" do
+      expect(create(:user).can_edit_adjustments?(person)).to be(false)
+    end
+  end
+
   describe "#verify_otp" do
     let(:user) { create(:user) }
 

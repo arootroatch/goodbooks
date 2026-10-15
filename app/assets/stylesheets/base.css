@@ -70,6 +70,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .field_with_errors input, .field_with_errors select, .field_with_errors textarea { border-color: var(--neg); }
 .field_with_errors label { color: var(--neg); }
 form > div, form > p { margin-bottom: var(--space-3); }
+fieldset {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+legend { padding: 0 var(--space-1); font-weight: 600; font-size: var(--text-sm); color: var(--muted); }
+fieldset > p { margin-bottom: var(--space-3); }
 /* sentence-style rows (controls inline with text, no labels) keep natural width */
 p:not(:has(label)) > :is(select, input:not([type=checkbox], [type=radio], [type=submit], [type=button], [type=hidden])) { width: auto; }
 

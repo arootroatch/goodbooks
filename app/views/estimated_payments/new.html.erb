@@ -1,0 +1,31 @@
+<header class="page-header"><h1>Record an estimated payment for <%= @year %></h1></header>
+<%= render "shared/errors", record: @payment %>
+
+<h2>Pick the bank transaction</h2>
+<%= form_with url: new_tax_year_estimated_payment_path(@year), method: :get, class: "filters" do |f| %>
+  <%= f.label :q, "Payee contains" %>
+  <%= f.search_field :q, value: @query %>
+  <%= f.submit "Search", name: nil %>
+<% end %>
+<% if @candidates.empty? %>
+  <p class="muted">No money-out transactions match between Jan 1, <%= @year %> and Jan 31, <%= @year + 1 %>.</p>
+<% else %>
+  <table>
+    <thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="num">Amount</th><th></th></tr></thead>
+    <tbody>
+      <% @candidates.each do |debit| %>
+        <tr>
+          <td><%= debit.posted_on.iso8601 %></td>
+          <td><%= debit.payee %></td>
+          <td><%= book_label(debit.account.business) %> · <%= debit.account.name %></td>
+          <td class="num"><%= money(-debit.amount_cents) %></td>
+          <td><%= button_to "Use this", tax_year_estimated_payments_path(@year), params: { estimated_payment: { debit_id: debit.id } }, class: "button" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<h2>Or enter it by hand</h2>
+<p class="muted">For a payment with no bank transaction, such as last year's overpayment applied to this year.</p>
+<%= render "form", payment: @payment.debit ? EstimatedPayment.new : @payment, url: tax_year_estimated_payments_path(@year), method: :post, submit: "Record payment" %>

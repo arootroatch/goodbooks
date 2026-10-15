@@ -21,7 +21,7 @@ RSpec.describe "Table row actions" do
     [ "rules", -> { business_rules_path(business) }, %w[Edit Delete] ],
     [ "accounts", -> { business_accounts_path(business) }, [ "Import CSV", "Edit", "Archive" ] ],
     [ "tax parameters", -> { tax_parameters_path }, %w[Edit] ],
-    [ "people", -> { people_path }, %w[Edit] ],
+    [ "people", -> { people_path }, [ "Edit", "Tax adjustments" ] ],
     [ "invites", -> { invites_path }, %w[Revoke] ],
     [ "members", -> { business_memberships_path(business) }, %w[Remove] ]
   ].each do |page, path, labels|

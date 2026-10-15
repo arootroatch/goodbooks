@@ -1,0 +1,29 @@
+<section class="tax-payments">
+  <h2>Payments</h2>
+  <%= secondary_action "Record a payment", new_tax_year_estimated_payment_path(year) if Current.user.household_owner? %>
+  <% if payments.empty? %>
+    <p class="muted">No estimated payments recorded for <%= year %>.</p>
+  <% else %>
+    <table>
+      <thead><tr><th>Paid</th><th>Quarter</th><th class="num">Amount</th><th>Bank transaction</th><th></th></tr></thead>
+      <tbody>
+        <% payments.each do |payment| %>
+          <tr id="<%= dom_id(payment) %>">
+            <td><%= payment.paid_on.iso8601 %></td>
+            <td>Q<%= payment.quarter %></td>
+            <td class="num"><%= money(payment.amount_cents) %></td>
+            <td><%= tax_payment_debit_label(payment, visible_book_ids) %></td>
+            <td>
+              <% if Current.user.household_owner? %>
+                <div class="button-group">
+                  <%= link_to "Edit", edit_tax_year_estimated_payment_path(year, payment) %>
+                  <%= confirm_button "Delete", tax_year_estimated_payment_path(year, payment), method: :delete, confirm: "Delete this payment?" %>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

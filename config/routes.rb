@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       post :apply, on: :collection
     end
     resources :mileage_entries, except: :show
+    resources :home_offices, only: %i[edit update], param: :year
     resources :memberships, only: %i[index update destroy]
     resource :inbox, only: :show
     get "reports/profit_and_loss", to: "profit_and_losses#show", as: :profit_and_loss
@@ -67,11 +68,17 @@ Rails.application.routes.draw do
   end
 
   resources :tax_parameters, only: %i[index new create edit update]
+  resource :household, only: %i[edit update]
+  resources :tax_years, path: "taxes", param: :year, only: %i[index show edit update] do
+    resources :estimated_payments, path: "payments", only: %i[new create edit update destroy]
+  end
 
   resources :invites, only: %i[index new create destroy]
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
-  resources :people, only: %i[index new create edit update]
+  resources :people, only: %i[index new create edit update] do
+    resources :adjustments, only: %i[edit update], param: :year, controller: "person_adjustments"
+  end
   resource :personal_book, only: :create
   resources :plaid_items, only: %i[index new create show destroy] do
     post :sync, on: :member

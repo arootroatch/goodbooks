@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_000002) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -117,11 +117,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
     t.index ["account_id"], name: "index_csv_imports_on_account_id"
   end
 
+  create_table "estimated_payments", force: :cascade do |t|
+    t.integer "tax_year_id", null: false
+    t.integer "quarter", null: false
+    t.date "paid_on", null: false
+    t.integer "amount_cents", null: false
+    t.integer "debit_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["debit_id"], name: "index_estimated_payments_on_debit_id", unique: true
+    t.index ["tax_year_id"], name: "index_estimated_payments_on_tax_year_id"
+  end
+
+  create_table "home_offices", force: :cascade do |t|
+    t.integer "business_id", null: false
+    t.integer "year", null: false
+    t.string "calculation", default: "simplified", null: false
+    t.integer "office_sqft", null: false
+    t.integer "home_sqft"
+    t.integer "rent_cents", default: 0, null: false
+    t.integer "mortgage_interest_cents", default: 0, null: false
+    t.integer "utilities_cents", default: 0, null: false
+    t.integer "insurance_cents", default: 0, null: false
+    t.integer "repairs_cents", default: 0, null: false
+    t.integer "other_cents", default: 0, null: false
+    t.integer "depreciation_cents", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_id", "year"], name: "index_home_offices_on_business_id_and_year", unique: true
+    t.index ["business_id"], name: "index_home_offices_on_business_id"
+  end
+
   create_table "households", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "singleton", default: true, null: false
+    t.string "irs_payment_url", default: "https://www.irs.gov/payments/direct-pay", null: false
     t.index ["singleton"], name: "index_households_on_singleton", unique: true
   end
 
@@ -215,6 +247,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
     t.index ["user_id"], name: "index_people_on_user_id", unique: true
   end
 
+  create_table "person_adjustments", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.integer "year", null: false
+    t.integer "se_health_insurance_cents", default: 0, null: false
+    t.integer "retirement_contribution_cents", default: 0, null: false
+    t.string "retirement_plan"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id", "year"], name: "index_person_adjustments_on_person_id_and_year", unique: true
+    t.index ["person_id"], name: "index_person_adjustments_on_person_id"
+  end
+
   create_table "plaid_items", force: :cascade do |t|
     t.integer "household_id", null: false
     t.integer "created_by_id", null: false
@@ -286,7 +330,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
     t.integer "standard_mileage_rate_tenth_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "standard_deduction_mfj_cents"
+    t.json "brackets_mfj"
+    t.integer "ss_wage_base_cents"
+    t.integer "se_earnings_bps"
+    t.integer "ss_rate_bps"
+    t.integer "medicare_rate_bps"
+    t.integer "additional_medicare_bps"
+    t.integer "additional_medicare_threshold_mfj_cents"
+    t.integer "qbi_bps"
+    t.integer "qbi_threshold_mfj_cents"
+    t.integer "home_office_simplified_rate_cents"
+    t.integer "home_office_simplified_max_sqft"
+    t.integer "safe_harbor_high_agi_threshold_cents"
+    t.integer "annual_additions_limit_cents"
+    t.integer "elective_deferral_limit_cents"
     t.index ["year"], name: "index_tax_parameters_on_year", unique: true
+  end
+
+  create_table "tax_years", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "year", null: false
+    t.integer "prior_year_total_tax_cents"
+    t.integer "prior_year_agi_cents"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id", "year"], name: "index_tax_years_on_household_id_and_year", unique: true
+    t.index ["household_id"], name: "index_tax_years_on_household_id"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -340,6 +410,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
   add_foreign_key "categories", "businesses"
   add_foreign_key "clients", "businesses"
   add_foreign_key "csv_imports", "accounts"
+  add_foreign_key "estimated_payments", "tax_years"
+  add_foreign_key "estimated_payments", "transactions", column: "debit_id", on_delete: :nullify
+  add_foreign_key "home_offices", "businesses"
   add_foreign_key "invite_grants", "businesses"
   add_foreign_key "invite_grants", "invites"
   add_foreign_key "invites", "users", column: "accepted_by_id"
@@ -353,6 +426,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
   add_foreign_key "mileage_entries", "businesses"
   add_foreign_key "people", "households"
   add_foreign_key "people", "users"
+  add_foreign_key "person_adjustments", "people"
   add_foreign_key "plaid_items", "households"
   add_foreign_key "plaid_items", "users", column: "created_by_id"
   add_foreign_key "rules", "businesses"
@@ -360,6 +434,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_050005) do
   add_foreign_key "sales_tax_filings", "businesses"
   add_foreign_key "sales_tax_profiles", "businesses"
   add_foreign_key "sessions", "users"
+  add_foreign_key "tax_years", "households"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
   add_foreign_key "transactions", "rules", on_delete: :nullify

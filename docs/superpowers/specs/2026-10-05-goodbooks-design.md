@@ -59,7 +59,7 @@ Invoice generation or sending, payroll, inventory, double-entry ledger, accrual 
 
 - Every business-scoped query goes through `Current.user.accessible_businesses` (businesses where the user has a membership). A record in a business the user cannot access returns 404, not 403.
 - Write actions check the role through a single `Authorization` concern (hand-rolled, no Pundit): `viewer` reads only, `editor` reads and writes data, `owner` also manages the business's settings, accounts, and members.
-- Household-level screens (household rollup, tax estimates, people, tax years) are visible only to users with at least viewer access on **every** business in the household. Editing household-level data requires `household_owner`.
+- Household-level screens (household rollup, tax estimates, people, tax years) are visible only to users with at least viewer access on **every** business in the household. Editing household-level data requires `household_owner`, except that a business's home office can also be edited by its business owner and a person's tax adjustments by that person's user (tax engine spec §6.1).
 
 ### Seeds
 
@@ -229,57 +229,9 @@ Summary: a book owner connects a bank with Plaid Link and assigns each Plaid acc
 
 ## 9. Sub-project 6: Tax engine (federal, MFJ, sole proprietors)
 
-### 9.1 Inputs
+Refined and superseded by `2026-10-12-goodbooks-tax-engine-design.md`.
 
-```
-TaxParameters (per year; seeded, editable by household owner):
-  standard_mileage_rate_tenth_cents, standard_deduction_mfj_cents,
-  brackets_mfj (json: [{floor_cents, rate_bps}]), ss_wage_base_cents,
-  se_earnings_bps (9235), ss_rate_bps (1240), medicare_rate_bps (290),
-  additional_medicare_bps (90), additional_medicare_threshold_mfj_cents,
-  qbi_bps (2000), qbi_threshold_mfj_cents, home_office_simplified_rate_cents (500),
-  home_office_simplified_max_sqft (300), retirement limit fields for SEP and Solo 401k,
-  safe_harbor_high_agi_threshold_cents (15000000)
-TaxYear         household, year, prior_year_total_tax_cents, prior_year_agi_cents
-EstimatedPayment tax_year, quarter (1–4), paid_on, amount_cents
-HomeOffice      business, year, method: simplified|regular, office_sqft, home_sqft,
-                rent_cents, mortgage_interest_cents, utilities_cents, insurance_cents,
-                repairs_cents, other_cents, depreciation_cents (accountant-provided)
-PersonAdjustment person, year, se_health_insurance_cents, retirement_contribution_cents,
-                retirement_plan: sep|solo_401k
-```
-
-The seeded values for the current year are entered from IRS publications (the annual inflation-adjustment Rev. Proc., the IRS mileage notice, and the SSA wage base announcement) at implementation time and verified against those sources.
-
-### 9.2 Calculation (`Tax::Estimator`, pure)
-
-For a tax year, as of a quarter:
-
-1. **Net profit per business** = income (net of collected sales tax and gross of processor fees, with processor fees as an expense; see the sales tax spec §6) − deductible expenses (with `deductible_bps` applied) − mileage deduction − home office deduction.
-   - Simplified home office: min(office_sqft, max_sqft) × rate.
-   - Regular: (office_sqft / home_sqft) × sum of home costs + depreciation.
-   - Either way, capped at the business's profit before home office (no loss created). The excess is reported as carryover, informational only.
-2. **Annualize** YTD figures using the Form 2210 Schedule AI periods: Q1 = Jan–Mar (×4), Q2 = Jan–May (×2.4), Q3 = Jan–Aug (×1.5), Q4 = full year (×1). Done with `Rational`.
-3. **SE tax per person**: SE earnings = sum of the person's businesses' net profit × 92.35%. Below $400, SE tax is 0. SS portion = 12.4% × min(SE earnings, wage base). Medicare = 2.9% × SE earnings. Household Additional Medicare = 0.9% × max(0, total SE earnings − threshold).
-4. **Income tax (household)**: AGI = total net profit − ½ of the SE tax (excluding Additional Medicare) − SE health insurance − retirement contributions. SE health insurance is capped per person at that person's net profit minus their ½ SE tax and retirement contribution. Taxable income before QBI = AGI − standard deduction (floored at 0). QBI deduction = 20% × min(QBI, taxable income before QBI), where QBI = total net profit − ½ SE tax − SE health insurance − retirement. If taxable income before QBI exceeds the QBI threshold, a warning says the simplified QBI may be wrong. Tax = brackets applied to taxable income.
-5. **Total projected tax** = income tax + SE tax + Additional Medicare.
-6. **Required annual payment** = min(90% of projected tax, safe harbor), where safe harbor = 100% of prior-year total tax, or 110% if prior-year AGI > $150,000. Safe harbor is omitted if prior-year values are missing (with a banner asking for them).
-7. **Per-quarter amounts**, shown side by side:
-   - Regular installment: required annual × cumulative 25/50/75/100% − payments made so far.
-   - Annualized installment: annualized projected tax (steps 1–5 run on the annualized figures) × the Schedule AI applicable percentage for the period (22.5%, 45%, 67.5%, 90%; these already include the 90% factor) − payments made so far.
-   - The "pay at least" figure = the lesser of the two, floored at 0. It is labeled an approximation of the Form 2210 rules.
-8. **Due dates**: Apr 15, Jun 15, Sep 15 of the year and Jan 15 of the next, rolled forward past weekends and federal holidays (holiday list in code, per year).
-
-### 9.3 Screens
-
-- A tax year dashboard: due now, next due date, both methods, per-person SE breakdown, an expandable line-by-line worksheet showing every intermediate number, the payment log, and the warnings.
-- Edit screens for TaxYear, TaxParameters, HomeOffice (per business), and PersonAdjustment (per person).
-- The Schedule C report fills line 30 from HomeOffice.
-- A permanent note on the screen: this is an estimate; verify with your accountant.
-
-### 9.4 Testing
-
-`Tax::Estimator` gets worked examples computed by hand and checked into the specs: zero profit, profit under $400, one spouse above the wage base, both spouses, Additional Medicare threshold crossed, safe harbor at 100% vs 110%, each annualization period, home office capped by profit, SE health insurance cap, and payments that exceed the requirement.
+Summary: a pure `Tax::Estimator`, computed on every request from the existing report code (so profit is net of collected sales tax and the personal book is excluded), projects the year's income tax, SE tax and Additional Medicare from year-to-date profit for each Form 2210 Schedule AI period. It shows the regular installment (against min(90% of projected tax, 100%/110% safe harbor)) beside the annualized installment and recommends the lesser, with a full worksheet. Home office (simplified or regular, capped by profit) fills Schedule C line 30; per-person SE health insurance and retirement contributions reduce AGI and QBI. Estimated payments are recorded by linking the IRS debit, and the page links to the household's configured IRS payment URL. `TaxParameters` gains the federal figures, seeded for 2026.
 
 ## 10. Sub-project 7: Sharing polish
 

@@ -1,0 +1,43 @@
+<details class="tax-worksheet">
+  <summary>Worksheet for Q<%= worksheet.quarter %> (<%= tax_period_label(worksheet) %>)</summary>
+  <p class="muted">Business profit is annualized; home office, health insurance, and retirement are full-year amounts applied after annualizing.</p>
+  <table>
+    <tbody>
+      <% worksheet.business_lines.each do |line| %>
+        <tr><th colspan="2"><%= line.business.name %></th></tr>
+        <tr><td>Profit through the period</td><td class="num"><%= money(line.ytd_cents) %></td></tr>
+        <tr><td>Annualized</td><td class="num"><%= money(line.annualized_cents) %></td></tr>
+        <tr><td>Home office (full year <%= money(line.home_office_cents) %>) used</td><td class="num"><%= money(line.home_office_used_cents) %></td></tr>
+        <tr><td>Net profit</td><td class="num"><%= money(line.net_profit_cents) %></td></tr>
+      <% end %>
+      <% worksheet.person_lines.each do |line| %>
+        <tr><th colspan="2"><%= line.person.name %></th></tr>
+        <tr><td>Net profit from their businesses</td><td class="num"><%= money(line.net_profit_cents) %></td></tr>
+        <tr><td>SE earnings</td><td class="num"><%= money(line.se_earnings_cents) %></td></tr>
+        <tr><td>Social Security</td><td class="num"><%= money(line.ss_cents) %></td></tr>
+        <tr><td>Medicare</td><td class="num"><%= money(line.medicare_cents) %></td></tr>
+        <tr><td>Half of SE tax (deductible)</td><td class="num"><%= money(line.half_se_cents) %></td></tr>
+        <tr><td>Self-employed health insurance (capped)</td><td class="num"><%= money(line.health_insurance_cents) %></td></tr>
+        <tr><td>Retirement contribution</td><td class="num"><%= money(line.retirement_cents) %></td></tr>
+      <% end %>
+      <tr><th colspan="2">Household</th></tr>
+      <tr><td>Total net profit</td><td class="num"><%= money(worksheet.total_net_profit_cents) %></td></tr>
+      <tr><td>Adjusted gross income</td><td class="num"><%= money(worksheet.agi_cents) %></td></tr>
+      <tr><td>Standard deduction</td><td class="num"><%= money(worksheet.standard_deduction_cents) %></td></tr>
+      <tr><td>Taxable income before QBI</td><td class="num"><%= money(worksheet.taxable_before_qbi_cents) %></td></tr>
+      <tr><td>Qualified business income</td><td class="num"><%= money(worksheet.qbi_cents) %></td></tr>
+      <tr><td>QBI deduction</td><td class="num"><%= money(worksheet.qbi_deduction_cents) %></td></tr>
+      <tr><td>Taxable income</td><td class="num"><%= money(worksheet.taxable_income_cents) %></td></tr>
+      <% worksheet.bracket_slices.each do |slice| %>
+        <tr><td><%= tax_rate_label(slice.rate_bps) %> of <%= money(slice.taxed_cents) %></td><td class="num"><%= money(slice.tax_cents) %></td></tr>
+      <% end %>
+      <tr><td>Income tax</td><td class="num"><%= money(worksheet.income_tax_cents) %></td></tr>
+      <tr><td>Self-employment tax</td><td class="num"><%= money(worksheet.se_tax_cents) %></td></tr>
+      <tr><td>Additional Medicare tax</td><td class="num"><%= money(worksheet.additional_medicare_cents) %></td></tr>
+      <tr><th>Total projected tax</th><th class="num"><%= money(worksheet.total_tax_cents) %></th></tr>
+      <tr><td>90% of projected tax</td><td class="num"><%= money(estimate.ninety_percent_cents) %></td></tr>
+      <tr><td>Prior-year safe harbor</td><td class="num"><%= estimate.safe_harbor_cents ? money(estimate.safe_harbor_cents) : "—" %></td></tr>
+      <tr><th>Required for the year</th><th class="num"><%= money(estimate.required_annual_cents) %></th></tr>
+    </tbody>
+  </table>
+</details>
