@@ -165,4 +165,14 @@ RSpec.describe DemoSeeder do
     run
     expect(TaxParameters.for_year(2025)).to be_estimate_ready
   end
+
+  it "seeds a second session, audit activity and an open error" do
+    run
+    alex = User.find_by!(email_address: "alex@example.com")
+    expect(alex.sessions.map(&:device_label)).to include("Safari on iOS")
+    expect(AuditEvent.count).to be >= 12
+    expect(AuditEvent.distinct.pluck(:action)).to include("create", "update", "destroy", "summary")
+    expect(AuditEvent.distinct.count(:user_id)).to be >= 2
+    expect(ErrorEvent.unresolved.count).to eq(1)
+  end
 end

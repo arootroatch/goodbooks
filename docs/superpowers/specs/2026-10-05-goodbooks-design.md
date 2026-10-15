@@ -144,7 +144,7 @@ Notes:
 - The app generates a random token, stores its digest, and shows the full URL once for copy/paste. Expiry is 7 days, single use.
 - Accepting: if the visitor is logged in, grants are added to their memberships. Otherwise they create an account (email prefilled if given), enroll in 2FA, and receive the grants.
 - The household owner may link an accepted user to a `Person` (used to connect the spouse's login to her taxpayer record).
-- Email delivery arrives in sub-project 7.
+- Invites are copy-link only; email delivery was dropped (sharing polish spec §1).
 
 ### 5.4 Accounts and transactions
 
@@ -193,7 +193,7 @@ A Solid Queue recurring job runs nightly at 03:00 and uses SQLite's online backu
 ### 5.10 Deployment
 
 - `docker-compose.yml`: `app` (built from the Dockerfile), port 80 → Thruster, volume `goodbooks_storage:/rails/storage`, `restart: unless-stopped`.
-- Required env: `RAILS_MASTER_KEY`, `APP_HOST`. Later sub-projects add `PLAID_*` and `SMTP_*`.
+- Required env: `RAILS_MASTER_KEY`, `APP_HOST`. Plaid adds `PLAID_*`.
 - TLS terminates at the tunnel. `config.assume_ssl = true`, `force_ssl = true`, and `hosts` restricted to `APP_HOST`.
 - The DB is migrated on container start (Rails default `bin/docker-entrypoint`).
 - The README covers Cloudflare Tunnel and Tailscale Funnel setup.
@@ -234,6 +234,8 @@ Refined and superseded by `2026-10-12-goodbooks-tax-engine-design.md`.
 Summary: a pure `Tax::Estimator`, computed on every request from the existing report code (so profit is net of collected sales tax and the personal book is excluded), projects the year's income tax, SE tax and Additional Medicare from year-to-date profit for each Form 2210 Schedule AI period. It shows the regular installment (against min(90% of projected tax, 100%/110% safe harbor)) beside the annualized installment and recommends the lesser, with a full worksheet. Home office (simplified or regular, capped by profit) fills Schedule C line 30; per-person SE health insurance and retirement contributions reduce AGI and QBI. Estimated payments are recorded by linking the IRS debit, and the page links to the household's configured IRS payment URL. `TaxParameters` gains the federal figures, seeded for 2026.
 
 ## 10. Sub-project 7: Sharing polish
+
+Refined and superseded by `2026-10-14-goodbooks-sharing-polish-design.md`. Email delivery was dropped. Removing a user deactivates their login. The audit list was updated to the current models, and an error log was added.
 
 - **Email delivery**: when `SMTP_*` env vars are set, invites with an email are sent via Action Mailer (deliver_later). Otherwise the copy-link flow from Core remains.
 - **Session management**: each user sees their active sessions (device, IP, last seen) and can revoke them. The household owner can revoke all sessions for any user and remove a user's memberships.
