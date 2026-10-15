@@ -5,8 +5,8 @@ RSpec.describe "Production host configuration" do
     config = File.read(Rails.root.join("config/environments/production.rb"))
     expect(config).to include("config.hosts = [ AppHost.fetch! ]")
     expect(config).to include("config.host_authorization = { exclude: ->(request) { request.path == \"/up\" } }")
-    expect(config).to include("config.assume_ssl = true")
-    expect(config).to include("config.force_ssl = true")
+    expect(config).to include("config.assume_ssl = AppHost.https?(AppHost.fetch!)")
+    expect(config).to include("config.force_ssl = AppHost.https?(AppHost.fetch!)")
   end
 end
 

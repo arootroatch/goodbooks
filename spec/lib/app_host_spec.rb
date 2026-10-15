@@ -14,4 +14,9 @@ RSpec.describe AppHost do
   it "lets the image build precompile assets without APP_HOST" do
     expect(AppHost.fetch!("SECRET_KEY_BASE_DUMMY" => "1")).to eq("localhost")
   end
+
+  it "serves HTTPS everywhere but localhost, where first-run setup happens without a tunnel" do
+    expect(AppHost.https?("books.example.com")).to be(true)
+    expect(AppHost.https?("localhost")).to be(false)
+  end
 end
