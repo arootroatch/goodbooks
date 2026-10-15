@@ -1,4 +1,6 @@
 class Person < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   MAX_PER_HOUSEHOLD = 2
 
   belongs_to :household

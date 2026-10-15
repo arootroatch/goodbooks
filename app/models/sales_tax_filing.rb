@@ -1,4 +1,6 @@
 class SalesTaxFiling < ApplicationRecord
+  include Audited
+  audited label: -> { "Sales tax filing for the period starting #{period_starts_on}" }
   belongs_to :business
 
   validates :period_starts_on, :filed_on, presence: true

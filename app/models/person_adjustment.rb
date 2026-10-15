@@ -1,4 +1,6 @@
 class PersonAdjustment < ApplicationRecord
+  include Audited
+  audited label: -> { "#{person&.name} adjustments #{year}" }
   include MoneyAttribute
 
   PLANS = { "sep" => "SEP-IRA", "solo_401k" => "Solo 401(k)" }.freeze

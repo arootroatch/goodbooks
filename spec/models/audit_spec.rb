@@ -44,6 +44,7 @@ RSpec.describe Audit do
 
   describe ".summarize" do
     it "writes one summary event instead of per-row events, and returns the block's value" do
+      business
       result = Audit.as(actor) do
         Audit.summarize(business: business) do |summary|
           create(:rule, business: business)

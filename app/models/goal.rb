@@ -1,6 +1,8 @@
 # A money goal in one book. Payment goals add up the outflows linked to them (by their matcher or by hand);
 # savings goals share their account's balance with the book's other savings goals on it, in position order.
 class Goal < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   include MoneyAttribute
 
   KINDS = %w[payments savings].freeze

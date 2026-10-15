@@ -1,4 +1,6 @@
 class EstimatedPayment < ApplicationRecord
+  include Audited
+  audited label: -> { "Estimated payment Q#{quarter} #{tax_year&.year}" }
   include MoneyAttribute
 
   belongs_to :tax_year

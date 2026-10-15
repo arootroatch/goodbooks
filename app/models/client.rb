@@ -1,4 +1,6 @@
 class Client < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   belongs_to :business
   has_many :invoices, dependent: :restrict_with_error
 

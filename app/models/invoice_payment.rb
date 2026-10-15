@@ -1,4 +1,6 @@
 class InvoicePayment < ApplicationRecord
+  include Audited
+  audited label: -> { "Payment of #{Money.new(amount_cents)} on invoice #{invoice&.number}" }, business: -> { invoice&.business_id }
   include MoneyAttribute
 
   money_attribute :amount

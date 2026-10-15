@@ -1,4 +1,6 @@
 class Transaction < ApplicationRecord
+  include Audited
+  audited label: -> { "#{posted_on} · #{payee} · #{Money.new(amount_cents)}" }, business: -> { account&.business_id }
   include MoneyAttribute
 
   CATEGORIZED_BY = %w[rule user].freeze

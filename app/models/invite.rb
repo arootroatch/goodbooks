@@ -1,4 +1,6 @@
 class Invite < ApplicationRecord
+  include Audited
+  audited label: -> { "Invite for #{email.presence || "anyone with the link"}" }
   TTL = 7.days
 
   class AlreadyUsed < StandardError; end
@@ -73,5 +75,11 @@ class Invite < ApplicationRecord
     return if grants.all? { |grant| created_by.membership_for(grant.business)&.owner? }
 
     errors.add(:base, "You can only grant access to businesses you own")
+  end
+
+  def audit_extra_values(action)
+    return {} unless action == "create"
+
+    { "grants" => [ nil, grants.map { "#{_1.business.name}: #{_1.role}" } ] }
   end
 end

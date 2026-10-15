@@ -1,4 +1,6 @@
 class Membership < ApplicationRecord
+  include Audited
+  audited label: -> { "#{user&.name} in #{business&.name} (#{role})" }
   RANK = { "viewer" => 0, "editor" => 1, "owner" => 2 }.freeze
 
   belongs_to :user
