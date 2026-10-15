@@ -18,6 +18,26 @@ RSpec.describe "Estimated tax on the dashboard" do
     expect(card.at_css("a[href='#{tax_year_path(2026)}']")).to be_present
   end
 
+  it "shows the year's progress and every quarter" do
+    create(:tax_parameters, :federal_2026)
+    income = create(:category, :income, business:)
+    create(:transaction, account: create(:account, business:), category: income, posted_on: Date.new(2026, 2, 1), amount_cents: 2_500_000)
+    create(:estimated_payment, tax_year: create(:tax_year, household:, year: 2026), paid_on: Date.new(2026, 4, 15), amount_cents: 100_000)
+    estimate = Tax.estimate(household: Household.instance, year: 2026)
+    sign_in_as owner
+    get root_path
+    card = Nokogiri::HTML(response.body).at_css(".tax-due")
+    expect(card.at_css(".tax-due-progress").text.squish)
+      .to include("Paid $1,000.00 of #{ApplicationController.helpers.money(estimate.required_annual_cents)} required for 2026")
+      .and include("#{estimate.paid_percent}%")
+    expect(card.at_css(".goal-fill")["style"]).to eq("width: #{estimate.paid_percent}%")
+    rows = card.css(".tax-due-quarters li")
+    expect(rows.map { _1.at_css(".tax-due-quarter").text }).to eq(%w[Q1 Q2 Q3 Q4])
+    expect(rows[0].text).to include("Apr 15").and include("Paid $1,000.00")
+    expect(rows[1]["aria-current"]).to eq("true")
+    expect(rows[0]["class"].to_s.include?("neg")).to eq(estimate.installments[0].pay_at_least_cents.positive?)
+  end
+
   it "shows last year's Q4 installment in January" do
     create(:tax_parameters, :federal_2026)
     travel_to Date.new(2027, 1, 10)

@@ -1,4 +1,4 @@
-<%# Locals: estimate, household, show_page_link, title. Used on the taxes page and the dashboard. %>
+<%# Locals: estimate, household, show_page_link, title. Used on the taxes page and the dashboard; the quarters show only off the taxes page, which has its own installments table. %>
 <section class="card tax-due">
   <h2 class="card-title"><%= title %> <small>Q<%= estimate.quarter %> <%= estimate.year %></small></h2>
   <p>
@@ -6,6 +6,22 @@
     by <strong><%= estimate.next_due_on.strftime("%b %-d, %Y") %></strong>
     <small class="muted"><%= due_phrase(estimate.next_due_on) %></small>
   </p>
+  <div class="goal-bar tax-due-progress">
+    <span class="goal-track"><span class="goal-fill<%= " met" if estimate.paid_percent == 100 %>" style="width: <%= estimate.paid_percent %>%"></span></span>
+    <span class="goal-amounts num">Paid <%= money(estimate.paid_cents) %> of <%= money(estimate.required_annual_cents) %> required for <%= estimate.year %> · <%= estimate.paid_percent %>%</span>
+  </div>
+  <% if show_page_link %>
+    <ul class="tax-due-quarters">
+      <% estimate.installments.each do |row| %>
+        <li<%= ' aria-current="true"'.html_safe if row.quarter == estimate.quarter %><%= ' class="neg"'.html_safe if row.past_due?(Date.current) %>>
+          <b class="tax-due-quarter">Q<%= row.quarter %></b>
+          <span><%= row.due_on.strftime("%b %-d") %></span>
+          <span class="num">Paid <%= money(row.paid_cents) %></span>
+          <span class="num muted">Due <%= money(row.pay_at_least_cents) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
   <div class="button-group">
     <%= irs_payment_link(household) %>
     <%= link_to "Taxes #{estimate.year}", tax_year_path(estimate.year) if show_page_link %>

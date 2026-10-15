@@ -42,6 +42,14 @@ RSpec.describe "Taxes page" do
     expect(link["rel"]).to eq("noopener noreferrer")
   end
 
+  it "shows the year's progress but leaves the quarters to the installments table" do
+    sign_in_as owner
+    get tax_year_path(2026)
+    card = Nokogiri::HTML(response.body).at_css(".tax-due")
+    expect(card.at_css(".tax-due-progress").text).to include("required for 2026")
+    expect(card.at_css(".tax-due-quarters")).to be_nil
+  end
+
   it "shows the Home office and Adjustments links to the household owner but not the accountant" do
     pat = create(:person, household:, name: "Pat Example")
     business.update!(person: pat)
