@@ -168,9 +168,9 @@ end
 ```
 
 - **`after_create`, `after_update`, `after_destroy`** call `Audit.record(self, action)`. It returns without writing if there's no actor or a summary block is open.
-- **An update writes nothing when only ignored attributes changed.** That covers `updated_at` and a goal-link-only change, for example.
+- **An update writes nothing when only ignored attributes changed**, such as a touch of `updated_at`.
 - **What's stored:** `changed_values` comes from `saved_changes` minus the ignored attributes: `id`, `created_at`, `updated_at`, plus anything the model lists in `audited ignore: [...]`. Money columns are stored as integer cents and formatted on display.
-- **Secrets are never stored.** Any attribute whose name matches `Rails.application.config.filter_parameters` is stored as `"[FILTERED]"`, both before and after. That covers `token_digest` and `access_token`, for example. A spec asserts that no covered model can store an unfiltered secret column.
+- **Secrets are never stored.** Any attribute whose name matches `Audit::SECRETS` (`digest`, `token`, `secret`, `otp`, `password`, `crypt`, `salt`) is stored as `"[FILTERED]"`, both before and after. That covers `token_digest` and `access_token`, for example. `config.filter_parameters` isn't reused because it also matches `email` and `code`, which aren't secrets from the household owner. A spec asserts that no covered model can store an unfiltered secret column.
 - **`label:`** is a lambda evaluated on the record. Without one, the label is `"#{model_name.human} ##{id}"`.
 - **`business:`** names the association, or a lambda, that gives the book ([§6.4](#64-book-and-label)).
 - **Child records:** `InviteGrant` changes are folded into the parent invite's event. `Invite` serializes its grants as a `grants` attribute (e.g. `["Smith Photography: editor"]`) on create and destroy, and `InviteGrant` is not audited on its own.
@@ -238,7 +238,7 @@ Transaction edits that run `GoalMatcher` or `RuleApplier` on a single row inline
 - Newest first, 50 per page with Newer / Older links. Uses keyset pagination on `(created_at, id)`, so no new gem is needed.
 - **Each row shows:**
   - the time, the actor's name and the action ("created", "updated", "deleted", or the summary text)
-  - the label, linked to the record when it still exists and the owner can open it (best effort; plain text otherwise)
+  - the label, linked to that record's full history (the same page filtered to the record); it works even after the record is deleted
   - the book name
 - **Expanding a row** (`<details>`) shows a before → after table. Money columns are formatted as dollars and booleans as Yes/No; `[FILTERED]` is shown as is.
 - **A record's history:** `GET /audit?auditable_type=Invoice&auditable_id=7`. The page doesn't add history links on record pages; that's a possible follow-up.
@@ -250,7 +250,7 @@ Transaction edits that run `GoalMatcher` or `RuleApplier` on a single row inline
 - `ErrorLog` subscribes to `Rails.error` in an initializer (`Rails.error.subscribe(ErrorLog.new)`). It records reports with `handled: false`, plus explicit reports with `severity: :error`, and skips warnings.
 - **It skips exceptions Rails turns into 4xx responses:** `ActiveRecord::RecordNotFound`, `ActionController::RoutingError`, `ActionController::InvalidAuthenticityToken`, `ActionController::ParameterMissing` and `ActionController::BadRequest`, plus anything in `ActionDispatch::ExceptionWrapper.rescue_responses`.
 - **A new fingerprint** creates a row. **A repeat** increments `occurrences`, updates `last_seen_at`, `message`, `source` and `last_user_id`, and clears `resolved_at`.
-- **A rolled-back transaction can't take the error row with it.** Unhandled exceptions reach the subscriber after the request's or job's transactions have unwound, so they're written immediately. If a transaction is still open when a report arrives (an explicit `Rails.error.report` inside one), the write is deferred with `ActiveRecord.current_transaction.after_commit` and `after_rollback`. It isn't written from a second connection, because SQLite would block on the open write lock.
+- **Written directly.** Unhandled exceptions reach the subscriber after the request's or job's transactions have unwound, so a plain write sticks. A report made explicitly inside a transaction that later rolls back is lost with it. That's acceptable: the app makes no such reports today. A second connection isn't an option, because SQLite would block on the open write lock.
 - **It never raises.** Any failure inside the subscriber is rescued and sent to `Rails.logger.error` only.
 - **Request params, headers and cookies are never stored.** `source` comes from the `controller` and `action`, or `job`, in the report's context.
 
@@ -326,7 +326,7 @@ TDD throughout, following the parent spec's §3.
 - **`AuditEvent`:** can't be updated or destroyed
 - **`UserAgentLabel`:** a table of real user agents
 - **`User::Deactivation`:** each refusal rule, the full happy path, invites revoked
-- **`ErrorLog`:** grouping by fingerprint, recurrence reopens, skipped 4xx exceptions, survives a rolled-back transaction, never raises
+- **`ErrorLog`:** grouping by fingerprint, recurrence reopens, skipped 4xx exceptions, never raises
 
 **Request specs**
 - **Authorization:** 403 for non-owners on Users, Audit log and Errors; another user's session returns 404
@@ -344,7 +344,7 @@ TDD throughout, following the parent spec's §3.
 
 `demo:seed` adds:
 - a second session for the owner (a phone user agent, last seen yesterday)
-- about 20 audit events across users, books and record types, including a summary and a destroy
+- about 15 audit events across users, books and record types, including a summary and a destroy
 - one open error event
 
 It does this through `Audit.as` and the real models, not hand-built rows, except for the error event.
