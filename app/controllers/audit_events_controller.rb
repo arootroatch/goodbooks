@@ -6,7 +6,7 @@ class AuditEventsController < ApplicationController
   before_action :require_household_owner!
 
   def index
-    scope = AuditEvent.filtered(**filters, range: date_range)
+    scope = AuditEvent.filtered(**filters, range: (date_range unless params[:auditable_id].present?))
     @events = page(scope)
     @users = User.order(:name)
     @books = Business.order(:name)

@@ -43,4 +43,13 @@ RSpec.describe "Audit log" do
     get audit_events_path(before: older)
     expect(response.body).to include("Event 0")
   end
+
+  it "shows a record's full history from its link, while the default view is year-to-date" do
+    client = travel_to(Date.new(2025, 6, 1)) { Audit.as(owner) { create(:client, business: business, name: "Old Acme") } }
+    sign_in_as owner
+    get audit_events_path
+    expect(response.body).not_to include("Old Acme")
+    get audit_events_path(auditable_type: "Client", auditable_id: client.id)
+    expect(response.body).to include("Old Acme")
+  end
 end

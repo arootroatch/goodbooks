@@ -7,8 +7,10 @@
   <%= f.select :auditable_type, options_for_select(audit_type_options, params[:auditable_type]), include_blank: "All records" %>
   <%= f.select :business_id, options_from_collection_for_select(@books, :id, :name, params[:business_id]), include_blank: "All books" %>
   <%= f.hidden_field :auditable_id, value: params[:auditable_id] if params[:auditable_id].present? %>
-  <%= f.date_field :from, value: date_range.first %>
-  <%= f.date_field :to, value: date_range.last %>
+  <% unless params[:auditable_id].present? %>
+    <%= f.date_field :from, value: date_range.first %>
+    <%= f.date_field :to, value: date_range.last %>
+  <% end %>
   <noscript><%= f.submit "Filter" %></noscript>
 <% end %>
 <% if @events.empty? %>
