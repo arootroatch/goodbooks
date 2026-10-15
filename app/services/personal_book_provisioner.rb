@@ -4,10 +4,16 @@ class PersonalBookProvisioner
   NAME = "Personal"
 
   def self.call(household)
-    household.with_lock do
-      book = household.personal_book || household.businesses.create!(kind: "personal", name: NAME).tap { CategoryTemplate.apply_to(_1) }
-      sync_memberships(book)
-      book
+    Audit.summarize do |summary|
+      household.with_lock do
+        book = household.personal_book || household.businesses.create!(kind: "personal", name: NAME).tap do
+          CategoryTemplate.apply_to(_1)
+          summary.text = "Created the personal book"
+        end
+        summary.record = summary.business = book
+        sync_memberships(book)
+        book
+      end
     end
   end
 

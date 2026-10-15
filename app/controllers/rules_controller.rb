@@ -46,7 +46,11 @@ class RulesController < ApplicationController
   end
 
   def apply
-    count = RuleApplier.new(@business).apply(@business.transactions.inbox.to_a)
+    count = Audit.summarize(business: @business) do |summary|
+      RuleApplier.new(@business).apply(@business.transactions.inbox.to_a).tap do
+        summary.text = "Applied rules: #{_1} #{"transaction".pluralize(_1)} categorized"
+      end
+    end
     redirect_to business_inbox_path(@business), notice: "#{count} #{"transaction".pluralize(count)} categorized.", status: :see_other
   end
 

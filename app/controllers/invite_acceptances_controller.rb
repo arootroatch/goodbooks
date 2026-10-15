@@ -15,7 +15,7 @@ class InviteAcceptancesController < ApplicationController
       @user = User.new(params.expect(user: %i[name email_address password password_confirmation]))
       ApplicationRecord.transaction do
         @user.save!
-        @invite.accept!(@user)
+        Audit.as(@user) { @invite.accept!(@user) }
       end
       begin_two_factor(@user)
     end
