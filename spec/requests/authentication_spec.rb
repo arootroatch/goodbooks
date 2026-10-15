@@ -201,4 +201,13 @@ RSpec.describe "Authentication" do
     get new_two_factor_setup_path
     expect(response).to redirect_to(new_session_path)
   end
+
+  it "refreshes the session's last_seen_at on requests" do
+    sign_in_as user
+    record = user.sessions.last
+    travel 10.minutes do
+      get root_path
+      expect(record.reload.last_seen_at).to be_within(1.second).of(Time.current)
+    end
+  end
 end
