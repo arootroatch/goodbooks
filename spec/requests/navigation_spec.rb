@@ -45,10 +45,23 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_link("People", href: people_path)
   end
 
+  it "links the household overview first in the household section" do
+    sign_in_as household_owner
+    get household_inbox_path
+    expect(sidebar).to have_link("Overview", href: root_path)
+    expect(sidebar.find(".nav-group", text: "Household").find(:xpath, "following-sibling::a[1]")).to have_text("Overview")
+  end
+
+  it "marks the household overview current on the dashboard" do
+    sign_in_as household_owner
+    get root_path
+    expect(sidebar).to have_css("a[href='#{root_path}'][aria-current='page']", text: "Overview")
+  end
+
   it "omits the business section outside a business" do
     sign_in_as household_owner
     get root_path
-    expect(sidebar).to have_no_link("Overview")
+    expect(sidebar).to have_no_link("Overview", href: business_path(business))
     expect(sidebar).to have_no_css(".nav-group", text: "Reports")
   end
 
@@ -110,7 +123,7 @@ RSpec.describe "Navigation" do
       get household_inbox_path
       get people_path
       expect(sidebar.find(".switcher summary").text).to eq("Household")
-      expect(sidebar).to have_no_link("Overview")
+      expect(sidebar).to have_no_link("Overview", href: business_path(business))
     end
 
     it "falls back to the household once the business is no longer accessible" do
@@ -186,7 +199,7 @@ RSpec.describe "Navigation" do
     sign_in_as create(:user)
     get root_path
     expect(response).to have_http_status(:ok)
-    expect(sidebar).to have_no_link("Overview")
+    expect(sidebar).to have_no_link("Overview", href: business_path(business))
     expect(sidebar).to have_no_link("Household P&L")
     expect(sidebar.all(".switcher li", visible: :all).map(&:text)).to eq([ "Household" ])
   end
