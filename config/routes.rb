@@ -84,6 +84,13 @@ Rails.application.routes.draw do
   resources :invites, only: %i[index new create destroy]
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
+  resources :users, only: :index do
+    member do
+      patch :sign_out
+      patch :deactivate
+      patch :reactivate
+    end
+  end
   resources :people, only: %i[index new create edit update] do
     resources :adjustments, only: %i[edit update], param: :year, controller: "person_adjustments"
   end

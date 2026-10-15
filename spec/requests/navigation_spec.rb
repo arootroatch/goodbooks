@@ -30,6 +30,7 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_no_link("Tax parameters")
     expect(sidebar).to have_no_link("Household", href: edit_household_path)
     expect(sidebar).to have_no_link("People")
+    expect(sidebar).to have_no_link("Users")
     expect(sidebar).to have_no_link("Invites")
   end
 
@@ -43,6 +44,7 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_link("Household", href: edit_household_path)
     expect(sidebar).to have_link("Invites", href: invites_path)
     expect(sidebar).to have_link("People", href: people_path)
+    expect(sidebar).to have_link("Users", href: users_path)
   end
 
   it "omits the business section outside a business" do
