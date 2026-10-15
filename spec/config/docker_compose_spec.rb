@@ -10,12 +10,12 @@ RSpec.describe "docker-compose.yml" do
 
   it "sets env vars inline instead of interpolating from a .env file" do
     expect(app).not_to have_key("env_file")
-    expect(app["environment"]).to include("APP_HOST", "SECRET_KEY_BASE", *EncryptionKeys::NAMES.map { EncryptionKeys.variable(_1) })
+    expect(app["environment"]).to include("APP_HOST", "SECRET_KEY_BASE", *Secrets::ENCRYPTION_KEYS.map { Secrets.variable(_1) })
     expect(app["environment"].values.join).not_to include("${")
   end
 
   it "ships every secret blank so the template never carries real ones" do
-    secrets = %w[SECRET_KEY_BASE PLAID_SECRET] + EncryptionKeys::NAMES.map { EncryptionKeys.variable(_1) }
+    secrets = %w[SECRET_KEY_BASE PLAID_SECRET] + Secrets::ENCRYPTION_KEYS.map { Secrets.variable(_1) }
     expect(app["environment"].slice(*secrets).values).to all(eq(""))
   end
 end
