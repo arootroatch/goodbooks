@@ -1,4 +1,7 @@
 class Rule < ApplicationRecord
+  include Audited
+  audited label: -> { "Rule: #{field} #{operator.to_s.humanize(capitalize: false)} \"#{value}\"" }
+
   include MoneyAttribute
 
   FIELDS = %w[payee memo].freeze
