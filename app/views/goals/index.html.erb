@@ -15,13 +15,13 @@
         <tr id="<%= dom_id(goal) %>" data-sortable-url="<%= move_business_goal_path(@business, goal) %>">
           <td><% if current_membership.can_edit? %><span class="drag-handle" title="Drag to reorder">≡</span><% end %></td>
           <td>
-            <strong><%= link_to goal.name, business_goal_path(@business, goal) %></strong>
+            <strong><%= link_to goal.name, business_goal_path(@business, goal) %></strong><%= goal_met_badge(row) %>
             <small class="muted">
               <% if goal.savings? %>Savings · <%= goal.account.name %><% else %>Payments · <%= goal.matcher? ? goal.matcher_description : "Linked by hand" %><% end %>
               <% if goal.target_date %> · by <%= l(goal.target_date, format: :long) %><% end %>
             </small>
           </td>
-          <td><%= render "goals/bar", row: row %></td>
+          <td id="<%= dom_id(goal, :progress) %>"><%= render "goals/bar", row: row %></td>
           <td>
             <% if current_membership.can_edit? %>
               <div class="button-group">

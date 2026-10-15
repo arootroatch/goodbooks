@@ -7,7 +7,7 @@
     </header>
     <ul>
       <% rows.each do |row| %>
-        <li><%= link_to row.goal.name, business_goal_path(business, row.goal) %><%= render "goals/bar", row: row %></li>
+        <li><span class="goal-name"><%= link_to row.goal.name, business_goal_path(business, row.goal) %><%= goal_met_badge(row) %></span><%= render "goals/bar", row: row %></li>
       <% end %>
     </ul>
   </section>

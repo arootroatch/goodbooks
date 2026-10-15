@@ -54,7 +54,15 @@ class GoalsController < ApplicationController
 
   def move
     @goal.move_to!(params.expect(:position))
-    head :no_content
+    respond_to do |format|
+      # Reordering changes how savings goals share their account, so every bar is redrawn.
+      format.turbo_stream do
+        render turbo_stream: Goals::Progress.for_book(@business).map { |row|
+          turbo_stream.update(helpers.dom_id(row.goal, :progress), partial: "goals/bar", locals: { row: })
+        }
+      end
+      format.any { head :no_content }
+    end
   end
 
   private

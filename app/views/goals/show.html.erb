@@ -1,7 +1,7 @@
 <% content_for :title, @goal.name %>
 <header class="page-header">
   <div>
-    <h1><%= @goal.name %><%= " (archived)" if @goal.archived? %></h1>
+    <h1><%= @goal.name %><%= " (archived)" if @goal.archived? %><%= goal_met_badge(@row) unless @goal.archived? && @goal.savings? %></h1>
     <p class="subtitle">
       Target <%= money(@goal.target_cents) %><% if @goal.target_date %> by <%= l(@goal.target_date, format: :long) %><% end %>
       · <% if @goal.savings? %>Savings in <%= @goal.account.name %><% else %><%= @goal.matcher? ? "Linked when #{@goal.matcher_description}" : "Linked by hand" %><% end %>
@@ -56,7 +56,7 @@
       <tbody>
         <% @allocation.each do |row| %>
           <tr class="<%= "current" if row.goal == @goal %>">
-            <td><%= link_to row.goal.name, business_goal_path(@business, row.goal) %></td>
+            <td><%= link_to row.goal.name, business_goal_path(@business, row.goal) %><%= goal_met_badge(row) %></td>
             <td><%= render "goals/bar", row: row %></td>
           </tr>
         <% end %>

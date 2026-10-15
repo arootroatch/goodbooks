@@ -36,11 +36,13 @@ RSpec.describe "Goal reports" do
     nest = create(:goal, :savings, business: book, account: savings, name: "Nest egg", target: "6,000")
     create(:goal, :savings, business: book, account: savings, name: "Truck", target: "10,000")
     create(:transaction, account: savings, posted_on: Date.new(2026, 2, 1), payee: "DEPOSIT", amount_cents: 1_000_00)
+    create(:transaction, account: savings, posted_on: Date.new(2026, 3, 1), payee: "WITHDRAWAL", amount_cents: -500_00)
     sign_in_as user_with_role("viewer", book)
     get business_goal_path(book, nest)
     page = Nokogiri::HTML(response.body)
-    expect(page.at_css(".goal-allocation").text.squish).to include("Nest egg").and include("Truck").and include("$3,000.00 of $10,000.00")
-    expect(page.at_css(".goal-history tbody tr").text.squish).to include("DEPOSIT").and include("$9,000.00")
+    expect(page.at_css(".goal-allocation").text.squish).to include("Nest egg").and include("Truck").and include("$2,500.00 of $10,000.00")
+    rows = page.css(".goal-history tbody tr").map { _1.css("td").map { |td| td.text.squish } }
+    expect(rows.map { _1.values_at(1, 3) }).to eq([ [ "WITHDRAWAL", "$8,500.00" ], [ "DEPOSIT", "$9,000.00" ] ])
   end
 
   it "lets an editor unlink a transaction, which stays unlinked when the goal rematches" do

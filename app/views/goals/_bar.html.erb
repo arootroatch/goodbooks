@@ -1,4 +1,4 @@
-<%# One goal's progress: bar, "$x of $y", and a Met badge. %>
+<%# One goal's progress: bar and "$x of $y". The Met badge goes beside the name (goal_met_badge). %>
 <% goal = row.goal %>
 <div class="goal-bar">
   <% if row.balance_unknown? %>
@@ -11,6 +11,5 @@
   <% else %>
     <span class="goal-track"><span class="goal-fill<%= " met" if row.met? %>" style="width: <%= row.percent %>%"></span></span>
     <span class="goal-amounts num"><%= money(row.saved_cents) %> of <%= money(row.target_cents) %></span>
-    <% if row.met? %><span class="badge badge-pos">Met</span><% end %>
   <% end %>
 </div>

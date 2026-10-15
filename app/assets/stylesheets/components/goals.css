@@ -2,10 +2,11 @@
 .goal-track { flex: 1; min-width: 6rem; height: 8px; background: var(--chart-grid); border-radius: 999px; overflow: hidden; }
 .goal-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .goal-fill.met { background: var(--pos); }
-.goal-amounts { white-space: nowrap; }
+.goal-amounts { white-space: nowrap; min-width: 24ch; text-align: right; }
 .goal-completed { margin-top: var(--space-4); }
 .goal-widget ul { grid-column: 1 / -1; list-style: none; margin: 0; padding: 0; }
 .goal-widget li { display: grid; grid-template-columns: minmax(6rem, 14rem) minmax(0, 1fr); gap: var(--space-2); align-items: center; margin: 8px 0; }
-.goal-widget li a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal-name { display: flex; align-items: center; min-width: 0; }
+.goal-name a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .goal-allocation tr.current td:first-child { font-weight: 600; }
 .goal-tag { margin-left: var(--space-1, 4px); }

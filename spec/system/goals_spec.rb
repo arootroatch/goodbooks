@@ -48,6 +48,8 @@ RSpec.describe "Goals" do
     target = find("#goal_#{nest.id}").native
     page.driver.browser.action.click_and_hold(handle).move_to(target, 0, -5).pause(duration: 0.2).move_to(target, 0, -10).release.perform
     expect(page).to have_css("tbody[data-sortable-state='saved']")
+    expect(find("#goal_#{truck.id}")).to have_content("$8,000.00 of $10,000.00") # redrawn without a reload
+    expect(find("#goal_#{nest.id}")).to have_content("$0.00 of $6,000.00")
     visit business_path(book)
     within(".goal-widget") { expect(page).to have_content("$8,000.00 of $10,000.00").and have_content("$0.00 of $6,000.00") }
   end
