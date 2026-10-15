@@ -57,8 +57,11 @@
   <% end %>
   <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
   <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
-  <%= f.submit %>
+  <div class="actions">
+    <%= f.submit %>
+    <%= delete_button "Delete", transaction if transaction.persisted? && !transaction.imported? %>
+  </div>
 <% end %>
 <% if transaction.persisted? && !transaction.imported? %>
-  <%= confirm_button "Delete", business_transaction_path(@business, transaction), method: :delete, confirm: "Delete this transaction?" %>
+  <%= delete_form transaction, business_transaction_path(@business, transaction), confirm: "Delete this transaction?" %>
 <% end %>

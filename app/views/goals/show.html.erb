@@ -8,7 +8,7 @@
     </p>
   </div>
   <% if current_membership.can_edit? %>
-    <div class="button-group">
+    <div class="page-actions">
       <%= link_to "Edit", edit_business_goal_path(@business, @goal), class: "button" %>
       <%= archive_button [ @business, @goal ] %>
     </div>
@@ -30,15 +30,15 @@
       <table class="goal-transactions">
         <thead><tr><th>Date</th><th>Payee</th><th>Account</th><th class="num">Amount</th><th class="num">Total</th><th></th></tr></thead>
         <tbody>
-          <% total = 0 %>
+          <% total = -@linked.sum(&:amount_cents) %>
           <% @linked.each do |txn| %>
-            <% total -= txn.amount_cents %>
             <tr id="<%= dom_id(txn) %>">
               <td><%= txn.posted_on %></td>
               <td><%= txn.payee %></td>
               <td><%= txn.account.name %></td>
               <td class="num"><%= money(-txn.amount_cents) %></td>
               <td class="num"><%= money(total) %></td>
+              <% total += txn.amount_cents %>
               <td><%= confirm_button "Unlink", business_goal_link_path(@business, @goal, txn), method: :delete, confirm: "Unlink this payment from the goal?" if current_membership.can_edit? %></td>
             </tr>
           <% end %>

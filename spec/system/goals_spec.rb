@@ -21,7 +21,7 @@ RSpec.describe "Goals" do
       expect(page).to have_content("$3,500.00 of $30,000.00")
       click_on "Pay back Uncle Tony"
     end
-    within(".goal-transactions tbody tr:first-child") { click_on "Unlink" } # rack_test: no JS, so no confirm dialog
+    within(".goal-transactions tbody tr:last-child") { click_on "Unlink" } # rack_test: no JS, so no confirm dialog
     expect(page).to have_content("Transaction unlinked.")
     expect(page).to have_content("$2,000.00 of $30,000.00")
 

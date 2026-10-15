@@ -32,5 +32,12 @@
             include_blank: "Choose an account" %>
     </p>
   </fieldset>
-  <%= f.submit "Save goal" %>
+  <div class="actions">
+    <%= f.submit "Save goal" %>
+    <%= delete_button "Delete goal", goal if goal.persisted? %>
+  </div>
+<% end %>
+<% if goal.persisted? %>
+  <%= delete_form goal, business_goal_path(@business, goal),
+        confirm: "Delete this goal? Its transactions stay; they're just no longer linked. Archive it instead to keep its history." %>
 <% end %>

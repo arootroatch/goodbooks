@@ -16,7 +16,7 @@ class GoalsController < ApplicationController
     rows = Goals::Progress.for_book(@business)
     @row = rows.find { _1.goal == @goal } || Goals::Progress.for_goals([ @goal ]).sole
     if @goal.payments?
-      @linked = @goal.transactions.where(excluded: false).includes(:account).order(:posted_on, :id)
+      @linked = @goal.transactions.where(excluded: false).includes(:account).order(posted_on: :desc, id: :desc)
     else
       @allocation = rows.select { _1.goal.account_id == @goal.account_id }
       @history = Goals::BalanceHistory.for(@goal.account)

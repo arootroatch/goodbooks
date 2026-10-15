@@ -4,7 +4,7 @@ RSpec.describe "Goal reports" do
   let!(:book) { create(:business) }
   let!(:checking) { create(:account, business: book, name: "Checking") }
 
-  it "lists a payment goal's linked transactions oldest first with a running total" do
+  it "lists a payment goal's linked transactions newest first with a running total" do
     goal = create(:goal, business: book, target: "30,000")
     create(:transaction, account: checking, posted_on: Date.new(2026, 3, 1), payee: "ZELLE TONY", amount_cents: -2_000_00, goal: goal, goal_linked_by: "user")
     create(:transaction, account: checking, posted_on: Date.new(2026, 2, 1), payee: "ZELLE TONY", amount_cents: -1_500_00, goal: goal, goal_linked_by: "user")
@@ -12,8 +12,8 @@ RSpec.describe "Goal reports" do
     sign_in_as user_with_role("viewer", book)
     get business_goal_path(book, goal)
     rows = Nokogiri::HTML(response.body).css(".goal-transactions tbody tr").map { _1.css("td").map { |td| td.text.squish } }
-    expect(rows.map(&:first)).to eq([ "2026-02-01", "2026-03-01" ])
-    expect(rows.map { _1[4] }).to eq([ "$1,500.00", "$3,500.00" ])
+    expect(rows.map(&:first)).to eq([ "2026-03-01", "2026-02-01" ])
+    expect(rows.map { _1[4] }).to eq([ "$3,500.00", "$1,500.00" ])
     expect(response.body).to include("$3,500.00 of $30,000.00")
     expect(response.body).not_to include("Unlink")
   end
@@ -27,8 +27,8 @@ RSpec.describe "Goal reports" do
     get business_goal_path(book, goal)
     expect(response).to have_http_status(:ok)
     rows = Nokogiri::HTML(response.body).css(".goal-transactions tbody tr").map { _1.css("td").map { |td| td.text.squish } }
-    expect(rows.map(&:first)).to eq([ "2026-02-01", "2026-03-01" ])
-    expect(rows.map { _1[4] }).to eq([ "$1,500.00", "$3,500.00" ])
+    expect(rows.map(&:first)).to eq([ "2026-03-01", "2026-02-01" ])
+    expect(rows.map { _1[4] }).to eq([ "$3,500.00", "$1,500.00" ])
   end
 
   it "shows a savings goal's allocation and the account's running balance" do
