@@ -18,8 +18,7 @@ class User::Deactivation
       error = refusal
       next Result.new(error:) if error
 
-      # Revoke invites first: Invite validates its creator still owns the granted books.
-      Invite.usable.where(created_by: @user).find_each { _1.update!(expires_at: Time.current) }
+      Invite.usable.where(created_by: @user).update_all(expires_at: Time.current)
       @user.memberships.each(&:destroy!)
       @user.sessions.destroy_all
       @user.update!(deactivated_at: Time.current)
@@ -32,6 +31,7 @@ class User::Deactivation
 
   def refusal
     return "You can't remove yourself." if @user == @actor
+    return "#{@user.name} has already been removed." if @user.deactivated?
     return "Household owners can't be removed." if @user.household_owner?
 
     books = @user.memberships.owner.includes(:business).select(&:last_owner?).map(&:business)

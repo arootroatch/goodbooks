@@ -32,4 +32,20 @@ RSpec.describe User::Deactivation do
     expect(accountant.reload).not_to be_deactivated
     expect(accountant.memberships).not_to be_empty
   end
+
+  it "still removes a user whose invite no longer validates" do
+    other_owner = user_with_role("owner", business)
+    accountant.memberships.find_by(business:).update!(role: "owner")
+    invite = Invite.create!(created_by: accountant, grant_roles: { business.id => "viewer" })
+    accountant.memberships.find_by(business:).update!(role: "editor")
+    expect(deactivate(accountant)).to be_ok
+    expect(Invite.find_usable(invite.token)).to be_nil
+    expect(other_owner.membership_for(business)).to be_owner
+  end
+
+  it "refuses to remove someone already removed, without writing events" do
+    expect(deactivate(accountant)).to be_ok
+    expect { @result = deactivate(accountant) }.not_to change(AuditEvent, :count)
+    expect(@result.error).to eq("Avery has already been removed.")
+  end
 end
