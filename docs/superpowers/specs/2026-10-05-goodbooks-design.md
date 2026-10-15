@@ -86,7 +86,7 @@ Seven sub-projects, built in order. Each gets its own implementation plan.
 4. **Sales tax** (Tennessee)
 5. **Plaid**
 6. **Tax engine**: quarterly estimates, home office, per-person adjustments.
-7. **Sharing polish**: email delivery of invites, session management, audit log.
+7. **Sharing polish**: session management, household user removal (deactivation), audit log, error log, Docker log rotation.
 
 Sections 5–10 describe sub-projects 1, 2 and 4–7; sub-project 3 has its own spec.
 

@@ -19,6 +19,17 @@ RSpec.describe "Audit summary call sites" do
     expect(AuditEvent.pluck(:summary)).to eq([ "Created the personal book" ])
   end
 
+  it "syncing an existing personal book writes its membership events normally" do
+    book = PersonalBookProvisioner.call(business.household)
+    spouse = create(:user)
+    create(:person, household: business.household, user: spouse)
+    actor
+    Audit.as(actor) { PersonalBookProvisioner.call(business.household) }
+    expect(AuditEvent.where(auditable_type: "Membership", action: "create").count).to be >= 1
+    expect(AuditEvent.where(action: "summary")).to be_empty
+    expect(book).to be_personal
+  end
+
   it "reordering rules and goals writes one summary each" do
     first, second = create_list(:rule, 2, business: business)
     actor

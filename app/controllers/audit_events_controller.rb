@@ -15,7 +15,7 @@ class AuditEventsController < ApplicationController
   private
 
   def filters
-    { user_id: params[:user_id].presence, auditable_type: params[:auditable_type].presence_in(Audit::MODELS),
+    { user_id: params[:user_id].presence, auditable_type: params[:auditable_type].presence_in(Audit::MODELS + [ "User" ]),
       auditable_id: params[:auditable_id].presence, business_id: params[:business_id].presence }
   end
 

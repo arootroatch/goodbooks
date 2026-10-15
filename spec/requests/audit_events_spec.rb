@@ -32,6 +32,17 @@ RSpec.describe "Audit log" do
     expect(response.body).to include(ERB::Util.html_escape(audit_events_path(auditable_type: "Rule", auditable_id: Rule.last.id)))
   end
 
+  it "filters removal summary events by the User type without leaking other types with the same id" do
+    other = Audit.as(owner) { create(:client, business: business, name: "Acme") }
+    Audit.as(owner) { Audit.note("Removed Whitney from the household", record: editor) }
+    event = AuditEvent.find_by!(auditable_type: "User")
+    AuditEvent.where(auditable_type: "Client").update_all(auditable_id: event.auditable_id)
+    sign_in_as owner
+    get audit_events_path(auditable_type: "User", auditable_id: event.auditable_id)
+    expect(response.body).to include("Removed Whitney from the household")
+    expect(response.body).not_to include("Acme")
+  end
+
   it "pages 50 at a time" do
     Audit.as(owner) { 51.times { |i| Audit.note("Event #{i}") } }
     sign_in_as owner
