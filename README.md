@@ -233,18 +233,3 @@ The Release workflow runs the full CI suite, then builds the image for `amd64` a
 pushes it to `ghcr.io/arootroatch/goodbooks` as `1.4.0`, `1.4` and `latest`. GHCR packages start out private, so
 after the first release open the package's settings on GitHub and set its visibility to **Public**. Otherwise
 servers need `docker login ghcr.io` to pull it.
-
-### Moving an existing install to the published image
-
-Installs built from source before the published image kept their secrets in `config/credentials.yml.enc`, unlocked
-by `config/master.key`. Carry them over so existing two-factor secrets and bank connections keep working. In the old
-checkout, run `bin/rails credentials:show` and copy its values into the new `docker-compose.yml`:
-
-| Credentials value                          | `docker-compose.yml` setting                    |
-|--------------------------------------------|-------------------------------------------------|
-| `secret_key_base`                          | `SECRET_KEY_BASE`                               |
-| `active_record_encryption.primary_key`     | `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`          |
-| `active_record_encryption.deterministic_key` | `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY`  |
-| `active_record_encryption.key_derivation_salt` | `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` |
-
-Don't generate new ones: new keys can't read the existing database. The `goodbooks_storage` volume carries over as is.
