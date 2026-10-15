@@ -1,0 +1,39 @@
+<header class="page-header">
+  <h1>Errors</h1>
+</header>
+<nav class="button-group no-print">
+  <%= link_to "Open", error_events_path, class: "button", aria: { current: ("page" if @tab == "open") } %>
+  <%= link_to "Resolved", error_events_path(tab: "resolved"), class: "button", aria: { current: ("page" if @tab == "resolved") } %>
+</nav>
+<% if @error_events.empty? %>
+  <p><%= @tab == "open" ? "No open errors." : "No resolved errors." %></p>
+<% else %>
+  <table>
+    <thead><tr><th>Error</th><th>Where</th><th class="num">Count</th><th>First seen</th><th>Last seen</th><th></th></tr></thead>
+    <tbody>
+      <% @error_events.each do |event| %>
+        <tr>
+          <td>
+            <details>
+              <summary><strong><%= event.error_class %></strong>: <%= event.message %></summary>
+              <pre><%= event.backtrace %></pre>
+            </details>
+          </td>
+          <td><%= event.source %></td>
+          <td class="num"><%= event.occurrences %></td>
+          <td><%= l(event.first_seen_at, format: :short) %></td>
+          <td><%= l(event.last_seen_at, format: :short) %></td>
+          <td>
+            <div class="button-group">
+              <% if @tab == "open" %>
+                <%= button_to "Resolve", resolve_error_event_path(event), method: :patch %>
+              <% else %>
+                <%= button_to "Reopen", reopen_error_event_path(event, tab: "resolved"), method: :patch %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
