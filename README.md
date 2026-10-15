@@ -56,8 +56,8 @@ Design documents live in `docs/superpowers/specs/`, starting with `2026-10-05-go
 4. **Set up the household before exposing anything.** The first person to open a new install claims it, so do this
    while it is reachable only from the server:
    - Set `APP_HOST: "localhost"` and run `docker compose up -d`.
-   - On the server, open `http://localhost:3000` in Chrome or Firefox. They treat `localhost` as secure, which the
-     sign-in cookies need. *If the server is headless*, forward the port from your laptop with
+   - On the server, open `http://localhost:3000` in a browser. With `APP_HOST` set to `localhost` the app serves
+     plain HTTP; with any other hostname it requires HTTPS. *If the server is headless*, forward the port from your laptop with
      `ssh -L 3000:localhost:3000 you@server` and open `http://localhost:3000` there.
    - Create the household: its name, your name, email and password (12 characters or more), and your spouse's name
      if you have one. Then scan the QR code with your authenticator app and **save the recovery codes** it shows.
@@ -136,8 +136,9 @@ Also keep a copy of `docker-compose.yml` offsite, somewhere separate from the ar
 **A backup is useless without the keys in that file**: they decrypt the stored two-factor secrets, so a restored
 database without them cannot sign anyone in.
 
-**Restoring.** Restore from a nightly snapshot in `backups/`, not from the live `production.sqlite3`, which an archive
-may have caught mid-write. Put the snapshot's date in the command:
+**Restoring.** Restore from a nightly snapshot in `backups/`, not from the live databases, which an archive may have
+caught mid-write. Anything entered after that snapshot is lost, and bank transactions sync again on the next run. Put
+the snapshot's date in the command:
 
 ```bash
 docker compose stop app
@@ -236,6 +237,14 @@ servers need `docker login ghcr.io` to pull it.
 ### Moving an existing install to the published image
 
 Installs built from source before the published image kept their secrets in `config/credentials.yml.enc`, unlocked
-by `config/master.key`. To keep using them, add `RAILS_MASTER_KEY: "<contents of config/master.key>"` to
-`environment:` in the new `docker-compose.yml` and leave the four generated secrets blank. Each blank secret falls
-back to the credentials file baked into the image.
+by `config/master.key`. Carry them over so existing two-factor secrets and bank connections keep working. In the old
+checkout, run `bin/rails credentials:show` and copy its values into the new `docker-compose.yml`:
+
+| Credentials value                          | `docker-compose.yml` setting                    |
+|--------------------------------------------|-------------------------------------------------|
+| `secret_key_base`                          | `SECRET_KEY_BASE`                               |
+| `active_record_encryption.primary_key`     | `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`          |
+| `active_record_encryption.deterministic_key` | `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY`  |
+| `active_record_encryption.key_derivation_salt` | `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` |
+
+Don't generate new ones: new keys can't read the existing database. The `goodbooks_storage` volume carries over as is.

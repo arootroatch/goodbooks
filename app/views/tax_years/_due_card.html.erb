@@ -17,10 +17,12 @@
           <b class="tax-due-quarter">Q<%= row.quarter %></b>
           <span><%= row.due_on.strftime("%b %-d") %></span>
           <span class="num">Paid <%= money(row.paid_cents) %></span>
-          <span class="num muted">Due <%= money(row.pay_at_least_cents) %></span>
+          <span class="num muted">Pay at least <%= money(row.pay_at_least_cents) %></span>
+          <% if row.past_due?(Date.current) %><small class="tax-due-late">Past due</small><% end %>
         </li>
       <% end %>
     </ul>
+    <p class="muted tax-due-note">Each quarter's amount includes any shortfall from earlier quarters, so pay the current one, not the sum.</p>
   <% end %>
   <div class="button-group">
     <%= irs_payment_link(household) %>

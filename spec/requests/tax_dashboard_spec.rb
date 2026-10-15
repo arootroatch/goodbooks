@@ -35,7 +35,20 @@ RSpec.describe "Estimated tax on the dashboard" do
     expect(rows.map { _1.at_css(".tax-due-quarter").text }).to eq(%w[Q1 Q2 Q3 Q4])
     expect(rows[0].text).to include("Apr 15").and include("Paid $1,000.00")
     expect(rows[1]["aria-current"]).to eq("true")
-    expect(rows[0]["class"].to_s.include?("neg")).to eq(estimate.installments[0].pay_at_least_cents.positive?)
+    expect(rows[1].text).to include("Pay at least #{ApplicationController.helpers.money(estimate.installments[1].pay_at_least_cents)}")
+  end
+
+  it "marks a quarter past due once its date passes with money still owed" do
+    create(:tax_parameters, :federal_2026)
+    income = create(:category, :income, business:)
+    create(:transaction, account: create(:account, business:), category: income, posted_on: Date.new(2026, 2, 1), amount_cents: 2_500_000)
+    sign_in_as owner
+    get root_path
+    rows = Nokogiri::HTML(response.body).css(".tax-due-quarters li")
+    expect(rows[0]["class"]).to eq("neg")
+    expect(rows[0].text).to include("Past due")
+    expect(rows[1]["class"]).to be_nil
+    expect(rows[1].text).not_to include("Past due")
   end
 
   it "shows last year's Q4 installment in January" do
