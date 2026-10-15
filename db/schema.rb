@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_000003) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -443,6 +443,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_000002) do
     t.datetime "otp_enabled_at"
     t.integer "otp_last_verified_at"
     t.json "recovery_code_digests", default: [], null: false
+    t.datetime "deactivated_at"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
