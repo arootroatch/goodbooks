@@ -1,2 +1,15 @@
 <h1><%= @business.personal? ? "Rename" : "Edit business" %></h1>
 <%= render "form", business: @business %>
+<% if @business.business? && Current.user.household_owner? %>
+  <section class="card">
+    <h2 class="card-title danger">Delete this business</h2>
+    <p class="muted">Permanently deletes <%= @business.name_in_database %> with its accounts, transactions, categories, rules, goals,
+      mileage and sales tax records. This can't be undone. Unlink any Plaid bank accounts and delete invoices and clients first.</p>
+    <%= form_with url: business_path(@business), method: :delete, id: "delete_business",
+                  data: { turbo_confirm: "Permanently delete #{@business.name_in_database}?" } do |f| %>
+      <p><%= f.label :confirm_name, "Type #{@business.name_in_database} to confirm" %>
+        <%= f.text_field :confirm_name, autocomplete: "off", required: true %></p>
+      <%= f.submit "Delete business", class: "danger" %>
+    <% end %>
+  </section>
+<% end %>

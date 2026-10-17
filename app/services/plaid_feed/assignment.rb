@@ -39,6 +39,10 @@ module PlaidFeed
           apply(plaid, row)
         end
         raise ActiveRecord::Rollback if @errors.any?
+
+        # The item's cursor is already past this account's history; starting over replays it. Linked accounts
+        # just match their rows again by Plaid id, so nothing is duplicated.
+        @item.update!(cursor: nil) if @item.accounts.where.not(plaid_account_id: assigned.to_a).exists?
       end
       Result.new(errors: @errors)
     end

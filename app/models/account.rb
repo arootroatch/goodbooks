@@ -45,6 +45,12 @@ class Account < ApplicationRecord
 
   def balance_known? = !balance_cents.nil?
 
+  # Stops the Plaid feed: back to a CSV account if it has a mapping, else manual. Its transactions stay.
+  def detach_from_plaid!
+    update!(source: mapped? ? "csv" : "manual", plaid_item: nil, plaid_account_id: nil, plaid_mask: nil, plaid_name: nil,
+            plaid_sync_from: nil)
+  end
+
   private
 
   def plaid_link_complete

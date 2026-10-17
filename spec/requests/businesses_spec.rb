@@ -103,6 +103,62 @@ RSpec.describe "Businesses" do
     end
   end
 
+  describe "deleting" do
+    it "offers the household owner a delete form on the edit page" do
+      sign_in_as household_owner
+      get edit_business_path(business)
+      form = Capybara.string(response.body).find("form#delete_business")
+      expect(form["action"]).to eq(business_path(business))
+      expect(form).to have_field("confirm_name")
+    end
+
+    it "deletes the business when the household owner types its name" do
+      sign_in_as household_owner
+      delete business_path(business), params: { confirm_name: "Pat Consulting" }
+      expect(response).to redirect_to(root_path)
+      expect(flash[:notice]).to eq("Deleted Pat Consulting.")
+      expect(Business.exists?(business.id)).to be(false)
+      expect(AuditEvent.last).to have_attributes(user: household_owner, summary: "Deleted book Pat Consulting")
+      get audit_events_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Deleted book Pat Consulting")
+    end
+
+    it "keeps the business when the typed name doesn't match" do
+      sign_in_as household_owner
+      delete business_path(business), params: { confirm_name: "pat" }
+      expect(response).to redirect_to(edit_business_path(business))
+      expect(flash[:alert]).to eq("Type the business's name exactly to delete it.")
+      expect(Business.exists?(business.id)).to be(true)
+    end
+
+    it "explains a refusal and keeps the business" do
+      create(:client, business: business)
+      sign_in_as household_owner
+      delete business_path(business), params: { confirm_name: "Pat Consulting" }
+      expect(response).to redirect_to(edit_business_path(business))
+      expect(flash[:alert]).to eq("Delete this business's invoices and clients first.")
+      expect(Business.exists?(business.id)).to be(true)
+    end
+
+    it "hides the form from, and forbids, a book owner who isn't the household owner" do
+      owner = user_with_role("owner", business)
+      sign_in_as owner
+      get edit_business_path(business)
+      expect(response.body).not_to include("delete_business")
+      delete business_path(business), params: { confirm_name: "Pat Consulting" }
+      expect(response).to have_http_status(:forbidden)
+      expect(Business.exists?(business.id)).to be(true)
+    end
+
+    it "offers no delete form on the personal book" do
+      book = PersonalBookProvisioner.call(Household.instance)
+      sign_in_as household_owner
+      get edit_business_path(book)
+      expect(response.body).not_to include("delete_business")
+    end
+  end
+
   describe "overview" do
     let(:account) { create(:account, business: business, name: "Checking") }
     let(:consulting) { create(:category, :income, business: business, name: "Consulting") }

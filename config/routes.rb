@@ -26,7 +26,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :businesses, only: %i[new create show edit update] do
+  resources :businesses, only: %i[new create show edit update destroy] do
     resource :tithe, only: %i[show update], controller: "tithes"
     resource :sales_tax_profile, only: %i[show update], path: "sales_tax"
     resources :sales_tax_periods, only: :show, param: :starts_on, path: "sales_tax/periods" do
@@ -107,6 +107,9 @@ Rails.application.routes.draw do
     post :sync, on: :member
     resource :assignment, only: %i[show update], controller: "plaid_assignments"
     resource :reconnection, only: %i[new create], controller: "plaid_reconnections"
+    resources :accounts, only: [] do
+      resource :link, only: :destroy, controller: "plaid_account_links"
+    end
   end
   post "plaid/webhooks", to: "plaid_webhooks#create", as: :plaid_webhooks
 

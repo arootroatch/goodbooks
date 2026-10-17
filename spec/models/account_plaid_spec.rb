@@ -28,4 +28,20 @@ RSpec.describe Account do
     create(:account)
     expect(Account.csv_importable).to contain_exactly(csv, plaid)
   end
+
+  it "detaches from Plaid back to a CSV account when it has a mapping, keeping its transactions" do
+    account = create(:account, :plaid, plaid_mask: "0000", plaid_name: "Checking", plaid_sync_from: Date.new(2026, 1, 1),
+                                       csv_mapping: { "date_column" => "Date" })
+    txn = create(:transaction, account: account, plaid_transaction_id: "t1")
+    account.detach_from_plaid!
+    expect(account.reload).to have_attributes(source: "csv", plaid_item_id: nil, plaid_account_id: nil, plaid_mask: nil,
+                                              plaid_name: nil, plaid_sync_from: nil)
+    expect(txn.reload).to have_attributes(account_id: account.id, plaid_transaction_id: "t1")
+  end
+
+  it "detaches from Plaid back to a manual account without a mapping" do
+    account = create(:account, :plaid)
+    account.detach_from_plaid!
+    expect(account.reload.source).to eq("manual")
+  end
 end

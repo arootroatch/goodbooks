@@ -205,5 +205,44 @@ RSpec.describe "Plaid items" do
       expect(flash[:notice]).to eq("Connection removed here. Plaid reported: ITEM_NOT_FOUND: gone")
       expect(PlaidItem.exists?(item.id)).to be(false)
     end
+
+    describe "unlinking one account" do
+      let!(:card) { create(:account, :plaid, business: business, plaid_item: item, plaid_account_id: "fake-card", name: "Card") }
+
+      it "offers a confirmed Unlink on each account row" do
+        sign_in_as owner
+        get plaid_item_path(item)
+        row = Capybara.string(response.body).find("##{ActionView::RecordIdentifier.dom_id(account)}")
+        form = row.find("form[data-turbo-confirm]", text: "Unlink")
+        expect(form["action"]).to eq(plaid_item_account_link_path(item, account))
+        expect(form["data-turbo-confirm"]).to include("Stop feeding Operating from Demo Bank?")
+      end
+
+      it "unlinks only that account, keeping its transactions and the connection" do
+        txn = create(:transaction, account: account, plaid_transaction_id: "t1")
+        sign_in_as owner
+        delete plaid_item_account_link_path(item, account)
+        expect(response).to redirect_to(plaid_item_path(item))
+        expect(flash[:notice]).to eq("Unlinked Operating. Its transactions stay. Assign the bank account again to feed another book.")
+        expect(account.reload).to have_attributes(source: "manual", plaid_item_id: nil, plaid_account_id: nil)
+        expect(txn.reload.account_id).to eq(account.id)
+        expect(card.reload.plaid_item_id).to eq(item.id)
+        expect(PlaidItem.exists?(item.id)).to be(true)
+        expect(plaid_gateway.calls).not_to include(:item_remove)
+      end
+
+      it "404s an account from another connection and a user who can't manage the connection" do
+        other = create(:account, :plaid, business: business)
+        sign_in_as owner
+        delete plaid_item_account_link_path(item, other)
+        expect(response).to have_http_status(:not_found)
+        expect(other.reload.plaid_item_id).to be_present
+
+        sign_in_as user_with_role("owner", business)
+        delete plaid_item_account_link_path(item, account)
+        expect(response).to have_http_status(:not_found)
+        expect(account.reload.plaid_item_id).to eq(item.id)
+      end
+    end
   end
 end
