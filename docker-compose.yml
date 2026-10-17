@@ -15,11 +15,11 @@ services:
       APP_HOST: "" # The hostname people type, e.g. books.example.com. Use localhost for first-run setup.
       TIME_ZONE: "Central Time (US & Canada)" # Rails zone name; "today" rolls over at local midnight.
       SOLID_QUEUE_IN_PUMA: "true"
-      # Generate once (README, step 2) and never change: the encryption keys unlock stored 2FA secrets and bank tokens.
-      SECRET_KEY_BASE: ""
-      ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ""
-      ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ""
-      ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ""
+      # Secrets: generate all four once (README, step 2) and never change them. Keep a copy offsite.
+      SECRET_KEY_BASE: "" # Signs sign-in cookies. Changing it signs everyone out; nothing is lost.
+      ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: "" # Encrypts 2FA secrets and bank tokens. Lost = locked out.
+      ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: "" # Required by Rails' encryption; set it and keep it like the others.
+      ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: "" # Mixed into the primary key. Lost = same as losing that key.
       PLAID_CLIENT_ID: "" # Optional Plaid bank feeds: set all three or none. See README.
       PLAID_SECRET: ""
       PLAID_ENV: "" # sandbox or production
