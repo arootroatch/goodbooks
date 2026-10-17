@@ -39,7 +39,7 @@
   </table>
 <% end %>
 <p class="muted">
-  A snapshot can't sign anyone in without the keys in your <code>docker-compose.yml</code>, so keep a copy of that file too.
+  A snapshot can't sign anyone in without the keys in your <code>.env</code>, so keep a copy of that file too.
   Snapshots hold the database only, not uploaded files, so still copy the whole volume offsite (see the README).
 </p>
 
@@ -63,7 +63,7 @@
         <%= options_for_select(@snapshots.map { _1.date.iso8601 }, @latest.date.iso8601) %>
       </select>
     </p>
-    <p>On the server, in the folder with your <code>docker-compose.yml</code>, run:</p>
+    <p>On the server, in the folder with your <code>docker-compose.yml</code> and <code>.env</code>, run:</p>
 <pre class="restore-command">docker compose stop app
 docker run --rm -v goodbooks_storage:/data alpine sh -c '
   cp /data/backups/goodbooks-<span data-restore-command-target="date"><%= @latest.date.iso8601 %></span>.sqlite3 /data/production.sqlite3 &&
