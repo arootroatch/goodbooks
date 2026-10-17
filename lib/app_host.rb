@@ -5,4 +5,7 @@ module AppHost
 
     env["APP_HOST"].presence or raise "APP_HOST is blank. Set it in docker-compose.yml (see README)."
   end
+
+  # The tunnel provides HTTPS. First-run setup at http://localhost:3000 has no tunnel, and browsers treat localhost as secure.
+  def self.https?(host) = host != "localhost"
 end

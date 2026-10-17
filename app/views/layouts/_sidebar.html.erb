@@ -35,6 +35,7 @@
     <% end %>
   <% else %>
     <p class="nav-group">Household</p>
+    <%= nav_link "Overview", root_path %>
     <%= nav_link "Household inbox", household_inbox_path %>
     <%= nav_link "Household P&L", household_profit_and_loss_path if Current.user.can_view_household? %>
     <%= nav_link "Household invoices", household_invoices_path if Current.user.can_view_household? %>

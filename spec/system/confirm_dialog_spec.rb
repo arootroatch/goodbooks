@@ -33,6 +33,7 @@ RSpec.describe "Confirm dialog", js: true do
       click_on "Delete"
     end
     expect(page).to have_no_css("dialog[open]")
+    expect(page).to have_text("Trip deleted.")
     expect(MileageEntry.exists?(entry.id)).to be(false)
   end
 end

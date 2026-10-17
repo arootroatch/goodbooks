@@ -1,0 +1,10 @@
+/* The estimated-tax card: year progress and a row per quarter. Reuses .goal-bar for the bar. */
+.tax-due-progress { margin: var(--space-3) 0; }
+.tax-due-progress .goal-amounts { min-width: 0; white-space: normal; }
+.tax-due-quarters { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); font-size: var(--text-sm); }
+.tax-due-quarters li { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.tax-due-quarters li[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+@media (max-width: 640px) { .tax-due-quarters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tax-due-quarters .num { text-align: left; }
+.tax-due-late { font-weight: 600; }
+.tax-due-note { margin: 0 0 var(--space-3); font-size: var(--text-sm); }

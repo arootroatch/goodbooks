@@ -1,5 +1,6 @@
 require "active_support/core_ext/integer/time"
 require_relative "../../lib/app_host"
+require_relative "../../lib/secrets"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -25,11 +26,12 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  config.assume_ssl = true
+  # Assume all access to the app is happening through a SSL-terminating reverse proxy (the tunnel), except during
+  # first-run setup at http://localhost (see README).
+  config.assume_ssl = AppHost.https?(AppHost.fetch!)
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  config.force_ssl = AppHost.https?(AppHost.fetch!)
 
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -82,7 +84,14 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   config.hosts = [ AppHost.fetch! ]
+
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Secrets from docker-compose.yml (see README). Rails generates a throwaway key base while assets precompile.
+  if (secret_key_base = Secrets.secret_key_base!)
+    config.secret_key_base = secret_key_base
+  end
+  config.active_record.encryption.merge!(Secrets.encryption_keys!)
 end
