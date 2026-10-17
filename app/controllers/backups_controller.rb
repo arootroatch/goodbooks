@@ -1,6 +1,6 @@
 class BackupsController < ApplicationController
   before_action :require_household_owner!
-  before_action :load_page
+  before_action :load_page, except: :create
 
   def show
   end

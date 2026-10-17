@@ -122,9 +122,9 @@ Everything lives in the `goodbooks_storage` Docker volume: the SQLite databases,
 CSV imports), and the nightly backups.
 
 **Nightly snapshots.** Every night the app writes a consistent copy of the main database to
-`backups/goodbooks-YYYY-MM-DD.sqlite3` in the volume and keeps the latest 14. The household owner's **Backups** page
+`backups/goodbooks-YYYY-MM-DD.sqlite3` in the volume and keeps the latest 14 by default. The household owner's **Backups** page
 shows when the last one ran, warns if one is missed, takes one on demand, downloads any of them, and sets how many to
-keep. That protects against mistakes, not against losing the server's disk.
+keep in place of that default. That protects against mistakes, not against losing the server's disk.
 
 **Offsite copies.** Copy the volume somewhere else regularly, for example from cron to a NAS or a synced folder:
 

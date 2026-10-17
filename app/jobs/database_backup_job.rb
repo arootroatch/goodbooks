@@ -1,6 +1,9 @@
 class DatabaseBackupJob < ApplicationJob
   class BackupError < StandardError; end
 
+  # Back up now and the nightly run share one temp path, so never run two at once.
+  limits_concurrency to: 1, key: ->(*) { "database_backup" }
+
   def perform(dir: BackupSnapshots.default_dir.to_s, today: Date.current)
     snapshots = BackupSnapshots.new(dir)
     FileUtils.mkdir_p(dir)

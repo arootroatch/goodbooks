@@ -44,6 +44,8 @@ class BackupSnapshots
     return unless File.file?(path)
 
     stat = File.stat(path)
-    Snapshot.new(name:, path:, date: Date.iso8601(match[1]), size: stat.size, taken_at: stat.mtime)
+    Snapshot.new(name:, path:, date: Date.iso8601(match[1]), size: stat.size, taken_at: stat.mtime.in_time_zone)
+  rescue Date::Error, Errno::ENOENT
+    nil
   end
 end

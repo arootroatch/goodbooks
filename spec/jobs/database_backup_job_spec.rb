@@ -5,6 +5,11 @@ RSpec.describe DatabaseBackupJob do
 
   after { FileUtils.remove_entry(dir) }
 
+  it "runs one at a time so concurrent runs can't share a temp file" do
+    expect(DatabaseBackupJob.concurrency_limit).to eq(1)
+    expect(DatabaseBackupJob.concurrency_key.call).to eq("database_backup")
+  end
+
   it "writes a readable copy of the database" do
     DatabaseBackupJob.perform_now(dir: dir, today: Date.new(2026, 10, 5))
     path = File.join(dir, "goodbooks-2026-10-05.sqlite3")

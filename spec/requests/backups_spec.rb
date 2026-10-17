@@ -36,6 +36,13 @@ RSpec.describe "Backups" do
       get backups_path
       expect(response.body).to include(%(href="#{backups_path}"))
     end
+
+    it "hides the sidebar link from non-owners" do
+      sign_in_as user_with_role("owner", create(:business))
+      get root_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(%(href="#{backups_path}"))
+    end
   end
 
   describe "show" do
@@ -85,6 +92,7 @@ RSpec.describe "Backups" do
       patch backups_path, params: { household: { backup_retention: "30" } }
       expect(response).to redirect_to(backups_path)
       expect(household.reload.backup_retention).to eq(30)
+      expect(AuditEvent.where(auditable_type: "Household", auditable_id: household.id, action: "update", user: owner)).to exist
       follow_redirect!
       expect(response.body).to include("Retention saved.")
     end

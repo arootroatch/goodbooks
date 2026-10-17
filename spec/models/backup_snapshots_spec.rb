@@ -30,6 +30,20 @@ RSpec.describe BackupSnapshots do
       expect(all.last).to have_attributes(date: Date.new(2026, 10, 1), size: 3, path: File.join(dir, "goodbooks-2026-10-01.sqlite3"))
     end
 
+    it "reports taken_at in the app time zone" do
+      write("goodbooks-2026-10-01.sqlite3")
+      Time.use_zone("America/Chicago") do
+        expect(snapshots.all.first.taken_at.time_zone.name).to eq("America/Chicago")
+      end
+    end
+
+    it "skips names with an impossible date" do
+      write("goodbooks-2026-13-45.sqlite3")
+      write("goodbooks-2026-10-01.sqlite3")
+      expect(snapshots.all.map(&:name)).to eq(%w[goodbooks-2026-10-01.sqlite3])
+      expect(snapshots.find("goodbooks-2026-13-45.sqlite3")).to be_nil
+    end
+
     it "is empty when the directory doesn't exist" do
       expect(BackupSnapshots.new(File.join(dir, "missing")).all).to eq([])
     end
@@ -79,6 +93,13 @@ RSpec.describe BackupSnapshots do
     (1..5).each { write("goodbooks-2026-10-0#{_1}.sqlite3") }
     snapshots.prune(2)
     expect(Dir.children(dir).sort).to eq(%w[goodbooks-2026-10-04.sqlite3 goodbooks-2026-10-05.sqlite3])
+  end
+
+  it "#prune still works with an impossible-date file present, and leaves it alone" do
+    write("goodbooks-2026-13-45.sqlite3")
+    (1..3).each { write("goodbooks-2026-10-0#{_1}.sqlite3") }
+    snapshots.prune(1)
+    expect(Dir.children(dir).sort).to eq(%w[goodbooks-2026-10-03.sqlite3 goodbooks-2026-13-45.sqlite3])
   end
 
   it "#path_for builds the day's path" do
