@@ -83,6 +83,8 @@ Rails.application.routes.draw do
       patch :reopen
     end
   end
+  resource :backups, only: %i[show create update]
+  get "backups/:name/download", to: "backup_downloads#show", as: :backup_download, constraints: { name: %r{[^/]+} }, format: false
   resources :tax_years, path: "taxes", param: :year, only: %i[index show edit update] do
     resources :estimated_payments, path: "payments", only: %i[new create edit update destroy]
   end

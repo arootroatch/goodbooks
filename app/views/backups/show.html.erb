@@ -1,0 +1,55 @@
+<header class="page-header">
+  <h1>Backups</h1>
+  <div class="button-group no-print">
+    <%= button_to "Back up now", backups_path, class: "button primary" %>
+  </div>
+</header>
+
+<% if @latest.nil? || @overdue %>
+  <p class="flash-alert">
+    <%= @latest.nil? ? "No backups yet." : "No backup in the last day." %>
+    <% if @backup_error %>
+      The last backup failed: <%= @backup_error.message %>. <%= link_to "See Errors", error_events_path %>
+    <% end %>
+  </p>
+<% end %>
+
+<% if @latest %>
+  <p>Last backup: <strong><%= l(@latest.taken_at, format: :long) %></strong> · Keeping <%= @household.backup_retention_in_database %></p>
+<% end %>
+<p class="muted">
+  Every night at 3:00am the app copies the database to <code>backups/</code> in the <code>goodbooks_storage</code> Docker volume.
+</p>
+
+<h2>Snapshots</h2>
+<% if @snapshots.empty? %>
+  <p>No snapshots yet.</p>
+<% else %>
+  <table>
+    <thead><tr><th>Date</th><th class="num">Size</th><th></th></tr></thead>
+    <tbody>
+      <% @snapshots.each do |snapshot| %>
+        <tr>
+          <td><%= snapshot.date.iso8601 %></td>
+          <td class="num"><%= number_to_human_size(snapshot.size) %></td>
+          <td><%= link_to "Download", backup_download_path(snapshot.name), data: { turbo: false } %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+<p class="muted">
+  A snapshot can't sign anyone in without the keys in your <code>docker-compose.yml</code>, so keep a copy of that file too.
+  Snapshots hold the database only, not uploaded files, so still copy the whole volume offsite (see the README).
+</p>
+
+<h2>Retention</h2>
+<%= form_with model: @household, url: backups_path, method: :patch do |f| %>
+  <%= render "shared/errors", record: @household %>
+  <p>
+    <%= f.label :backup_retention, "Snapshots to keep" %>
+    <%= f.number_field :backup_retention, min: 1, max: 365, step: 1, required: true %>
+    <small class="muted">Older snapshots beyond this number are deleted at the next backup.</small>
+  </p>
+  <%= f.submit "Save" %>
+<% end %>
