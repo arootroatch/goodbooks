@@ -1,5 +1,7 @@
 # One bank login connected through Plaid. Its accounts may feed different books.
 class PlaidItem < ApplicationRecord
+  include Audited
+  audited label: -> { institution_name }, ignore: %w[cursor last_synced_at]
   belongs_to :household
   belongs_to :created_by, class_name: "User"
   has_many :accounts, dependent: :nullify

@@ -53,6 +53,7 @@ RSpec.describe "Goal reports" do
     delete business_goal_link_path(book, goal, txn)
     expect(response).to redirect_to(business_goal_path(book, goal))
     expect(txn.reload.attributes.values_at("goal_id", "goal_linked_by")).to eq([ nil, "user" ])
+    expect(AuditEvent.where(auditable_type: "Transaction", auditable_id: txn.id, action: "summary").pluck(:summary)).to eq([ "Unlinked from goal #{goal.name}" ])
     goal.update!(match_value: "zelle")
     expect(txn.reload.goal_id).to be_nil
   end

@@ -24,12 +24,12 @@ module Authentication
     end
 
     def resume_session
-      Current.session ||= find_session_by_cookie
+      Current.session ||= find_session_by_cookie&.tap(&:seen!)
     end
 
     def find_session_by_cookie
-      record = Session.find_by(id: cookies.signed[:session_id]) if cookies.signed[:session_id]
-      return record unless record && record.created_at < SESSION_TTL.ago
+      record = Session.includes(:user).find_by(id: cookies.signed[:session_id]) if cookies.signed[:session_id]
+      return record unless record && (record.created_at < SESSION_TTL.ago || record.user.deactivated?)
 
       record.destroy
       cookies.delete(:session_id)
@@ -68,7 +68,7 @@ module Authentication
       return if session[:pending_user_id].blank?
       return if session[:pending_at].to_i < PENDING_TTL.ago.to_i
 
-      User.find_by(id: session[:pending_user_id])
+      User.active.find_by(id: session[:pending_user_id])
     end
 
     def complete_two_factor(user)

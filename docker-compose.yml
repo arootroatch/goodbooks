@@ -3,6 +3,11 @@ services:
     build: .
     image: goodbooks:latest
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     ports:
       - "127.0.0.1:3000:80"
     environment:

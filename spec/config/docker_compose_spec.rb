@@ -12,4 +12,8 @@ RSpec.describe "docker-compose.yml" do
     expect(app["environment"]).to have_key("APP_HOST")
     expect(app["environment"].values.join).not_to include("${")
   end
+
+  it "rotates the app's logs" do
+    expect(app["logging"]).to eq("driver" => "json-file", "options" => { "max-size" => "10m", "max-file" => "5" })
+  end
 end

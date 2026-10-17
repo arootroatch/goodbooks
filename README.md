@@ -78,6 +78,9 @@ git pull --autostash && docker compose up -d --build
 docker compose logs -f app
 ```
 
+Docker keeps at most 50 MB of app logs (five 10 MB files), so `docker compose logs` only shows what's still kept.
+Unhandled errors are also recorded on the **Errors** page (household owner only), grouped by error.
+
 Data lives in the `goodbooks_storage` Docker volume (SQLite databases, uploads, backups).
 
 ## Backups

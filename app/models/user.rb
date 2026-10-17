@@ -6,11 +6,16 @@ class User < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_one :person, dependent: :nullify
 
+  scope :active, -> { where(deactivated_at: nil) }
+  scope :deactivated, -> { where.not(deactivated_at: nil) }
+
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
   validates :email_address, presence: true, uniqueness: true
   validates :name, presence: true
   validates :password, length: { minimum: 12 }, allow_nil: true
+
+  def deactivated? = deactivated_at.present?
 
   def accessible_businesses
     Business.where(id: memberships.select(:business_id))

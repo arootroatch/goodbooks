@@ -1,4 +1,7 @@
 class Rule < ApplicationRecord
+  include Audited
+  audited label: -> { "Rule: #{field} #{operator.to_s.humanize(capitalize: false)} \"#{value}\"" }
+
   include MoneyAttribute
 
   FIELDS = %w[payee memo].freeze
@@ -28,10 +31,13 @@ class Rule < ApplicationRecord
   before_create { self.position = (business.rules.maximum(:position) || 0) + 1 }
 
   def move_to!(new_position)
-    ApplicationRecord.transaction do
-      ids = business.rules.ordered.where.not(id: id).pluck(:id)
-      ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
-      ids.each.with_index(1) { |rule_id, position| Rule.where(id: rule_id).update_all(position: position) }
+    Audit.summarize(record: self) do |summary|
+      ApplicationRecord.transaction do
+        ids = business.rules.ordered.where.not(id: id).pluck(:id)
+        ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
+        ids.each.with_index(1) { |rule_id, position| Rule.where(id: rule_id).update_all(position: position) }
+      end
+      summary.text = "Reordered rules"
     end
     reload
   end

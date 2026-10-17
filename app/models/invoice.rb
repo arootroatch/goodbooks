@@ -1,4 +1,6 @@
 class Invoice < ApplicationRecord
+  include Audited
+  audited label: -> { "Invoice #{number}" }
   include MoneyAttribute
 
   EVENTS = {

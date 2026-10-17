@@ -1,0 +1,55 @@
+<header class="page-header">
+  <h1>Audit log</h1>
+</header>
+<%= form_with url: audit_events_path, method: :get, class: "filters no-print",
+              data: { controller: "auto-submit", action: "change->auto-submit#submit" } do |f| %>
+  <%= f.select :user_id, options_from_collection_for_select(@users, :id, :name, params[:user_id]), include_blank: "All users" %>
+  <%= f.select :auditable_type, options_for_select(audit_type_options, params[:auditable_type]), include_blank: "All records" %>
+  <%= f.select :business_id, options_from_collection_for_select(@books, :id, :name, params[:business_id]), include_blank: "All books" %>
+  <%= f.hidden_field :auditable_id, value: params[:auditable_id] if params[:auditable_id].present? %>
+  <% unless params[:auditable_id].present? %>
+    <%= f.date_field :from, value: date_range.first %>
+    <%= f.date_field :to, value: date_range.last %>
+  <% end %>
+  <noscript><%= f.submit "Filter" %></noscript>
+<% end %>
+<% if @events.empty? %>
+  <p>No changes match these filters.</p>
+<% else %>
+  <table>
+    <thead><tr><th>When</th><th>Who</th><th>What</th><th>Record</th><th>Book</th><th>Changes</th></tr></thead>
+    <tbody>
+      <% @events.each do |event| %>
+        <tr>
+          <td><%= l(event.created_at, format: :short) %></td>
+          <td><%= event.user.name %></td>
+          <td><%= audit_action(event) %></td>
+          <td>
+            <% if event.auditable_id %>
+              <%= link_to event.label, audit_events_path(auditable_type: event.auditable_type, auditable_id: event.auditable_id) %>
+            <% else %>
+              <%= event.label %>
+            <% end %>
+          </td>
+          <td><%= event.business&.name %></td>
+          <td>
+            <% if event.changed_values.any? %>
+              <details>
+                <summary><%= pluralize(event.changed_values.size, "field") %></summary>
+                <table>
+                  <% event.changed_values.each do |name, (before, after)| %>
+                    <tr><th><%= name.humanize %></th><td><%= audit_value(name, before) %></td><td>→</td><td><%= audit_value(name, after) %></td></tr>
+                  <% end %>
+                </table>
+              </details>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <nav class="button-group no-print">
+    <%= link_to "Newer", audit_page_path(after: @newer_id), class: "button" if @newer_id %>
+    <%= link_to "Older", audit_page_path(before: @older_id), class: "button" if @older_id %>
+  </nav>
+<% end %>

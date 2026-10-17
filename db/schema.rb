@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_000004) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -60,6 +60,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "audit_events", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "action", null: false
+    t.string "auditable_type"
+    t.integer "auditable_id"
+    t.integer "business_id"
+    t.string "label", default: "", null: false
+    t.json "changed_values", default: {}, null: false
+    t.string "summary"
+    t.datetime "created_at", null: false
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_events_on_auditable_type_and_auditable_id"
+    t.index ["business_id", "created_at"], name: "index_audit_events_on_business_id_and_created_at"
+    t.index ["created_at"], name: "index_audit_events_on_created_at"
+    t.index ["user_id", "created_at"], name: "index_audit_events_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_audit_events_on_user_id"
   end
 
   create_table "businesses", force: :cascade do |t|
@@ -119,6 +136,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
     t.json "mapping"
     t.integer "synced_count", default: 0, null: false
     t.index ["account_id"], name: "index_csv_imports_on_account_id"
+  end
+
+  create_table "error_events", force: :cascade do |t|
+    t.string "fingerprint", null: false
+    t.string "error_class", null: false
+    t.text "message", null: false
+    t.text "backtrace", null: false
+    t.string "source"
+    t.integer "occurrences", default: 1, null: false
+    t.datetime "first_seen_at", null: false
+    t.datetime "last_seen_at", null: false
+    t.integer "last_user_id"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fingerprint"], name: "index_error_events_on_fingerprint", unique: true
   end
 
   create_table "estimated_payments", force: :cascade do |t|
@@ -346,6 +379,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
     t.string "user_agent"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_seen_at"
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
@@ -425,6 +459,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
     t.datetime "otp_enabled_at"
     t.integer "otp_last_verified_at"
     t.json "recovery_code_digests", default: [], null: false
+    t.datetime "deactivated_at"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
@@ -432,6 +467,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000003) do
   add_foreign_key "accounts", "plaid_items"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "audit_events", "users"
   add_foreign_key "businesses", "households"
   add_foreign_key "businesses", "people"
   add_foreign_key "categories", "businesses"

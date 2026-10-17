@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
   resource :session, only: %i[new create destroy]
+  resources :sessions, only: %i[index destroy], controller: "sessions_list", as: :session_records do
+    delete :others, on: :collection
+  end
   resource :theme, only: :update
   resource :two_factor, only: %i[new create]
   resource :two_factor_setup, only: %i[new create]
@@ -73,6 +76,13 @@ Rails.application.routes.draw do
 
   resources :tax_parameters, only: %i[index new create edit update]
   resource :household, only: %i[edit update]
+  get "audit", to: "audit_events#index", as: :audit_events
+  resources :error_events, only: :index, path: "errors" do
+    member do
+      patch :resolve
+      patch :reopen
+    end
+  end
   resources :tax_years, path: "taxes", param: :year, only: %i[index show edit update] do
     resources :estimated_payments, path: "payments", only: %i[new create edit update destroy]
   end
@@ -80,6 +90,13 @@ Rails.application.routes.draw do
   resources :invites, only: %i[index new create destroy]
   get "join", to: "invite_acceptances#show", as: :join
   post "join", to: "invite_acceptances#create"
+  resources :users, only: :index do
+    member do
+      patch :sign_out
+      patch :deactivate
+      patch :reactivate
+    end
+  end
   resources :people, only: %i[index new create edit update] do
     resources :adjustments, only: %i[edit update], param: :year, controller: "person_adjustments"
   end

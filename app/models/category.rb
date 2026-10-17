@@ -1,4 +1,6 @@
 class Category < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   SALES_TAX_TREATMENTS = %w[taxable exempt not_a_sale].freeze
   SALES_TAX_TREATMENT_LABELS = { "taxable" => "Taxable sales", "exempt" => "Exempt sales", "not_a_sale" => "Not a sale" }.freeze
 

@@ -1,4 +1,6 @@
 class Account < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   include MoneyAttribute
 
   belongs_to :business
