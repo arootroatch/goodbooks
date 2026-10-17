@@ -1,16 +1,18 @@
 class DatabaseBackupJob < ApplicationJob
-  KEEP = 14
-
   class BackupError < StandardError; end
 
-  def perform(dir: Rails.root.join("storage/backups").to_s, today: Date.current)
+  # Back up now and the nightly run share one temp path, so never run two at once.
+  limits_concurrency to: 1, key: ->(*) { "database_backup" }
+
+  def perform(dir: BackupSnapshots.default_dir.to_s, today: Date.current)
+    snapshots = BackupSnapshots.new(dir)
     FileUtils.mkdir_p(dir)
-    path = File.join(dir, "goodbooks-#{today.iso8601}.sqlite3")
+    path = snapshots.path_for(today)
     tmp = "#{path}.tmp"
 
     copy_to(tmp)
     File.rename(tmp, path)
-    prune(dir)
+    snapshots.prune(Household.first&.backup_retention || Household::DEFAULT_BACKUP_RETENTION)
   rescue StandardError
     FileUtils.rm_f(tmp) if tmp
     raise
@@ -28,9 +30,5 @@ class DatabaseBackupJob < ApplicationJob
   ensure
     backup&.finish
     destination&.close
-  end
-
-  def prune(dir)
-    Dir.glob(File.join(dir, "goodbooks-*.sqlite3")).sort.reverse.drop(KEEP).each { File.delete(_1) }
   end
 end

@@ -5,6 +5,11 @@ RSpec.describe DatabaseBackupJob do
 
   after { FileUtils.remove_entry(dir) }
 
+  it "runs one at a time so concurrent runs can't share a temp file" do
+    expect(DatabaseBackupJob.concurrency_limit).to eq(1)
+    expect(DatabaseBackupJob.concurrency_key.call).to eq("database_backup")
+  end
+
   it "writes a readable copy of the database" do
     DatabaseBackupJob.perform_now(dir: dir, today: Date.new(2026, 10, 5))
     path = File.join(dir, "goodbooks-2026-10-05.sqlite3")
@@ -14,13 +19,31 @@ RSpec.describe DatabaseBackupJob do
     expect(tables).to include("households", "transactions")
   end
 
-  it "keeps the newest 14 backups" do
+  it "keeps the newest 14 backups when there's no household yet" do
     16.times { |i| FileUtils.touch(File.join(dir, "goodbooks-2026-09-#{format("%02d", i + 1)}.sqlite3")) }
     DatabaseBackupJob.perform_now(dir: dir, today: Date.new(2026, 10, 5))
     files = Dir.children(dir).sort
     expect(files.size).to eq(14)
     expect(files.last).to eq("goodbooks-2026-10-05.sqlite3")
     expect(files.first).to eq("goodbooks-2026-09-04.sqlite3")
+  end
+
+  it "keeps as many backups as the household's retention" do
+    allow(Household).to receive(:first).and_return(build(:household, backup_retention: 3))
+    5.times { |i| FileUtils.touch(File.join(dir, "goodbooks-2026-09-0#{i + 1}.sqlite3")) }
+    DatabaseBackupJob.perform_now(dir: dir, today: Date.new(2026, 10, 5))
+    expect(Dir.children(dir).sort).to eq(%w[goodbooks-2026-09-04.sqlite3 goodbooks-2026-09-05.sqlite3 goodbooks-2026-10-05.sqlite3])
+  end
+
+  it "replaces the day's snapshot when run twice the same day" do
+    2.times { DatabaseBackupJob.perform_now(dir: dir, today: Date.new(2026, 10, 5)) }
+    expect(Dir.children(dir)).to eq(%w[goodbooks-2026-10-05.sqlite3])
+  end
+
+  it "writes to the configured backups directory by default" do
+    allow(BackupSnapshots).to receive(:default_dir).and_return(Pathname(dir))
+    DatabaseBackupJob.perform_now(today: Date.new(2026, 10, 5))
+    expect(Dir.children(dir)).to eq(%w[goodbooks-2026-10-05.sqlite3])
   end
 
   context "when the copy fails" do

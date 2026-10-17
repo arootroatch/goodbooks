@@ -1,0 +1,51 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "2f285fa676e33b1641d8ad3babaf0758b746fa48fc37ae798cf3fc423fc5ae78",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/backup_downloads_controller.rb",
+      "line": 6,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(BackupSnapshots.new.find(params[:name]).path, :filename => BackupSnapshots.new.find(params[:name]).name, :type => \"application/vnd.sqlite3\", :disposition => :attachment)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "BackupDownloadsController",
+        "method": "show"
+      },
+      "user_input": "BackupSnapshots.new.find(params[:name]).path",
+      "confidence": "Medium",
+      "cwe_id": [
+        22
+      ],
+      "note": "Not user-controlled: params[:name] is only a lookup key. BackupSnapshots#find requires an anchored goodbooks-YYYY-MM-DD.sqlite3 name and an existing file in the fixed configured backup dir, so no path traversal; route is household-owner only."
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "32e791b1cc86725a9c38fe695ea2922b2f403051e4b5dd518948b84e6044ec84",
+      "check_name": "FileAccess",
+      "message": "Model attribute used in file name",
+      "file": "app/jobs/database_backup_job.rb",
+      "line": 11,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "File.rename(\"#{BackupSnapshots.new(dir).path_for(today)}.tmp\", BackupSnapshots.new(dir).path_for(today))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DatabaseBackupJob",
+        "method": "perform"
+      },
+      "user_input": "BackupSnapshots.new(dir).path_for(today)",
+      "confidence": "Medium",
+      "cwe_id": [
+        22
+      ],
+      "note": "Not user-controlled: the path comes from the configured backup dir plus a Date via BackupSnapshots#path_for, never from request input."
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}

@@ -14,6 +14,7 @@ module NavigationHelper
       (nav_link "Banks", plaid_items_path if show_bank_connections?),
       (nav_link "People", people_path if user.household_owner?),
       (nav_link "Audit log", audit_events_path if user.household_owner?),
+      (nav_link "Backups", backups_path if user.household_owner?),
       (nav_link "Errors", error_events_path, badge: ErrorEvent.unresolved.count if user.household_owner?)
     ].compact
   end

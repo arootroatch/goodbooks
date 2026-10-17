@@ -23,4 +23,22 @@ RSpec.describe Household do
     household.irs_payment_url = "https://www.irs.gov/payments"
     expect(household).to be_valid
   end
+
+  describe "backup_retention" do
+    it "defaults to 14" do
+      expect(create(:household).backup_retention).to eq(14)
+    end
+
+    it "must be a whole number from 1 to 365" do
+      household = build(:household)
+      [ 0, 366, 2.5, nil, "abc" ].each do |value|
+        household.backup_retention = value
+        expect(household).not_to be_valid, "expected #{value.inspect} to be invalid"
+      end
+      [ 1, 365 ].each do |value|
+        household.backup_retention = value
+        expect(household).to be_valid
+      end
+    end
+  end
 end
