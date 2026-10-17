@@ -1,4 +1,6 @@
 class SalesTaxProfile < ApplicationRecord
+  include Audited
+  audited label: -> { "Sales tax profile for #{business&.name}" }
   include PercentAttribute
   include BusinessKindValidation
 

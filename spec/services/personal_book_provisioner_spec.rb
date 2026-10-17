@@ -24,6 +24,16 @@ RSpec.describe PersonalBookProvisioner do
     expect(accountant.membership_for(book)).to be_nil
   end
 
+  it "sync gives nothing back to a deactivated linked user" do
+    spouse = create(:user)
+    create(:person, household: household, user: spouse)
+    book = described_class.call(household)
+    spouse.memberships.destroy_all
+    spouse.update!(deactivated_at: Time.current)
+    described_class.sync(household)
+    expect(spouse.membership_for(book)).to be_nil
+  end
+
   it "sync grants newly linked people and does nothing without a book" do
     spouse = create(:user)
     expect { described_class.sync(household) }.not_to change(Membership, :count)

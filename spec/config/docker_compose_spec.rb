@@ -18,4 +18,8 @@ RSpec.describe "docker-compose.yml" do
     secrets = %w[SECRET_KEY_BASE PLAID_SECRET] + Secrets::ENCRYPTION_KEYS.map { Secrets.variable(_1) }
     expect(app["environment"].slice(*secrets).values).to all(eq(""))
   end
+
+  it "rotates the app's logs" do
+    expect(app["logging"]).to eq("driver" => "json-file", "options" => { "max-size" => "10m", "max-file" => "5" })
+  end
 end

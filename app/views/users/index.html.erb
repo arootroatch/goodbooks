@@ -1,0 +1,44 @@
+<%# app/views/users/index.html.erb %>
+<header class="page-header">
+  <h1>Users</h1>
+  <%= primary_action "Invite someone", new_invite_path %>
+</header>
+<table>
+  <thead><tr><th>Name</th><th>Books</th><th>Last seen</th><th></th></tr></thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <tr>
+        <td>
+          <%= user.name %> <%= tag.span("Household owner", class: "badge") if user.household_owner? %><br>
+          <small><%= user.email_address %></small>
+        </td>
+        <td><%= user.memberships.map { "#{_1.business.name}: #{_1.role.humanize}" }.sort.join(", ").presence || "—" %></td>
+        <td><%= (seen = @last_seen[user.id]) ? "#{time_ago_in_words(seen)} ago" : "Never" %></td>
+        <td>
+          <div class="button-group">
+            <%= confirm_button "Sign out everywhere", sign_out_user_path(user), method: :patch, confirm: "Sign #{user.name} out of every device?" %>
+            <% unless user.household_owner? %>
+              <%= confirm_button "Remove from household", deactivate_user_path(user), method: :patch,
+                                 confirm: "Remove #{user.name}? They lose access to every book and can't sign in." %>
+            <% end %>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% if @deactivated.any? %>
+  <h2>Removed</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Removed</th><th></th></tr></thead>
+    <tbody>
+      <% @deactivated.each do |user| %>
+        <tr>
+          <td><%= user.name %><br><small><%= user.email_address %></small></td>
+          <td><%= l(user.deactivated_at, format: :short) %></td>
+          <td><div class="button-group"><%= confirm_button "Reactivate", reactivate_user_path(user), method: :patch, confirm: "Let #{user.name} sign in again?" %></div></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

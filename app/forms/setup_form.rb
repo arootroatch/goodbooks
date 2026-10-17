@@ -17,10 +17,12 @@ class SetupForm
     ApplicationRecord.transaction do
       return already_completed if Household.exists?
 
-      household = Household.create!(name: household_name)
       user = User.create!(name:, email_address:, password:, password_confirmation:, household_owner: true)
-      household.people.create!(name:, user:)
-      household.people.create!(name: spouse_name) if spouse_name.present?
+      Audit.as(user) do
+        household = Household.create!(name: household_name)
+        household.people.create!(name:, user:)
+        household.people.create!(name: spouse_name) if spouse_name.present?
+      end
       user
     end
   rescue ActiveRecord::RecordInvalid => e

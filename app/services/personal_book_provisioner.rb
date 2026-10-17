@@ -5,9 +5,17 @@ class PersonalBookProvisioner
 
   def self.call(household)
     household.with_lock do
-      book = household.personal_book || household.businesses.create!(kind: "personal", name: NAME).tap { CategoryTemplate.apply_to(_1) }
-      sync_memberships(book)
-      book
+      existing = household.personal_book
+      next existing.tap { sync_memberships(_1) } if existing
+
+      Audit.summarize do |summary|
+        book = household.businesses.create!(kind: "personal", name: NAME)
+        CategoryTemplate.apply_to(book)
+        summary.text = "Created the personal book"
+        summary.record = summary.business = book
+        sync_memberships(book)
+        book
+      end
     end
   end
 
@@ -17,8 +25,8 @@ class PersonalBookProvisioner
   end
 
   def self.sync_memberships(book)
-    User.where(household_owner: true).find_each { grant(book, _1, "owner") }
-    User.where(household_owner: false, id: book.household.people.select(:user_id)).find_each { grant(book, _1, "editor") }
+    User.active.where(household_owner: true).find_each { grant(book, _1, "owner") }
+    User.active.where(household_owner: false, id: book.household.people.select(:user_id)).find_each { grant(book, _1, "editor") }
   end
 
   def self.grant(book, user, role)

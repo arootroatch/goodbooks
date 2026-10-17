@@ -1,6 +1,8 @@
 # A money goal in one book. Payment goals add up the outflows linked to them (by their matcher or by hand);
 # savings goals share their account's balance with the book's other savings goals on it, in position order.
 class Goal < ApplicationRecord
+  include Audited
+  audited label: -> { name }
   include MoneyAttribute
 
   KINDS = %w[payments savings].freeze
@@ -60,11 +62,14 @@ class Goal < ApplicationRecord
   end
 
   def move_to!(new_position)
-    ApplicationRecord.transaction do
-      ids = business.goals.active.ordered.where.not(id: id).pluck(:id)
-      ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
-      ids.each.with_index(1) { |goal_id, position| Goal.where(id: goal_id).update_all(position: position) }
-      GoalMatcher.new(business).rematch if payments?
+    Audit.summarize(record: self) do |summary|
+      ApplicationRecord.transaction do
+        ids = business.goals.active.ordered.where.not(id: id).pluck(:id)
+        ids.insert(new_position.to_i.clamp(1, ids.size + 1) - 1, id)
+        ids.each.with_index(1) { |goal_id, position| Goal.where(id: goal_id).update_all(position: position) }
+        GoalMatcher.new(business).rematch if payments?
+      end
+      summary.text = "Reordered goals"
     end
     reload
   end

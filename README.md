@@ -176,7 +176,8 @@ tags for the exact version (`1.4.0`), the minor line (`1.4`), and `latest`. To s
 docker compose logs -f app
 ```
 
-Docker keeps at most 50 MB of app logs (five 10 MB files), so older lines roll off.
+Docker keeps at most 50 MB of app logs (five 10 MB files), so older lines roll off. Unhandled errors are also
+recorded on the **Errors** page (household owner only), grouped by error.
 
 - **The container keeps restarting:** the log names the setting that is blank, such as `APP_HOST` or a secret.
 - **A blank page (403) instead of the sign-in page:** the hostname in the browser doesn't match `APP_HOST`. The

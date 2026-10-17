@@ -1,4 +1,6 @@
 class TaxParameters < ApplicationRecord
+  include Audited
+  audited label: -> { "Tax parameters #{year}" }
   include MoneyAttribute
   include PercentAttribute
 

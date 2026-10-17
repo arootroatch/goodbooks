@@ -25,6 +25,8 @@ class DemoSeeder
     print_summary
   end
 
+  PHONE_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1".freeze
+
   private
 
   def build
@@ -51,6 +53,25 @@ class DemoSeeder
     seed_plaid(household, alex)
     seed_taxes(household, sound_roots, alex_person, whitney_person)
     seed_goals(household)
+    seed_activity(alex, whitney, sound_roots, gardens)
+  end
+
+  # A second login for Alex, a couple of weeks of edits by Alex and Whitney, and one open error.
+  def seed_activity(owner, editor, business, book)
+    owner.sessions.create!(user_agent: PHONE_AGENT, ip_address: "192.168.1.24", last_seen_at: 1.day.ago)
+    Audit.as(editor) do
+      book.transactions.order(posted_on: :desc).limit(4).each { _1.update!(memo: "Checked against receipt") }
+      book.mileage_entries.order(:driven_on).first&.destroy!
+      book.clients.order(:name).first&.update!(notes: "Prefers invoices on the 1st")
+    end
+    Audit.as(owner) do
+      business.transactions.order(posted_on: :desc).offset(4).limit(4).each { _1.update!(memo: "Receipt in Drive") }
+      business.rules.ordered.first&.move_to!(1)
+      Invite.create!(created_by: owner, email: "bookkeeper@example.com", grant_roles: { business.id => "viewer" })
+    end
+    ErrorEvent.create!(fingerprint: "demo", error_class: "Net::ReadTimeout", message: "Demo error: the bank timed out during sync",
+                       backtrace: "app/services/plaid_feed/sync.rb:21:in 'PlaidFeed::Sync#call'", source: "PlaidSyncJob",
+                       occurrences: 3, first_seen_at: 2.days.ago, last_seen_at: 3.hours.ago)
   end
 
   # Sound Roots Productions collects TN sales tax: weekly Stripe payouts (fees and tax entered), exempt consulting income,

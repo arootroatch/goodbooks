@@ -45,6 +45,7 @@
 
   <div class="sidebar-footer">
     <span class="sidebar-user"><%= Current.user.name.presence || Current.user.email_address %></span>
+    <%= link_to "Sessions", session_records_path, class: "ghost" %>
     <%= render "layouts/theme_toggle" %>
     <%= button_to "Sign out", session_path, method: :delete, class: "ghost" %>
   </div>

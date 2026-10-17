@@ -1,0 +1,25 @@
+<header class="page-header">
+  <h1>Sessions</h1>
+  <% if @sessions.size > 1 %>
+    <%= confirm_button "Sign out everywhere else", others_session_records_path, method: :delete,
+                       confirm: "Sign out of every other device?", class: "button" %>
+  <% end %>
+</header>
+<table>
+  <thead><tr><th>Device</th><th>IP address</th><th>Signed in</th><th>Last seen</th><th></th></tr></thead>
+  <tbody>
+    <% @sessions.each do |record| %>
+      <tr>
+        <td><%= record.device_label %> <%= tag.span("This device", class: "badge badge-pos") if record == Current.session %></td>
+        <td><%= record.ip_address %></td>
+        <td><%= l(record.created_at, format: :short) %></td>
+        <td><%= record.last_seen_at ? "#{time_ago_in_words(record.last_seen_at)} ago" : "—" %></td>
+        <td>
+          <% unless record == Current.session %>
+            <div class="button-group"><%= confirm_button "Revoke", session_record_path(record), method: :delete, confirm: "Sign out this device?" %></div>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

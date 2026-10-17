@@ -28,20 +28,23 @@ class CsvImport < ApplicationRecord
   def preview = CsvImport::Preview.build(self)
 
   def commit!
-    with_lock do
-      raise NotPreviewed, "This import was already #{status}." unless previewed?
+    Audit.summarize(record: account) do |summary|
+      with_lock do
+        raise NotPreviewed, "This import was already #{status}." unless previewed?
 
-      result = preview
-      created = result.new_entries.map do |entry|
-        row = entry.row
-        account.transactions.create!(posted_on: row.posted_on, amount_cents: row.amount_cents, payee: row.payee,
-                                     memo: row.memo, external_id: row.external_id)
+        result = preview
+        created = result.new_entries.map do |entry|
+          row = entry.row
+          account.transactions.create!(posted_on: row.posted_on, amount_cents: row.amount_cents, payee: row.payee,
+                                       memo: row.memo, external_id: row.external_id)
+        end
+        RuleApplier.new(account.business).apply(created)
+        GoalMatcher.new(account.business).apply(created)
+        result.synced_entries.each { _1.match.update!(external_id: _1.row.external_id) }
+        update!(status: "committed", committed_at: Time.current, row_count: result.entries.size, new_count: created.size,
+                duplicate_count: result.duplicate_entries.size, synced_count: result.synced_entries.size, error_count: result.error_entries.size)
       end
-      RuleApplier.new(account.business).apply(created)
-      GoalMatcher.new(account.business).apply(created)
-      result.synced_entries.each { _1.match.update!(external_id: _1.row.external_id) }
-      update!(status: "committed", committed_at: Time.current, row_count: result.entries.size, new_count: created.size,
-              duplicate_count: result.duplicate_entries.size, synced_count: result.synced_entries.size, error_count: result.error_entries.size)
+      summary.text = "Imported #{new_count} #{"transaction".pluralize(new_count)} into #{account.name} (#{duplicate_count} duplicates skipped)"
     end
   end
 

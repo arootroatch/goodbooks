@@ -1,4 +1,6 @@
 class Business < ApplicationRecord
+  include Audited
+  audited label: -> { name }, business: -> { id }
   belongs_to :household
   belongs_to :person, optional: true
   has_many :memberships, dependent: :destroy

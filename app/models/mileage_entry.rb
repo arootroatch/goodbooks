@@ -1,4 +1,6 @@
 class MileageEntry < ApplicationRecord
+  include Audited
+  audited label: -> { "#{driven_on} · #{purpose}" }
   belongs_to :business
 
   validates :driven_on, :purpose, presence: true

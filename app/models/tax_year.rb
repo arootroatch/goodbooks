@@ -1,4 +1,6 @@
 class TaxYear < ApplicationRecord
+  include Audited
+  audited label: -> { "Tax year #{year}" }
   include MoneyAttribute
 
   belongs_to :household

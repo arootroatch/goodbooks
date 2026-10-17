@@ -1,4 +1,6 @@
 class HomeOffice < ApplicationRecord
+  include Audited
+  audited label: -> { "Home office #{year}" }
   include MoneyAttribute
   include BusinessKindValidation
 

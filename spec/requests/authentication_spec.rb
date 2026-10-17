@@ -201,4 +201,36 @@ RSpec.describe "Authentication" do
     get new_two_factor_setup_path
     expect(response).to redirect_to(new_session_path)
   end
+
+  it "refreshes the session's last_seen_at on requests" do
+    sign_in_as user
+    record = user.sessions.last
+    travel 10.minutes do
+      get root_path
+      expect(record.reload.last_seen_at).to be_within(1.second).of(Time.current)
+    end
+  end
+
+  it "refuses a deactivated user's correct password with the usual message" do
+    user.update!(deactivated_at: Time.current)
+    log_in_password
+    expect(response).to redirect_to(new_session_path)
+    expect(flash[:alert]).to eq("Try another email address or password.")
+  end
+
+  it "signs out a deactivated user's live session on the next request" do
+    sign_in_as user
+    user.update!(deactivated_at: Time.current)
+    get root_path
+    expect(response).to redirect_to(new_session_path)
+    expect(user.sessions.count).to eq(0)
+  end
+
+  it "refuses a deactivated user at the 2FA step" do
+    log_in_password
+    user.update!(deactivated_at: Time.current)
+    post two_factor_path, params: { code: user.totp.now }
+    expect(response).to redirect_to(new_session_path)
+    expect(user.sessions.count).to eq(0)
+  end
 end
