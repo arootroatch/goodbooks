@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_000001) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -211,6 +211,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_000004) do
     t.datetime "updated_at", null: false
     t.boolean "singleton", default: true, null: false
     t.string "irs_payment_url", default: "https://www.irs.gov/payments/direct-pay", null: false
+    t.integer "backup_retention", default: 14, null: false
     t.index ["singleton"], name: "index_households_on_singleton", unique: true
   end
 
