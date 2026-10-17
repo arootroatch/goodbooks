@@ -15,6 +15,7 @@ RSpec.describe "Backups", js: true do
 
   it "shows snapshots, saves retention and fills the restore command with the chosen date" do
     system_sign_in_as owner
+    open_settings_menu
     click_on "Backups"
     expect(page).to have_content("2026-10-15")
     expect(page).to have_content("2026-10-14")

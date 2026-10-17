@@ -15,7 +15,8 @@
   font-size: var(--text-sm);
 }
 .sidebar > * { flex-shrink: 0; }
-.sidebar > a {
+.sidebar > a,
+.nav-section > a {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -24,8 +25,10 @@
   color: var(--muted);
   text-decoration: none;
 }
-.sidebar > a:hover { background: var(--hover); color: var(--fg); }
-.sidebar > a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-fg); font-weight: 500; }
+.sidebar > a:hover,
+.nav-section > a:hover { background: var(--hover); color: var(--fg); }
+.sidebar > a[aria-current="page"],
+.nav-section > a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-fg); font-weight: 500; }
 .sidebar .badge { background: var(--accent); color: var(--on-accent); }
 .nav-group {
   margin: var(--space-3) 0 var(--space-1);
@@ -38,6 +41,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.nav-section { display: flex; flex-direction: column; gap: 1px; }
+.nav-section > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+.nav-section > summary::-webkit-details-marker { display: none; }
+.nav-section > summary::after { content: "›"; margin-left: auto; font-size: 13px; line-height: 1; transition: transform .15s; }
+.nav-section[open] > summary::after { transform: rotate(90deg); }
+.nav-section[open] > summary .badge { display: none; }
+.nav-section > summary:hover { color: var(--fg); }
 
 .switcher { position: relative; margin-bottom: var(--space-1); }
 .switcher summary {

@@ -16,6 +16,7 @@ RSpec.describe "Sharing polish" do
 
   it "removes a user, who then can't sign in, and shows it in the audit log" do
     system_sign_in_as owner
+    open_settings_menu
     click_on "Users"
     within("tr", text: "Avery") { click_on "Remove from household" }
     expect(page).to have_content("Avery removed from the household.")
@@ -36,6 +37,7 @@ RSpec.describe "Sharing polish" do
     ErrorEvent.create!(fingerprint: "f", error_class: "RuntimeError", message: "boom", backtrace: "app/x.rb:1",
                        first_seen_at: 1.hour.ago, last_seen_at: 1.hour.ago)
     system_sign_in_as owner
+    open_settings_menu
     click_on "Errors"
     click_on "Resolve"
     expect(page).to have_content("Error resolved.")

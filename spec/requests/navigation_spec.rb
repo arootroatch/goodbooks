@@ -40,11 +40,11 @@ RSpec.describe "Navigation" do
     expect(sidebar).to have_no_link("All businesses")
     expect(sidebar).to have_link("Household inbox", href: household_inbox_path)
     expect(sidebar).to have_link("Household P&L", href: household_profit_and_loss_path)
-    expect(sidebar).to have_link("Tax parameters", href: tax_parameters_path)
-    expect(sidebar).to have_link("Household", href: edit_household_path)
-    expect(sidebar).to have_link("Invites", href: invites_path)
-    expect(sidebar).to have_link("People", href: people_path)
-    expect(sidebar).to have_link("Users", href: users_path)
+    expect(sidebar).to have_link("Tax parameters", href: tax_parameters_path, visible: :all)
+    expect(sidebar).to have_link("Household", href: edit_household_path, visible: :all)
+    expect(sidebar).to have_link("Invites", href: invites_path, visible: :all)
+    expect(sidebar).to have_link("People", href: people_path, visible: :all)
+    expect(sidebar).to have_link("Users", href: users_path, visible: :all)
   end
 
   it "links the household overview first in the household section" do
@@ -97,7 +97,7 @@ RSpec.describe "Navigation" do
       get path
       groups = sidebar.all(".nav-group").map(&:text)
       expect(groups.first).to eq("Settings")
-      links = sidebar.all("a").map(&:text)
+      links = sidebar.all("a", visible: :all).map(&:text)
       expect(links.index("People")).to be < links.index(path == root_path ? "Household inbox" : "Overview")
     end
   end
@@ -106,6 +106,38 @@ RSpec.describe "Navigation" do
     sign_in_as user_with_role("viewer", business)
     get business_transactions_path(business)
     expect(sidebar).to have_no_css(".nav-group", text: "Settings")
+  end
+
+  describe "the collapsible Settings section" do
+    def settings = sidebar.find("details.nav-section")
+
+    it "is collapsed by default away from its pages" do
+      sign_in_as household_owner
+      get root_path
+      expect(settings[:open]).to be_nil
+      expect(settings).to have_link("People", href: people_path, visible: :all)
+    end
+
+    it "is open on one of its own pages" do
+      sign_in_as household_owner
+      get people_path
+      expect(settings[:open]).not_to be_nil
+    end
+
+    it "is open everywhere once the user has opened it" do
+      sign_in_as household_owner
+      cookies[:settings_nav] = "open"
+      get root_path
+      expect(settings[:open]).not_to be_nil
+    end
+
+    it "shows the unresolved-errors badge on its heading" do
+      ErrorEvent.create!(fingerprint: "f", error_class: "RuntimeError", message: "boom", backtrace: "x",
+                         first_seen_at: 1.hour.ago, last_seen_at: 1.hour.ago)
+      sign_in_as household_owner
+      get root_path
+      expect(settings.find("summary")).to have_css(".badge", text: "1")
+    end
   end
 
   describe "on app-wide settings pages" do

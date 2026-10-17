@@ -46,9 +46,17 @@ Design documents live in `docs/superpowers/specs/`, starting with `2026-10-05-go
    done
    ```
 
-   **Never change these once the app is in use, and keep a copy offsite.** The encryption keys unlock everyone's
-   two-factor secrets and bank connections. Lose them and nobody can sign in, even from a backup. See
-   [Backups](#backups).
+   What each one does:
+
+   | Setting | What it protects | If it's lost or changed |
+   |---|---|---|
+   | `SECRET_KEY_BASE` | Signs the sign-in cookie | Everyone is signed out and signs in again. Nothing else is affected. |
+   | `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | Encrypts each person's two-factor secret and the Plaid bank tokens in the database | Authenticator codes can't be checked, so people are locked out of normal sign-in, and every bank must be reconnected. |
+   | `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` | Combined with the primary key to make the actual encryption key | Same as losing the primary key. |
+   | `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` | Required by Rails' encryption. goodbooks doesn't use it for any data yet | Nothing today, but treat it like the others in case a future version does. |
+
+   **Never change these once the app is in use, and keep a copy offsite.** A backup restored without the same
+   encryption keys has the same problem. See [Backups](#backups).
 
 3. **Set the time zone.** `TIME_ZONE` takes a Rails zone name such as `Eastern Time (US & Canada)` or
    `Pacific Time (US & Canada)`. "Today" rolls over at local midnight in that zone.

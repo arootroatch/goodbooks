@@ -16,6 +16,7 @@ RSpec.describe "Connecting a bank", type: :system, js: true do
 
   it "links, assigns, syncs without duplicating CSV history, and resolves a review" do
     system_sign_in_as owner
+    open_settings_menu
     click_on "Banks"
     click_on "Connect a bank"
     click_on "Connect with Plaid"
