@@ -7,7 +7,7 @@ RSpec.describe Secrets do
     end
 
     it "refuses to boot without one, counting blank as unset" do
-      expect { Secrets.secret_key_base!({ "SECRET_KEY_BASE" => "" }) }.to raise_error("SECRET_KEY_BASE not set. Set it in docker-compose.yml (see README).")
+      expect { Secrets.secret_key_base!({ "SECRET_KEY_BASE" => "" }) }.to raise_error("SECRET_KEY_BASE not set. Set it in .env (see README).")
       expect { Secrets.secret_key_base!({}) }.to raise_error(/SECRET_KEY_BASE not set/)
     end
 
@@ -28,9 +28,9 @@ RSpec.describe Secrets do
 
     it "refuses to boot without every key, naming the missing ones" do
       expect { Secrets.encryption_keys!(env.except("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT")) }
-        .to raise_error("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT not set. Set it in docker-compose.yml (see README).")
+        .to raise_error("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT not set. Set it in .env (see README).")
       expect { Secrets.encryption_keys!(env.merge("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY" => "")) }
-        .to raise_error("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY not set. Set it in docker-compose.yml (see README).")
+        .to raise_error("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY not set. Set it in .env (see README).")
       expect { Secrets.encryption_keys!({}) }.to raise_error(/PRIMARY_KEY, .*DETERMINISTIC_KEY, .*SALT not set. Set them/)
     end
 

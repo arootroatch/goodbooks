@@ -1,4 +1,4 @@
-# Production secrets from docker-compose.yml's environment. A blank value counts as unset.
+# Production secrets from the environment (.env, loaded by docker-compose.yml). A blank value counts as unset.
 # SECRET_KEY_BASE_DUMMY is set only while the Docker image precompiles assets, which needs none of them.
 module Secrets
   ENCRYPTION_KEYS = %i[primary_key deterministic_key key_derivation_salt].freeze
@@ -22,5 +22,5 @@ module Secrets
 
   def self.variable(key) = "ACTIVE_RECORD_ENCRYPTION_#{key.upcase}"
 
-  def self.missing(names) = "#{names.join(", ")} not set. Set #{names.one? ? "it" : "them"} in docker-compose.yml (see README)."
+  def self.missing(names) = "#{names.join(", ")} not set. Set #{names.one? ? "it" : "them"} in .env (see README)."
 end

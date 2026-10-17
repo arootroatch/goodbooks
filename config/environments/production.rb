@@ -89,7 +89,7 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  # Secrets from docker-compose.yml (see README). Rails generates a throwaway key base while assets precompile.
+  # Secrets from .env (see README). Rails generates a throwaway key base while assets precompile.
   if (secret_key_base = Secrets.secret_key_base!)
     config.secret_key_base = secret_key_base
   end

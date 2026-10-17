@@ -31,19 +31,26 @@ Design documents live in `docs/superpowers/specs/`, starting with `2026-10-05-go
 
 ## Install
 
-1. **Get the compose file.** Make a folder on the server and copy [`docker-compose.yml`](docker-compose.yml) into it,
-   either by pasting it into an editor or with
-   `curl -O https://raw.githubusercontent.com/arootroatch/goodbooks/main/docker-compose.yml`. This one file is your
-   whole configuration. It will hold your secrets, so make it private: `chmod 600 docker-compose.yml`.
+1. **Get the two files.** Make a folder on the server, download [`docker-compose.yml`](docker-compose.yml) and
+   [`.env.example`](.env.example) into it, and make your settings file from the example:
 
-2. **Generate your secrets.** Run this once and paste the four lines it prints over the matching blank lines in
-   `docker-compose.yml`:
+   ```bash
+   curl -O https://raw.githubusercontent.com/arootroatch/goodbooks/main/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/arootroatch/goodbooks/main/.env.example
+   cp .env.example .env && chmod 600 .env
+   ```
+
+   Every setting goes in `.env`; you never edit `docker-compose.yml`. `.env` will hold your secrets, so keep it private.
+
+2. **Generate your secrets.** Run this once in that folder. It fills the four blank secret lines in `.env` and leaves
+   any that are already set alone:
 
    ```bash
    for name in SECRET_KEY_BASE ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY \
                ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT; do
-     echo "      $name: \"$(openssl rand -hex 64)\""
+     sed -i.bak "s/^$name=\$/$name=$(openssl rand -hex 64)/" .env
    done
+   rm .env.bak
    ```
 
    What each one does:
@@ -58,19 +65,19 @@ Design documents live in `docs/superpowers/specs/`, starting with `2026-10-05-go
    **Never change these once the app is in use, and keep a copy offsite.** A backup restored without the same
    encryption keys has the same problem. See [Backups](#backups).
 
-3. **Set the time zone.** `TIME_ZONE` takes a Rails zone name such as `Eastern Time (US & Canada)` or
+3. **Set the time zone** in `.env`. `TIME_ZONE` takes a Rails zone name such as `Eastern Time (US & Canada)` or
    `Pacific Time (US & Canada)`. "Today" rolls over at local midnight in that zone.
 
 4. **Set up the household before exposing anything.** The first person to open a new install claims it, so do this
    while it is reachable only from the server:
-   - Set `APP_HOST: "localhost"` and run `docker compose up -d`.
+   - Set `APP_HOST=localhost` in `.env` and run `docker compose up -d`.
    - On the server, open `http://localhost:3000` in a browser. With `APP_HOST` set to `localhost` the app serves
      plain HTTP; with any other hostname it requires HTTPS. *If the server is headless*, forward the port from your laptop with
      `ssh -L 3000:localhost:3000 you@server` and open `http://localhost:3000` there.
    - Create the household: its name, your name, email and password (12 characters or more), and your spouse's name
      if you have one. Then scan the QR code with your authenticator app and **save the recovery codes** it shows.
 
-5. **Set your public hostname.** Change `APP_HOST` to the hostname people will type, such as `books.example.com`, and
+5. **Set your public hostname.** Change `APP_HOST` in `.env` to the hostname people will type, such as `books.example.com`, and
    run `docker compose up -d` again. It must match exactly, so don't have the tunnel rewrite the `Host` header.
 
 6. **Expose port 3000 through a tunnel.** TLS ends at the tunnel; the app listens only on `127.0.0.1:3000`.
@@ -105,8 +112,8 @@ Plaid is optional. Without it, production hides every Plaid screen and you impor
 
 1. Create an account at [dashboard.plaid.com](https://dashboard.plaid.com) and request Production access for the
    Transactions product. Plaid reviews the request; until it is approved, only Sandbox keys work.
-2. Copy the client ID and secret from **Developers → Keys** into `PLAID_CLIENT_ID` and `PLAID_SECRET`, set
-   `PLAID_ENV: "production"` (or `"sandbox"` to try it with Plaid's test banks), and run `docker compose up -d`. All
+2. Copy the client ID and secret from **Developers → Keys** into `PLAID_CLIENT_ID` and `PLAID_SECRET` in `.env`, set
+   `PLAID_ENV=production` (or `sandbox` to try it with Plaid's test banks), and run `docker compose up -d`. All
    three must be set; a typo in `PLAID_ENV` turns Plaid off and logs why.
 3. Anyone who owns a book can then go to **Banks** (under Settings) → **Connect a bank**. Each bank account becomes
    a new account in a book they own, feeds an existing manual or CSV account (pick "Existing account"; a blank "Sync
@@ -141,7 +148,7 @@ docker run --rm -v goodbooks_storage:/data:ro -v /path/to/offsite:/out alpine \
   sh -c 'tar czf /out/goodbooks-$(date +%F).tgz -C /data .'
 ```
 
-Also keep a copy of `docker-compose.yml` offsite, somewhere separate from the archives (a password manager works).
+Also keep a copy of `.env` offsite, somewhere separate from the archives (a password manager works).
 **A backup is useless without the keys in that file**: they decrypt the stored two-factor secrets, so a restored
 database without them cannot sign anyone in.
 
@@ -160,8 +167,8 @@ docker compose start app
 
 The **Backups** page shows the same command with a chosen snapshot's date filled in.
 
-**Moving to a new server.** Copy your `docker-compose.yml` over, unpack an offsite archive into a new volume (this
-brings back the uploaded files and the snapshots), run the `docker run` restore command above, then
+**Moving to a new server.** Copy `docker-compose.yml` and your `.env` over, unpack an offsite archive into a new
+volume (this brings back the uploaded files and the snapshots), run the `docker run` restore command above, then
 `docker compose up -d`:
 
 ```bash
@@ -173,13 +180,21 @@ docker run --rm -v goodbooks_storage:/data -v /path/to/offsite:/in alpine \
 ## Updating
 
 ```bash
+curl -O https://raw.githubusercontent.com/arootroatch/goodbooks/main/docker-compose.yml
 docker compose pull && docker compose up -d
 ```
 
-The app migrates its database on start. Each release on GitHub is published as `ghcr.io/arootroatch/goodbooks` with
-tags for the exact version (`1.4.0`), the minor line (`1.4`), and `latest`. To stay on a version, put its tag in
-`image:` instead of `latest`. If a release changes the template, compare your `docker-compose.yml` against the new
-[`docker-compose.yml`](docker-compose.yml) and copy over anything new; your settings and secrets stay as they are.
+The app migrates its database on start. Replacing `docker-compose.yml` is safe because your settings live in `.env`.
+If a release adds a setting, copy its line from the new [`.env.example`](.env.example) into your `.env`. This lists
+any you're missing:
+
+```bash
+curl -s https://raw.githubusercontent.com/arootroatch/goodbooks/main/.env.example | grep -o '^[A-Z_]*=' |
+  while read -r key; do grep -q "^$key" .env || echo "missing: ${key%=}"; done
+```
+
+Each release on GitHub is published as `ghcr.io/arootroatch/goodbooks` with tags for the exact version (`1.4.0`),
+the minor line (`1.4`), and `latest`. To stay on a version, set `GOODBOOKS_VERSION` in `.env` to its tag.
 
 ## Logs and troubleshooting
 
