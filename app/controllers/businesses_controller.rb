@@ -1,7 +1,7 @@
 class BusinessesController < ApplicationController
   include BusinessScoped
 
-  before_action :require_household_owner!, only: %i[new create]
+  before_action :require_household_owner!, only: %i[new create destroy]
   skip_before_action :set_business, only: %i[new create]
   before_action :require_owner!, only: %i[edit update]
 
@@ -46,6 +46,19 @@ class BusinessesController < ApplicationController
       redirect_to business_path(@business), notice: @business.personal? ? "Personal book updated." : "Business updated."
     else
       render :edit, status: :unprocessable_content
+    end
+  end
+
+  def destroy
+    if params[:confirm_name].to_s != @business.name
+      return redirect_to(edit_business_path(@business), alert: "Type the business's name exactly to delete it.", status: :see_other)
+    end
+
+    result = BusinessDestroyer.call(@business)
+    if result.ok?
+      redirect_to root_path, notice: "Deleted #{@business.name}.", status: :see_other
+    else
+      redirect_to edit_business_path(@business), alert: result.errors.to_sentence, status: :see_other
     end
   end
 

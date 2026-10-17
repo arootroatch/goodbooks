@@ -90,4 +90,41 @@ RSpec.describe PlaidFeed::Assignment do
     expect(described_class.kind_for("credit", "credit card")).to eq("credit")
     expect(described_class.kind_for("loan", "mortgage")).to eq("other")
   end
+
+  describe "the sync cursor" do
+    before { item.update!(cursor: "page-1") }
+
+    it "resets when a bank account is newly linked, so the next sync replays its history" do
+      expect(assign({ plaid_account: "fake-checking", choice: "new", book: personal.id.to_s, name: "Joint" })).to be_ok
+      expect(item.reload.cursor).to be_nil
+    end
+
+    it "stays when nothing new is linked or the assignment fails" do
+      assign({ plaid_account: "fake-checking", choice: "skip" })
+      expect(item.reload.cursor).to eq("page-1")
+      assign({ plaid_account: "fake-checking", choice: "new", book: personal.id.to_s, name: "A" },
+             { plaid_account: "fake-card", choice: "new", book: "0", name: "B" })
+      expect(item.reload.cursor).to eq("page-1")
+    end
+
+    it "lets an unlinked bank account be reassigned to another book with its full history" do
+      item.update!(cursor: nil)
+      wrong = create(:account, :plaid, business: business, plaid_item: item, plaid_account_id: "fake-checking", name: "Wrong")
+      card = create(:account, :plaid, business: business, plaid_item: item, plaid_account_id: "fake-card", name: "Card")
+      plaid_gateway.add_page(item.access_token, added: [
+        FakePlaidGateway.plaid_txn("t1", account_id: "fake-checking", amount: 4.5, date: Date.new(2026, 9, 1), name: "COFFEE"),
+        FakePlaidGateway.plaid_txn("t2", account_id: "fake-card", amount: 9.0, date: Date.new(2026, 9, 2), name: "BOOKS")
+      ])
+      PlaidFeed::Sync.call(item.reload, gateway: plaid_gateway)
+      expect(wrong.transactions.count).to eq(1)
+
+      wrong.detach_from_plaid!
+      expect(assign({ plaid_account: "fake-checking", choice: "new", book: personal.id.to_s, name: "Joint" })).to be_ok
+      PlaidFeed::Sync.call(item.reload, gateway: plaid_gateway)
+
+      expect(personal.accounts.find_by!(name: "Joint").transactions.pluck(:plaid_transaction_id)).to eq([ "t1" ])
+      expect(wrong.transactions.pluck(:plaid_transaction_id)).to eq([ "t1" ])
+      expect(card.transactions.pluck(:plaid_transaction_id)).to eq([ "t2" ])
+    end
+  end
 end

@@ -21,7 +21,7 @@
 <h2 class="section-title">Accounts</h2>
 <% reported = @plaid_accounts&.map { _1[:account_id] } %>
 <table>
-  <thead><tr><th>Bank account</th><th>Feeds</th></tr></thead>
+  <thead><tr><th>Bank account</th><th>Feeds</th><th></th></tr></thead>
   <tbody>
     <% @item.accounts.includes(:business).order(:name).each do |account| %>
       <tr id="<%= dom_id(account) %>">
@@ -29,6 +29,12 @@
         <td>
           <%= link_to "#{book_label(account.business)} › #{account.name}", business_transactions_path(account.business, account_id: account.id) %>
           <%= " · No longer reported by the bank" if reported && !reported.include?(account.plaid_account_id) %>
+        </td>
+        <td>
+          <div class="button-group">
+            <%= confirm_button "Unlink", plaid_item_account_link_path(@item, account), method: :delete,
+                               confirm: "Stop feeding #{account.name} from #{@item.institution_name}? Its transactions stay, and you can assign the bank account to another book." %>
+          </div>
         </td>
       </tr>
     <% end %>

@@ -39,10 +39,7 @@ class PlaidItem < ApplicationRecord
   def disconnect!(gateway)
     token = access_token
     ApplicationRecord.transaction do
-      accounts.each do |account|
-        account.update!(source: account.csv_mapping.present? ? "csv" : "manual", plaid_item: nil, plaid_account_id: nil,
-                        plaid_mask: nil, plaid_name: nil, plaid_sync_from: nil)
-      end
+      accounts.each(&:detach_from_plaid!)
       destroy!
     end
     begin
