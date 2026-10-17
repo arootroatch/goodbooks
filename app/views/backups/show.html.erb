@@ -53,3 +53,26 @@
   </p>
   <%= f.submit "Save" %>
 <% end %>
+
+<% if @latest %>
+  <h2>How to restore</h2>
+  <div data-controller="restore-command">
+    <p>
+      <label for="restore_snapshot">Snapshot to restore</label>
+      <select id="restore_snapshot" data-restore-command-target="select" data-action="restore-command#update">
+        <%= options_for_select(@snapshots.map { _1.date.iso8601 }, @latest.date.iso8601) %>
+      </select>
+    </p>
+    <p>On the server, in the folder with your <code>docker-compose.yml</code>, run:</p>
+<pre class="restore-command">docker compose stop app
+docker run --rm -v goodbooks_storage:/data alpine sh -c '
+  cp /data/backups/goodbooks-<span data-restore-command-target="date"><%= @latest.date.iso8601 %></span>.sqlite3 /data/production.sqlite3 &&
+  rm -f /data/production.sqlite3-wal /data/production.sqlite3-shm &&
+  chown 1000:1000 /data/production.sqlite3'
+docker compose start app</pre>
+    <p class="muted">
+      This stops goodbooks while it runs, which is why it isn't a button. Anything entered after the snapshot is lost,
+      and bank transactions sync again on the next run.
+    </p>
+  </div>
+<% end %>

@@ -122,8 +122,9 @@ Everything lives in the `goodbooks_storage` Docker volume: the SQLite databases,
 CSV imports), and the nightly backups.
 
 **Nightly snapshots.** Every night the app writes a consistent copy of the main database to
-`backups/goodbooks-YYYY-MM-DD.sqlite3` in the volume and keeps the latest 14. That protects against mistakes, not
-against losing the server's disk.
+`backups/goodbooks-YYYY-MM-DD.sqlite3` in the volume and keeps the latest 14. The household owner's **Backups** page
+shows when the last one ran, warns if one is missed, takes one on demand, downloads any of them, and sets how many to
+keep. That protects against mistakes, not against losing the server's disk.
 
 **Offsite copies.** Copy the volume somewhere else regularly, for example from cron to a NAS or a synced folder:
 
@@ -148,6 +149,8 @@ docker run --rm -v goodbooks_storage:/data alpine sh -c '
   chown 1000:1000 /data/production.sqlite3'
 docker compose start app
 ```
+
+The **Backups** page shows the same command with a chosen snapshot's date filled in.
 
 **Moving to a new server.** Copy your `docker-compose.yml` over, unpack an offsite archive into a new volume (this
 brings back the uploaded files and the snapshots), run the `docker run` restore command above, then
