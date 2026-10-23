@@ -34,6 +34,18 @@ RSpec.describe "Authentication" do
     expect(response).to redirect_to(new_session_path)
   end
 
+  # Bitwarden won't autofill a field whose label or form text mentions "recovery" or "backup", even with
+  # autocomplete="one-time-code", so the recovery-code hint sits outside the form.
+  it "keeps recovery-code wording out of the code field's form so password managers autofill it" do
+    log_in_password
+    get new_two_factor_path
+    html = Nokogiri::HTML(response.body)
+    field = html.at("input[name=code]")
+    expect(field[:autocomplete]).to eq("one-time-code")
+    expect(field.ancestors("form").first.text).not_to match(/recovery|backup/i)
+    expect(html.at("main").text).to match(/recovery code/i)
+  end
+
   it "signs in after a correct code" do
     log_in_password
     post two_factor_path, params: { code: user.totp.now }

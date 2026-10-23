@@ -15,6 +15,12 @@ export default class extends Controller {
       document.documentElement.dataset.theme = theme
     }
 
+    // Same rule as ThemeHelper#theme_color_meta_tags.
+    document.querySelectorAll("meta[name=theme-color]").forEach((meta) => {
+      const scheme = meta.dataset.scheme
+      meta.media = theme === "system" ? `(prefers-color-scheme: ${scheme})` : scheme === theme ? "all" : "not all"
+    })
+
     this.optionTargets.forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.themeChoice === theme))
     })

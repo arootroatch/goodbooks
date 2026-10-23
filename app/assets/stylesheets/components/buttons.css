@@ -18,3 +18,7 @@ form.button_to { display: inline; }
 .danger { color: var(--neg); }
 .ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .ghost:hover { color: var(--fg); }
+/* Finger-sized tap targets on touch screens. */
+@media (pointer: coarse) {
+  button, input[type=submit], input[type=button], a.button { min-height: 36px; }
+}

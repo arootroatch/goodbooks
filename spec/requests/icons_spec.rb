@@ -14,7 +14,7 @@ RSpec.describe "App icons" do
     expect(icon_links).to match(
       "icon image/svg+xml" => %r{\A/assets/icon-\h+\.svg\z},
       "icon image/png" => %r{\A/assets/icon-\h+\.png\z},
-      "apple-touch-icon image/png" => %r{\A/assets/icon-\h+\.png\z}
+      "apple-touch-icon image/png" => %r{\A/assets/icon-maskable-\h+\.png\z}
     )
   end
 
@@ -29,5 +29,12 @@ RSpec.describe "App icons" do
     png = response.body.b
     expect(png[16, 8].unpack("NN")).to eq([ 512, 512 ])
     expect(Digest::SHA256.hexdigest(png)).not_to eq(rails_default_png_sha256)
+  end
+
+  it "gives iOS a square touch icon with no transparent corners" do
+    get icon_links.fetch("apple-touch-icon image/png")
+    png = response.body.b
+    expect(png[16, 8].unpack("NN")).to eq([ 512, 512 ])
+    expect(png[25].ord).to eq(2) # color type 2: RGB, no alpha channel
   end
 end

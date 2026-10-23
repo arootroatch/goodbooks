@@ -17,4 +17,20 @@ RSpec.describe "Sidebar drawer", js: true do
     click_button "Menu"
     expect(page).to have_no_css("nav.sidebar", visible: :visible)
   end
+
+  it "closes the drawer by tapping outside it or pressing Escape" do
+    system_sign_in_as user_with_role("viewer", business)
+    page.current_window.resize_to(600, 900)
+    visit root_path
+
+    click_button "Menu"
+    find(".sidebar-backdrop").click(x: 150, y: 0) # right of the 260px drawer
+    expect(page).to have_no_css("nav.sidebar", visible: :visible)
+    expect(page).to have_button("Menu", exact: true) { _1["aria-expanded"] == "false" }
+
+    click_button "Menu"
+    expect(page).to have_css("nav.sidebar", visible: :visible)
+    find("body").send_keys(:escape)
+    expect(page).to have_no_css("nav.sidebar", visible: :visible)
+  end
 end
