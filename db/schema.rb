@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_000001) do
   create_table "accounts", force: :cascade do |t|
     t.integer "business_id", null: false
     t.string "name", null: false
@@ -29,6 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_000001) do
     t.date "opening_balance_on"
     t.integer "reported_balance_cents"
     t.datetime "balance_reported_at"
+    t.boolean "tithable", default: true, null: false
     t.index ["business_id"], name: "index_accounts_on_business_id"
     t.index ["plaid_account_id"], name: "index_accounts_on_plaid_account_id", unique: true, where: "plaid_account_id IS NOT NULL"
     t.index ["plaid_item_id"], name: "index_accounts_on_plaid_item_id"
@@ -439,6 +440,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_000001) do
     t.string "review_reason"
     t.integer "goal_id"
     t.string "goal_linked_by"
+    t.boolean "tithe_excluded", default: false, null: false
     t.index ["account_id", "external_id"], name: "index_transactions_on_account_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
     t.index ["account_id", "plaid_transaction_id"], name: "index_transactions_on_account_id_and_plaid_transaction_id", unique: true, where: "plaid_transaction_id IS NOT NULL"
     t.index ["account_id"], name: "index_transactions_on_account_id"

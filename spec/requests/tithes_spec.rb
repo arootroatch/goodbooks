@@ -133,6 +133,97 @@ RSpec.describe "Tithe" do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "lists each week's transactions as rows under the week, with their account" do
+    seed_week
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    week = Capybara.string(response.body).find("tbody.tithe-week", text: "TRANSFER FROM PAT")
+    expect(week).to have_css("tr.tithe-week-row button[aria-expanded='false']")
+    deposit = week.find("tr.tithe-entry[hidden]", text: "TRANSFER FROM PAT", visible: :all)
+    expect(deposit).to have_text(checking.name)
+    expect(deposit.all("td", visible: :all).map(&:text).values_at(1, 3).map(&:strip)).to eq([ "$1,500.00", "" ])
+    check = week.find("tr.tithe-entry", text: "CHECK 1042 GRACE CHURCH", visible: :all)
+    expect(check.all("td", visible: :all).map(&:text).values_at(1, 3).map(&:strip)).to eq([ "", "$100.00" ])
+    expect(deposit).to have_button("Leave out", visible: :all)
+  end
+
+  it "opens the week named in the URL" do
+    seed_week
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book, week: Tithe::Ledger.week_start(start_on).iso8601)
+    week = Capybara.string(response.body).find("tbody.tithe-week", text: "TRANSFER FROM PAT")
+    expect(week).to have_css("tr.tithe-week-row button[aria-expanded='true']")
+    expect(week).to have_no_css("tr.tithe-entry[hidden]")
+  end
+
+  it "lets the owner choose which accounts' income counts" do
+    savings = create(:account, business: book, name: "Savings", kind: "savings")
+    create(:transaction, account: savings, payee: "TRANSFER FROM CHECKING", amount_cents: 100_000, posted_on: start_on)
+    seed_week
+    book.update!(tithe_start_on: start_on)
+    sign_in_as owner
+    get business_tithe_path(book)
+    expect(Capybara.string(response.body).find("form.tithe-accounts")).to have_checked_field("Savings")
+    expect(response.body).to include("Behind $150.00")
+
+    patch business_tithe_accounts_path(book), params: { account_ids: [ checking.id.to_s, create(:account).id.to_s ] }
+    expect(response).to redirect_to(business_tithe_path(book))
+    expect([ checking.reload.tithable, savings.reload.tithable ]).to eq([ true, false ])
+    follow_redirect!
+    expect(Capybara.string(response.body).find("form.tithe-accounts")).to have_unchecked_field("Savings")
+    expect(response.body).to include("Behind $50.00")
+    expect(response.body).not_to include("TRANSFER FROM CHECKING")
+
+    patch business_tithe_accounts_path(book), params: { account_ids: [ "" ] }
+    expect(checking.reload.tithable).to be(false)
+  end
+
+  it "lets an editor leave a transaction out of the tithe and count it again" do
+    seed_week
+    book.update!(tithe_start_on: start_on)
+    spouse = create(:user)
+    create(:person, household: household, user: spouse)
+    PersonalBookProvisioner.sync(household)
+    sign_in_as spouse
+    deposit = checking.transactions.find_by!(payee: "TRANSFER FROM PAT")
+    week = Tithe::Ledger.week_start(start_on).iso8601
+
+    post business_transaction_tithe_exclusion_path(book, deposit)
+    expect(response).to redirect_to(business_tithe_path(book, week: week, anchor: "week-#{week}"))
+    expect(deposit.reload.tithe_excluded).to be(true)
+    get business_tithe_path(book)
+    expect(response.body).to include("Ahead $100.00")
+    row = Capybara.string(response.body).find("tr.tithe-entry", text: "TRANSFER FROM PAT", visible: :all)
+    expect(row[:class]).to include("muted")
+    expect(row).to have_css(".badge", text: "Left out", visible: :all).and have_button("Count", visible: :all)
+
+    delete business_transaction_tithe_exclusion_path(book, deposit)
+    expect(deposit.reload.tithe_excluded).to be(false)
+    expect(deposit.excluded).to be(false)
+  end
+
+  it "keeps account choices to the owner and exclusions to the personal book" do
+    spouse = create(:user)
+    create(:person, household: household, user: spouse)
+    PersonalBookProvisioner.sync(household)
+    book.update!(tithe_start_on: start_on)
+    sign_in_as spouse
+    get business_tithe_path(book)
+    expect(response.body).not_to include("tithe-accounts")
+    patch business_tithe_accounts_path(book), params: { account_ids: [ "" ] }
+    expect(response).to have_http_status(:forbidden)
+
+    business = create(:business)
+    sign_in_as user_with_role("owner", business)
+    txn = create(:transaction, account: create(:account, business: business))
+    post business_transaction_tithe_exclusion_path(business, txn)
+    expect(response).to have_http_status(:not_found)
+    patch business_tithe_accounts_path(business), params: { account_ids: [ "" ] }
+    expect(response).to have_http_status(:not_found)
+  end
+
   it "is not found for non-members and on business books" do
     business = create(:business)
     accountant = user_with_role("viewer", business)

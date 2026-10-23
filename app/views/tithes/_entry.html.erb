@@ -1,0 +1,18 @@
+<%# One transaction under its week, lined up with the week's Income and Paid columns. %>
+<% txn = entry.source %>
+<%= tag.tr class: [ "tithe-entry", { muted: entry.excluded } ], hidden: hidden, data: { tithe_week_target: "entry" } do %>
+  <td class="tithe-entry-label"><%= entry.posted_on.strftime("%b %-d") %> · <%= txn.payee %> <small class="muted"><%= txn.account.name %></small></td>
+  <td class="num"><%= money(entry.cents) if entry.kind == :income %></td>
+  <td></td>
+  <td class="num"><%= money(entry.cents) if entry.kind == :payment %></td>
+  <td></td>
+  <td><%= tag.span("Left out", class: "badge badge-muted") if entry.excluded %></td>
+  <td></td>
+  <td>
+    <% if current_membership.can_edit? %>
+      <%= button_to entry.excluded ? "Count" : "Leave out", business_transaction_tithe_exclusion_path(@business, txn),
+            method: entry.excluded ? :delete : :post, class: "ghost",
+            title: entry.excluded ? "Count this toward the tithe again" : "Leave this out of the tithe. #{TransactionsHelper::TITHE_EXCLUDED_HELP}" %>
+    <% end %>
+  </td>
+<% end %>

@@ -39,7 +39,7 @@ RSpec.describe "Shortcuts on the transaction edit page" do
   it "opens a rule pre-filled from the transaction when asked" do
     patch business_transaction_path(business, txn), params: { make_rule: "1", transaction: { category_id: software.id } }
     expect(txn.reload.category).to eq(software)
-    expect(response).to redirect_to(new_business_rule_path(business, value: "ADOBE", category_id: software.id))
+    expect(response).to redirect_to(new_business_rule_path(business, value: "ADOBE CREATIVE CLOUD 123", category_id: software.id))
   end
 
   it "offers the make-rule checkbox on the form" do

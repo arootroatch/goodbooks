@@ -1,0 +1,9 @@
+.tithe-accounts small { flex-basis: 100%; }
+.tithe-week-toggle { padding: 0; font-weight: 400; color: var(--fg); white-space: nowrap; }
+.tithe-week-toggle::before { content: "›"; display: inline-block; width: 1em; color: var(--muted); transition: transform .15s; }
+.tithe-week-toggle[aria-expanded=true]::before { transform: rotate(90deg); }
+.tithe-week-label { padding-left: 1em; white-space: nowrap; }
+.tithe-entry td { font-size: var(--text-sm); background: var(--hover); }
+.tithe-entry-label { padding-left: calc(var(--space-3) + 1em); }
+.tithe-entry.muted .num { text-decoration: line-through; }
+.tithe-entry button { padding: 2px 8px; }

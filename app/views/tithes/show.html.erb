@@ -8,27 +8,36 @@
     <%= f.date_field :tithe_start_on %>
     <%= f.submit "Save" %>
   <% end %>
+  <% if @accounts.any? %>
+    <%= form_with url: business_tithe_accounts_path(@business), method: :patch, class: "filters tithe-accounts" do %>
+      <span>Count income from</span>
+      <%= hidden_field_tag "account_ids[]", "", id: nil %>
+      <% @accounts.each do |account| %>
+        <label><%= check_box_tag "account_ids[]", account.id, account.tithable?, id: dom_id(account, :tithable) %> <%= account.name %></label>
+      <% end %>
+      <%= submit_tag "Save accounts" %>
+      <small class="muted">Tithe paid from any account still counts. Leave out savings so transfers into it aren't income.</small>
+    <% end %>
+  <% end %>
 <% end %>
 <% if @ledger.nil? %>
   <p><%= current_membership.owner? ? "Choose the date to start tracking from; earlier activity is ignored." : "The household owner hasn't set a tithe start date yet." %></p>
 <% else %>
   <%= render "tithes/summary", ledger: @ledger %>
-  <table>
+  <table class="tithe-weeks">
     <thead>
-      <tr><th>Week</th><th class="num">Income</th><th class="num">Owed</th><th class="num">Paid this week</th><th class="num">Applied</th><th>Status</th><th class="num">Balance</th></tr>
+      <tr><th>Week</th><th class="num">Income</th><th class="num">Owed</th><th class="num">Paid this week</th><th class="num">Applied</th><th>Status</th><th class="num">Balance</th><th></th></tr>
     </thead>
-    <tbody>
-      <% @ledger.weeks.reverse_each do |week| %>
-        <tr>
+    <% @ledger.weeks.reverse_each do |week| %>
+      <% open = week.starts_on == @open_week %>
+      <tbody class="tithe-week" id="week-<%= week.starts_on.iso8601 %>" data-controller="tithe-week">
+        <tr class="tithe-week-row">
           <td>
-            <details>
-              <summary><%= tithe_week_label(week) %></summary>
-              <ul>
-                <% week.entries.each do |entry| %>
-                  <li><%= entry.posted_on.iso8601 %> <%= entry.source.payee %> (<%= entry.kind == :income ? "income" : "tithe" %>) <%= money(entry.cents) %></li>
-                <% end %>
-              </ul>
-            </details>
+            <% if week.entries.any? %>
+              <button type="button" class="ghost tithe-week-toggle" aria-expanded="<%= open %>" data-tithe-week-target="toggle" data-action="tithe-week#toggle"><%= tithe_week_label(week) %></button>
+            <% else %>
+              <span class="tithe-week-label"><%= tithe_week_label(week) %></span>
+            <% end %>
           </td>
           <td class="num"><%= money(week.income_cents) %></td>
           <td class="num"><%= money(week.owed_cents) %></td>
@@ -36,8 +45,10 @@
           <td class="num"><%= money(week.paid_toward_cents) %></td>
           <td><%= tithe_status_badge(week.status) %></td>
           <td class="num"><%= tithe_balance_label(week.balance_cents) %></td>
+          <td></td>
         </tr>
-      <% end %>
-    </tbody>
+        <%= render partial: "tithes/entry", collection: week.entries, locals: { hidden: !open } %>
+      </tbody>
+    <% end %>
   </table>
 <% end %>

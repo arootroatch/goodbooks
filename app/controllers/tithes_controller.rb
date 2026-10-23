@@ -6,6 +6,8 @@ class TithesController < ApplicationController
 
   def show
     @ledger = Tithe.ledger_for(@business)
+    @accounts = @business.accounts.active.order(:name)
+    @open_week = parse_iso_date(params[:week].to_s)
     respond_to do |format|
       format.html
       format.csv do

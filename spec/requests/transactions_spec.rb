@@ -104,6 +104,22 @@ RSpec.describe "Transactions" do
     expect(imported.category).to eq(category)
   end
 
+  it "explains transfer and excluded, and offers leaving a personal-book row out of the tithe" do
+    sign_in_as user_with_role("editor", business)
+    get edit_business_transaction_path(business, imported)
+    expect(response.body).to include("Money moving between your own accounts").and include("Ignore this transaction everywhere")
+    expect(response.body).not_to include("Leave out of tithe")
+
+    household_owner = create(:user, :household_owner)
+    book = PersonalBookProvisioner.call(Household.first)
+    txn = create(:transaction, account: create(:account, business: book), amount_cents: 5_000, external_id: "p1")
+    sign_in_as household_owner
+    get edit_business_transaction_path(book, txn)
+    expect(response.body).to include("Leave out of tithe")
+    patch business_transaction_path(book, txn), params: { transaction: { tithe_excluded: "1" } }
+    expect(txn.reload).to have_attributes(tithe_excluded: true, excluded: false)
+  end
+
   context "with an archived category" do
     let!(:old) { create(:category, business: business, name: "Old", archived_at: Time.current) }
 

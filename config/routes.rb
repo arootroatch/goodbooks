@@ -27,7 +27,9 @@ Rails.application.routes.draw do
   end
 
   resources :businesses, only: %i[new create show edit update destroy] do
-    resource :tithe, only: %i[show update], controller: "tithes"
+    resource :tithe, only: %i[show update], controller: "tithes" do
+      resource :accounts, only: :update, controller: "tithe_accounts"
+    end
     resource :sales_tax_profile, only: %i[show update], path: "sales_tax"
     resources :sales_tax_periods, only: :show, param: :starts_on, path: "sales_tax/periods" do
       resource :filing, only: %i[create destroy], controller: "sales_tax_filings"
@@ -53,6 +55,7 @@ Rails.application.routes.draw do
     resources :transactions, except: :show do
       resource :classification, only: :update
       resource :review, only: :update, controller: "transaction_reviews"
+      resource :tithe_exclusion, only: %i[create destroy]
     end
     resources :rules, except: :show do
       patch :move, on: :member

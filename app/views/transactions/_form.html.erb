@@ -55,8 +55,20 @@
   <% if goals.any? %>
     <p><%= f.label :goal_id, "Goal" %> <%= f.collection_select :goal_id, goals, :id, :name, include_blank: "None" %></p>
   <% end %>
-  <p><%= f.label :transfer %> <%= f.check_box :transfer %></p>
-  <p><%= f.label :excluded %> <%= f.check_box :excluded %></p>
+  <p>
+    <%= f.label :transfer %> <%= f.check_box :transfer %>
+    <small><%= TransactionsHelper::TRANSFER_HELP %></small>
+  </p>
+  <p>
+    <%= f.label :excluded %> <%= f.check_box :excluded %>
+    <small><%= TransactionsHelper::EXCLUDED_HELP %></small>
+  </p>
+  <% if @business.personal? %>
+    <p>
+      <%= f.label :tithe_excluded, "Leave out of tithe" %> <%= f.check_box :tithe_excluded %>
+      <small><%= TransactionsHelper::TITHE_EXCLUDED_HELP %></small>
+    </p>
+  <% end %>
   <div class="actions">
     <%= f.submit %>
     <%= delete_button "Delete", transaction if transaction.persisted? && !transaction.imported? %>

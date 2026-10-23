@@ -8,13 +8,14 @@
   <%= link_to "Show archived", business_accounts_path(@business, archived: "1") %>
 <% end %>
 <table>
-  <thead><tr><th>Name</th><th>Source</th><th>Kind</th><th class="num">Balance</th><th></th></tr></thead>
+  <thead><tr><th>Name</th><th>Source</th><th>Kind</th><% if @business.personal? %><th>Tithe</th><% end %><th class="num">Balance</th><th></th></tr></thead>
   <tbody>
     <% @accounts.each do |account| %>
       <tr id="<%= dom_id(account) %>">
         <td><%= link_to account.name, business_transactions_path(@business, account_id: account.id) %><%= " (archived)" if account.archived? %></td>
         <td><%= account.plaid_item ? render("accounts/plaid_status", account: account) : account.source %></td>
         <td><%= account.kind %></td>
+        <% if @business.personal? %><td class="tithe"><%= account.tithable? ? "Counted" : tag.span("Not counted", class: "muted") %></td><% end %>
         <td class="num balance"><%= money(account.balance_cents) %></td>
         <td>
           <div class="button-group">

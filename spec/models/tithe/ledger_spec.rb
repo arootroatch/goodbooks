@@ -24,6 +24,14 @@ RSpec.describe Tithe::Ledger do
     expect(result.weeks.first.entries.map(&:kind)).to eq(%i[income payment])
   end
 
+  it "lists left-out entries in their week without counting them" do
+    left_out = Tithe::Ledger::Entry.new(posted_on: Date.parse("2026-01-06"), cents: 50_000, kind: :income, source: nil, excluded: true)
+    result = ledger([ income("2026-01-05", 10_000), left_out, paid("2026-01-07", 500).with(excluded: true) ], today: "2026-01-10")
+    week = result.weeks.sole
+    expect([ week.income_cents, week.owed_cents, week.paid_cents ]).to eq([ 10_000, 1_000, 0 ])
+    expect(week.entries.map(&:cents)).to eq([ 10_000, 50_000, 500 ])
+  end
+
   it "rounds once per week, half up" do
     result = ledger([ income("2026-01-05", 333), income("2026-01-06", 333), income("2026-01-07", 333) ], today: "2026-01-07")
     expect(result.weeks.sole.owed_cents).to eq(100) # 99.9 → 100, not 3 × 33

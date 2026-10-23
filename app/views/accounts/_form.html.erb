@@ -15,5 +15,11 @@
       <small>the balance at the end of that day; later transactions are added to it</small>
     </p>
   <% end %>
+  <% if @business.personal? %>
+    <p>
+      <%= f.label :tithable, "Count income toward tithe" %> <%= f.check_box :tithable %>
+      <small>turn off for savings and other accounts that only receive transfers; tithe paid from this account still counts</small>
+    </p>
+  <% end %>
   <%= f.submit %>
 <% end %>

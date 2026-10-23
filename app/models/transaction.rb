@@ -90,7 +90,7 @@ class Transaction < ApplicationRecord
   end
 
   # First word of the payee: what a new rule matches on by default.
-  def rule_keyword = payee.to_s.squish.split.first
+  def rule_keyword = payee.to_s.squish
 
   private
 

@@ -85,4 +85,31 @@ RSpec.describe "Accounts" do
       expect(response.body).not_to include("account[opening_balance]")
     end
   end
+
+  describe "tithe" do
+    let!(:owner) { create(:user, :household_owner) }
+    let!(:book) { PersonalBookProvisioner.call(Household.first) }
+
+    it "lets the owner mark a personal-book account as not counting toward the tithe" do
+      savings = create(:account, business: book, name: "Savings", kind: "savings")
+      sign_in_as owner
+      get edit_business_account_path(book, savings)
+      expect(Capybara.string(response.body)).to have_checked_field("Count income toward tithe")
+      patch business_account_path(book, savings), params: { account: { name: "Savings", kind: "savings", tithable: "0" } }
+      expect(savings.reload.tithable).to be(false)
+      get business_accounts_path(book)
+      expect(Capybara.string(response.body).find("##{ActionView::RecordIdentifier.dom_id(savings)} td.tithe")).to have_text("Not counted")
+
+      post business_accounts_path(book), params: { account: { name: "Cash jar", source: "manual", kind: "cash", tithable: "0" } }
+      expect(book.accounts.find_by!(name: "Cash jar").tithable).to be(false)
+    end
+
+    it "leaves the tithe setting off business books" do
+      sign_in_as user_with_role("owner", business)
+      get edit_business_account_path(business, account)
+      expect(response.body).not_to include("account[tithable]")
+      get business_accounts_path(business)
+      expect(Capybara.string(response.body)).to have_no_css("th", text: "Tithe").and have_no_css("td.tithe")
+    end
+  end
 end

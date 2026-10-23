@@ -15,7 +15,8 @@
             <% if editable %>
               <div class="button-group">
                 <%= button_to "Keep", business_transaction_review_path(business, txn), method: :patch, params: { decision: "keep" } %>
-                <%= button_to "Exclude", business_transaction_review_path(business, txn), method: :patch, params: { decision: "exclude" } %>
+                <%= button_to "Exclude", business_transaction_review_path(business, txn), method: :patch, params: { decision: "exclude" },
+                      title: TransactionsHelper::EXCLUDED_HELP %>
               </div>
             <% end %>
           </td>

@@ -13,7 +13,7 @@ RSpec.describe Tithe::Entries do
     create(:transaction, account: account, amount_cents: cents, posted_on: on, **attrs)
   end
 
-  def kinds = described_class.for(book).map { [ _1.kind, _1.cents ] }
+  def kinds = described_class.for(book).reject(&:excluded).map { [ _1.kind, _1.cents ] }
 
   it "counts uncategorized deposits and tithable income across the book's accounts" do
     txn(10_000)
@@ -27,6 +27,22 @@ RSpec.describe Tithe::Entries do
     txn(7_000, excluded: true)
     txn(8_000, on: Date.new(2026, 1, 3))
     expect(kinds).to be_empty
+  end
+
+  it "skips income into accounts that aren't tithable but still counts tithe paid from them" do
+    savings.update!(tithable: false)
+    txn(40_000, account: savings)
+    txn(-3_000, account: savings, category: tithe)
+    expect(kinds).to contain_exactly([ :payment, 3_000 ])
+  end
+
+  it "keeps rows left out of the tithe as excluded entries" do
+    left_out = txn(9_000, tithe_excluded: true)
+    txn(-1_000, category: tithe, tithe_excluded: true)
+    entries = described_class.for(book)
+    expect(kinds).to be_empty
+    expect(entries.map { [ _1.kind, _1.cents, _1.excluded ] }).to contain_exactly([ :income, 9_000, true ], [ :payment, 1_000, true ])
+    expect(entries.find { _1.kind == :income }.source).to eq(left_out)
   end
 
   it "never treats a positive amount in an expense category as income" do

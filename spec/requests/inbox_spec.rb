@@ -14,6 +14,14 @@ RSpec.describe "Inbox" do
     expect(response.body).not_to include("ALREADY DONE")
   end
 
+  it "explains Transfer and Exclude on hover" do
+    sign_in_as user_with_role("editor", business)
+    get business_inbox_path(business)
+    row = Capybara.string(response.body).find("tr", text: "ADOBE CREATIVE")
+    expect(row.find_button("Exclude")[:title]).to eq(TransactionsHelper::EXCLUDED_HELP)
+    expect(row.find_button("Transfer")[:title]).to eq(TransactionsHelper::TRANSFER_HELP)
+  end
+
   it "categorizes with a turbo stream that removes the row" do
     sign_in_as user_with_role("editor", business)
     patch business_transaction_classification_path(business, txn),
@@ -45,7 +53,7 @@ RSpec.describe "Inbox" do
     sign_in_as user_with_role("editor", business)
     patch business_transaction_classification_path(business, txn),
       params: { outcome: "categorize", category_id: category.id, make_rule: "1" }, as: :turbo_stream
-    expect(response).to redirect_to(new_business_rule_path(business, value: "ADOBE", category_id: category.id))
+    expect(response).to redirect_to(new_business_rule_path(business, value: "ADOBE CREATIVE", category_id: category.id))
   end
 
   it "forbids viewers from classifying" do

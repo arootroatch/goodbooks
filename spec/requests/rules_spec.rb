@@ -13,6 +13,30 @@ RSpec.describe "Rules" do
     expect(business.rules.sole.value).to eq("adobe")
   end
 
+  it "takes the amount range in whole dollars against a fixed .00" do
+    sign_in_as user_with_role("editor", business)
+    get new_business_rule_path(business)
+    form = Capybara.string(response.body)
+    expect(form).to have_css(".dollar-field", text: "$", count: 2)
+    expect(form.find(".dollar-field", match: :first)).to have_field("rule[amount_min]", with: "")
+      .and have_css(".dollar-field-cents[aria-hidden=true]", text: ".00")
+    expect(form).to have_text("money in or out; leave blank for no limit")
+    post business_rules_path(business), params: { rule: {
+      field: "payee", operator: "contains", value: "adobe", outcome: "categorize", category_id: category.id, amount_min: "10", amount_max: "25.50"
+    } }
+    rule = business.rules.last
+    expect(rule).to have_attributes(amount_min_cents: 1_000, amount_max_cents: 2_550)
+
+    get edit_business_rule_path(business, rule)
+    min, max = Capybara.string(response.body).all(".dollar-field").to_a
+    expect(min).to have_field("rule[amount_min]", with: "10").and have_css(".dollar-field-cents")
+    expect(max).to have_field("rule[amount_max]", with: "25.50").and have_no_css(".dollar-field-cents")
+
+    patch business_rule_path(business, rule), params: { rule: { amount_min: "30" } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(Capybara.string(response.body)).to have_css(".dollar-field.dollar-field-error", text: "$").and have_no_css(".field_with_errors")
+  end
+
   it "marks rules whose category is archived as inactive" do
     create(:rule, business: business, value: "adobe", category: category)
     category.update!(archived_at: Time.current)

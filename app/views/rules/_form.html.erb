@@ -7,8 +7,9 @@
     <%= f.text_field :value, required: true %>
   </p>
   <p>
-    and amount between <%= f.text_field :amount_min, size: 8, placeholder: "any" %>
-    and <%= f.text_field :amount_max, size: 8, placeholder: "any" %> (absolute value)
+    and amount between <%= dollar_field f, :amount_min, size: 6 %>
+    and <%= dollar_field f, :amount_max, size: 6 %>
+    <small>money in or out; leave blank for no limit</small>
   </p>
   <p>
     then <%= f.select :outcome, [["categorize as", "categorize"], ["mark as transfer", "transfer"]] %>

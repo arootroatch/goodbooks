@@ -4,7 +4,10 @@ module Tithe
   # the running balance uses actual payment dates. Positive balance = behind.
   class Ledger
     RATE = Rational(1, 10)
-    Entry = Data.define(:posted_on, :cents, :kind, :source)
+    # Excluded entries were left out of the tithe by hand: listed in their week, never counted.
+    Entry = Data.define(:posted_on, :cents, :kind, :source, :excluded) do
+      def initialize(excluded: false, **) = super
+    end
     Week = Data.define(:starts_on, :ends_on, :income_cents, :owed_cents, :paid_cents, :paid_toward_cents, :status, :opening_balance_cents, :balance_cents, :entries)
 
     attr_reader :weeks, :owed_cents, :paid_cents, :balance_cents, :credit_cents, :ytd_owed_cents, :ytd_paid_cents
@@ -18,8 +21,9 @@ module Tithe
       @paid_cents = 0
       totals = starts.map do |starts_on|
         week_entries = (by_week[starts_on] || []).sort_by { [ _1.posted_on, _1.kind == :income ? 0 : 1, _1.source&.id.to_i ] }
-        income = week_entries.select { _1.kind == :income }.sum(&:cents)
-        paid = week_entries.select { _1.kind == :payment }.sum(&:cents)
+        counted = week_entries.reject(&:excluded)
+        income = counted.select { _1.kind == :income }.sum(&:cents)
+        paid = counted.select { _1.kind == :payment }.sum(&:cents)
         owed = Money.round_rational(income * RATE)
         opening = @owed_cents - @paid_cents
         @owed_cents += owed

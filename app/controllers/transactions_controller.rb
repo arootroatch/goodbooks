@@ -2,8 +2,8 @@ class TransactionsController < ApplicationController
   include BusinessScoped
   include ScalarParams
 
-  IMPORTED_EDITABLE = %i[memo category_id transfer excluded goal_id].freeze
-  MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded goal_id].freeze
+  IMPORTED_EDITABLE = %i[memo category_id transfer excluded tithe_excluded goal_id].freeze
+  MANUAL_EDITABLE = %i[posted_on payee amount direction memo category_id transfer excluded tithe_excluded goal_id].freeze
 
   SALES_TAX_EDITABLE = %i[processor_fee sales_tax sales_tax_period_starts_on].freeze
 

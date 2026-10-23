@@ -32,6 +32,17 @@ module ApplicationHelper
     end
   end
 
+  # A money_attribute typed in whole dollars against a fixed ".00": "10" is $10. An amount with cents shows them
+  # in the box and drops the ".00", so nothing is hidden.
+  def dollar_field(form, attribute, **options)
+    value = form.object.public_send(attribute).to_s.delete_suffix(".00")
+    whole = !value.include?(".")
+    # text_field_tag, not form.text_field: Rails' error wrapper is a <div>, which would break the box out of its <p>.
+    input = text_field_tag(form.field_name(attribute), value, id: form.field_id(attribute), inputmode: whole ? "numeric" : "decimal", **options)
+    cents = tag.span(".00", class: "dollar-field-cents", aria: { hidden: true }) if whole
+    tag.span(safe_join([ "$", input, cents ].compact), class: [ "dollar-field", { "dollar-field-error": form.object.errors[attribute].any? } ])
+  end
+
   def money(cents)
     return "—" if cents.nil?
     return Money.new(cents).to_s unless cents.negative?

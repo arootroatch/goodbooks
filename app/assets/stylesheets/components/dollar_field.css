@@ -1,0 +1,21 @@
+/* One input-looking box: "$", the whole-dollar input, and a fixed ".00". */
+.dollar-field {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  vertical-align: middle;
+}
+.dollar-field input:not([type=hidden]) {
+  width: auto;
+  padding: 6px 2px;
+  border: 0;
+  background: transparent;
+  text-align: right;
+}
+.dollar-field input:focus-visible { box-shadow: none; }
+.dollar-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.dollar-field-error { border-color: var(--neg); }
