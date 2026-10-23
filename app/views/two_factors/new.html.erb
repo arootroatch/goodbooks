@@ -1,6 +1,8 @@
 <h1>Two-factor verification</h1>
+<%# Bitwarden skips autofill when text near the field says "recovery" or "backup", so that hint stays outside the form. %>
 <%= form_with url: two_factor_path do |f| %>
-  <%= f.label :code, "Authenticator code or recovery code" %>
+  <%= f.label :code, "Authenticator code" %>
   <%= f.text_field :code, autocomplete: "one-time-code", autofocus: true, required: true %>
   <%= f.submit "Verify" %>
 <% end %>
+<p class="muted">No authenticator? Enter one of your recovery codes instead.</p>
