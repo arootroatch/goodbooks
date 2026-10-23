@@ -1,0 +1,43 @@
+/* Phones: a table marked data-stack (responsive_tables.js) shows each row as a card of "HEADING  value" lines. */
+@media (max-width: 640px) {
+  table[data-stack], table[data-stack] > :is(tbody, tfoot), table[data-stack] tr { display: block; }
+  table[data-stack] { background: none; border: 0; border-radius: 0; overflow: visible; }
+  table[data-stack] > thead, table[data-stack] tr[hidden] { display: none; }
+  table[data-stack] tr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+  table[data-stack] tr:has(> [colspan]:only-child) { background: none; border: 0; padding: var(--space-2) 0 0; }
+  table[data-stack] :is(td, th) {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px var(--space-3);
+    width: auto;
+    padding: 3px 0;
+    border: 0;
+    text-align: right;
+    white-space: normal;
+  }
+  table[data-stack] :is(td, th)::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font: 500 var(--text-xs)/1.5 var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: left;
+  }
+  /* An unlabelled first cell (a row name under a blank heading) is the card's title. */
+  table[data-stack] :is(td, th):first-child:not([data-label]) { justify-content: flex-start; text-align: left; font-weight: 600; }
+  table[data-stack] :is(td, th):not([data-label])::before { content: none; }
+  table[data-stack] :is(td, th):not([data-label]) { justify-content: flex-end; }
+  table[data-stack] :is(td, th):empty { display: none; }
+  table[data-stack] td > * { max-width: 100%; }
+  table[data-stack] .inline-form { justify-content: flex-end; }
+  table[data-stack] .inline-form select { flex: 1 1 10rem; min-width: 0; }
+  table[data-stack] tbody tr:hover td { background: none; }
+}

@@ -10,3 +10,8 @@
 .goal-name a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .goal-allocation tr.current td:first-child { font-weight: 600; }
 .goal-tag { margin-left: var(--space-1, 4px); }
+@media (max-width: 640px) {
+  .goal-widget li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .goal-bar { flex-wrap: wrap; }
+  .goal-amounts { min-width: 0; }
+}

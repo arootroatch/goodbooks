@@ -2,21 +2,23 @@
 <html <%= tag.attributes(data: { theme: theme_attribute }) %>>
   <head>
     <title><%= content_for(:title) || "Goodbooks" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Goodbooks">
     <meta name="application-name" content="Goodbooks">
     <meta name="mobile-web-app-capable" content="yes">
+    <%= theme_color_meta_tags %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <%= favicon_link_tag "icon.png", type: "image/png" %>
     <%= favicon_link_tag "icon.svg", type: "image/svg+xml" %>
-    <%= favicon_link_tag "icon.png", rel: "apple-touch-icon", type: "image/png" %>
+    <%# iOS paints transparent corners black, so the touch icon is the square full-bleed one; iOS rounds it. %>
+    <%= favicon_link_tag "icon-maskable.png", rel: "apple-touch-icon", type: "image/png" %>
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -25,13 +27,14 @@
 
   <body>
     <% if authenticated? %>
-      <div class="app-shell" data-controller="sidebar">
+      <div class="app-shell" data-controller="sidebar" data-action="keydown.esc@window->sidebar#close">
         <header class="topbar no-print">
           <button type="button" class="ghost" aria-controls="sidebar" aria-expanded="false"
                   data-sidebar-target="button" data-action="sidebar#toggle">Menu</button>
           <%= link_to root_path, class: "auth-brand" do %><span class="switcher-dot"></span>goodbooks<% end %>
         </header>
         <%= render "layouts/sidebar" %>
+        <div class="sidebar-backdrop no-print" data-action="click->sidebar#close"></div>
         <main class="app-main">
           <%= render "layouts/flash" %>
           <%= yield %>
