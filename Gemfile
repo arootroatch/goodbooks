@@ -58,7 +58,7 @@ gem "rotp", "~> 6.3"
 gem "rqrcode", "~> 3.2"
 # CSV parsing for bank statement imports (bundled gem, not default, since Ruby 3.4)
 gem "csv"
-gem "plaid", "~> 52.0", require: false
+gem "plaid", "~> 53.0", require: false
 gem "jwt", "~> 3.3"
 
 group :development, :test do
